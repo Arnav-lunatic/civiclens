@@ -734,6 +734,10 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
         model: groqModel,
         messages: [
           {
+            role: 'system',
+            content: 'You are a municipal civic infrastructure AI validator for CivicLens. You evaluate images and always reply with a raw JSON object only matching the required schema, without markdown codeblocks, reasoning tags, or conversational text.',
+          },
+          {
             role: 'user',
             content: [
               { type: 'text', text: promptText },
@@ -743,8 +747,6 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
         ],
         temperature: 0.1,
         max_tokens: 600,
-        response_format: { type: 'json_object' },
-        reasoning_format: 'hidden',
       }),
     });
 
@@ -764,6 +766,10 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
             model: groqModel,
             messages: [
               {
+                role: 'system',
+                content: 'You are a municipal civic infrastructure AI validator for CivicLens. You evaluate images and always reply with a raw JSON object only matching the required schema, without markdown codeblocks, reasoning tags, or conversational text.',
+              },
+              {
                 role: 'user',
                 content: [
                   { type: 'text', text: promptText },
@@ -773,8 +779,6 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
             ],
             temperature: 0.1,
             max_tokens: 600,
-            response_format: { type: 'json_object' },
-            reasoning_format: 'hidden',
           }),
         });
       }
@@ -805,7 +809,8 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
 
     let parsed: any = {};
     try {
-      const cleanJsonStr = aiContent.replace(/```json/g, '').replace(/```/g, '').trim();
+      const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
+      const cleanJsonStr = jsonMatch ? jsonMatch[0] : aiContent.replace(/```json/g, '').replace(/```/g, '').trim();
       parsed = JSON.parse(cleanJsonStr);
     } catch (e) {
       console.warn('[Groq JSON Parse Warning]:', e);
