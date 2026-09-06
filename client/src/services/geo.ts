@@ -16,14 +16,60 @@ export interface FusedPosition {
   timestamp: number;
 }
 
+// Fast IP-based Geolocation fallback for laptops/desktops lacking physical GNSS GPS hardware
+export const fetchFallbackLocation = async (): Promise<{ lat: number; lng: number; accuracy: number } | null> => {
+  try {
+    const res = await fetch('https://ipwho.is/');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+        return { lat: data.latitude, lng: data.longitude, accuracy: 1000 };
+      }
+    }
+  } catch (e) {
+    // Secondary fallback
+  }
+
+  try {
+    const res2 = await fetch('https://ipapi.co/json/');
+    if (res2.ok) {
+      const data2 = await res2.json();
+      if (typeof data2.latitude === 'number' && typeof data2.longitude === 'number') {
+        return { lat: data2.latitude, lng: data2.longitude, accuracy: 1000 };
+      }
+    }
+  } catch (e) {
+    console.warn('IP fallback failed:', e);
+  }
+
+  return null;
+};
+
 export const GeoService = {
-  // STRICT 100% PHYSICAL HARDWARE GPS SENSOR (NO IP FALLBACK)
+  // Dual-mode sensor: High-accuracy GPS with automatic standard-accuracy & network fallback for laptops
   startLiveTracking: (
     onUpdate: (pos: FusedPosition) => void,
     onError: (err: GeolocationPositionError) => void
   ): { watchId: number | null } => {
+    const handleIpFallback = async (originalErr?: any) => {
+      const fallback = await fetchFallbackLocation();
+      if (fallback) {
+        onUpdate({
+          lat: fallback.lat,
+          lng: fallback.lng,
+          accuracy: fallback.accuracy,
+          speed: null,
+          heading: null,
+          altitude: null,
+          timestamp: Date.now(),
+        });
+      } else if (originalErr) {
+        onError(originalErr);
+      }
+    };
+
     if (!navigator.geolocation) {
-      onError({
+      handleIpFallback({
         code: 2,
         message: 'Geolocation hardware is not supported on this browser/device.',
         PERMISSION_DENIED: 1,
@@ -49,29 +95,45 @@ export const GeoService = {
     navigator.geolocation.getCurrentPosition(
       processSensorPosition,
       (err) => {
-        console.warn('[Strict GPS Hardware Error]:', err.code, err.message);
-        onError(err);
+        console.warn('[High-Accuracy GPS unavailable, falling back to standard positioning]:', err.code, err.message);
+        // Fallback to standard accuracy (works on laptops via Wi-Fi triangulation)
+        navigator.geolocation.getCurrentPosition(
+          processSensorPosition,
+          (err2) => {
+            console.warn('[Standard Wi-Fi location failed, trying IP fallback]:', err2.code, err2.message);
+            handleIpFallback(err2);
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 60000,
+          }
+        );
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0, // Strictly fresh hardware sensor data
-      }
-    );
-
-    // 2. Continuous Hardware GPS Stream
-    const watchId = navigator.geolocation.watchPosition(
-      processSensorPosition,
-      (err) => {
-        console.warn('[Strict GPS Hardware Watch Error]:', err.code, err.message);
-        onError(err);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 20000,
+        timeout: 8000,
         maximumAge: 0,
       }
     );
+
+    // 2. Continuous Sensor Stream
+    let watchId: number | null = null;
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        processSensorPosition,
+        (err) => {
+          console.warn('[GPS Hardware Watch Error]:', err.code, err.message);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 20000,
+          maximumAge: 10000,
+        }
+      );
+    } catch (e) {
+      // Non-blocking watch fallback
+    }
 
     return { watchId };
   },

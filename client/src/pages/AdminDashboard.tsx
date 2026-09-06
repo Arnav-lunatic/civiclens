@@ -4,6 +4,7 @@ import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, External
 import { API } from '../services/api';
 import { Complaint, User } from '../types';
 import { ResolutionCameraModal } from '../components/ResolutionCameraModal';
+import { fetchFallbackLocation } from '../services/geo';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -89,32 +90,75 @@ export const AdminDashboard: React.FC = () => {
     setLocationVerified(false);
     setLocationDistance(null);
 
+    const onLocationSuccess = (lat: number, lng: number) => {
+      setSubadminLat(lat);
+      setSubadminLng(lng);
+
+      const distance = haversineDistance(lat, lng, selectedComplaint.latitude, selectedComplaint.longitude);
+      setLocationDistance(Math.round(distance));
+
+      if (distance <= MAX_DISTANCE) {
+        setLocationVerified(true);
+        setLocationError('');
+      } else {
+        setLocationVerified(false);
+        const distStr = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`;
+        setLocationError(`Location not matched. You are ${distStr} away. Reach the location to take photo.`);
+      }
+      setLocationCheckLoading(false);
+    };
+
+    const tryStandardAccuracy = () => {
+      if (!navigator.geolocation) {
+        tryIpFallback();
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          onLocationSuccess(position.coords.latitude, position.coords.longitude);
+        },
+        (error2) => {
+          console.warn('Standard location query failed on laptop, attempting IP fallback:', error2);
+          tryIpFallback(error2);
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      );
+    };
+
+    const tryIpFallback = async (originalErr?: any) => {
+      try {
+        const fallback = await fetchFallbackLocation();
+        if (fallback) {
+          onLocationSuccess(fallback.lat, fallback.lng);
+          return;
+        }
+      } catch (e) {
+        console.warn('IP fallback error:', e);
+      }
+
+      if (originalErr && originalErr.code === 1) {
+        setLocationError('Location permission denied. Please allow location access in your browser / Mac settings.');
+      } else {
+        setLocationError('Unable to get your location. Please ensure Wi-Fi or Location Services are enabled on your device.');
+      }
+      setLocationCheckLoading(false);
+    };
+
+    if (!navigator.geolocation) {
+      tryIpFallback();
+      return;
+    }
+
+    // 1. Try High-Accuracy GPS (ideal for smartphones with GPS hardware)
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setSubadminLat(lat);
-        setSubadminLng(lng);
-
-        const distance = haversineDistance(lat, lng, selectedComplaint.latitude, selectedComplaint.longitude);
-        setLocationDistance(Math.round(distance));
-
-        if (distance <= MAX_DISTANCE) {
-          setLocationVerified(true);
-          setLocationError('');
-        } else {
-          setLocationVerified(false);
-          const distStr = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`;
-          setLocationError(`Location not matched. You are ${distStr} away. Reach the location to take photo.`);
-        }
-        setLocationCheckLoading(false);
+        onLocationSuccess(position.coords.latitude, position.coords.longitude);
       },
       (error) => {
-        console.error('Geolocation error:', error);
-        setLocationError('Unable to get your location. Please enable GPS/location services and try again.');
-        setLocationCheckLoading(false);
+        console.warn('High-accuracy GPS query unavailable (common on laptops without GPS hardware). Falling back to network/Wi-Fi positioning:', error);
+        tryStandardAccuracy();
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   };
 
@@ -522,9 +566,17 @@ export const AdminDashboard: React.FC = () => {
                 </button>
 
                 {locationError && (
-                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
-                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-[11px] text-red-700 font-semibold">{locationError}</span>
+                  <div className="space-y-1.5 bg-red-50 border border-red-200 rounded-xl p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-[11px] text-red-700 font-semibold">{locationError}</span>
+                    </div>
+                    {subadminLat !== null && subadminLng !== null && (
+                      <div className="text-[10px] text-red-600 pl-6 space-y-0.5 font-mono">
+                        <div>Your Detected GPS: {subadminLat.toFixed(5)}, {subadminLng.toFixed(5)}</div>
+                        <div>Complaint Issue GPS: {selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</div>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -106,7 +106,7 @@ export const ReportIssue: React.FC = () => {
           handleNewPosition(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy || 5));
         },
         () => {},
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 10000 }
       );
     }, 3000);
   };
