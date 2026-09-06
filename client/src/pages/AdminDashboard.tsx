@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink } from 'lucide-react';
+import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink, Camera, Loader2, AlertTriangle, X } from 'lucide-react';
 import { API } from '../services/api';
 import { Complaint, User } from '../types';
+import { ResolutionCameraModal } from '../components/ResolutionCameraModal';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -16,8 +17,22 @@ export const AdminDashboard: React.FC = () => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [newStatus, setNewStatus] = useState('In Progress');
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const [proofFile, setProofFile] = useState<File | null>(null);
   const [updating, setUpdating] = useState(false);
+
+  // Location verification state
+  const [locationVerified, setLocationVerified] = useState(false);
+  const [locationCheckLoading, setLocationCheckLoading] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const [locationDistance, setLocationDistance] = useState<number | null>(null);
+  const [subadminLat, setSubadminLat] = useState<number | null>(null);
+  const [subadminLng, setSubadminLng] = useState<number | null>(null);
+
+  // Resolution camera state
+  const [showResolutionCamera, setShowResolutionCamera] = useState(false);
+  const [resolutionPhotoFile, setResolutionPhotoFile] = useState<File | null>(null);
+  const [resolutionPhotoPreview, setResolutionPhotoPreview] = useState('');
+  const [resolutionPhotoLat, setResolutionPhotoLat] = useState<number | null>(null);
+  const [resolutionPhotoLng, setResolutionPhotoLng] = useState<number | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(user);
 
@@ -52,6 +67,57 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Haversine distance (meters) for client-side location check
+  const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const MAX_DISTANCE = 500; // meters
+
+  const handleVerifyLocation = () => {
+    if (!selectedComplaint) return;
+    setLocationCheckLoading(true);
+    setLocationError('');
+    setLocationVerified(false);
+    setLocationDistance(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setSubadminLat(lat);
+        setSubadminLng(lng);
+
+        const distance = haversineDistance(lat, lng, selectedComplaint.latitude, selectedComplaint.longitude);
+        setLocationDistance(Math.round(distance));
+
+        if (distance <= MAX_DISTANCE) {
+          setLocationVerified(true);
+          setLocationError('');
+        } else {
+          setLocationVerified(false);
+          const distStr = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`;
+          setLocationError(`Location not matched. You are ${distStr} away. Reach the location to take photo.`);
+        }
+        setLocationCheckLoading(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLocationError('Unable to get your location. Please enable GPS/location services and try again.');
+        setLocationCheckLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
   const handleUpdateStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedComplaint) return;
@@ -60,18 +126,37 @@ export const AdminDashboard: React.FC = () => {
     const formData = new FormData();
     formData.append('status', newStatus);
     formData.append('resolutionNotes', resolutionNotes);
-    if (proofFile) formData.append('resolvedImage', proofFile);
+    if (resolutionPhotoFile) {
+      formData.append('resolvedImage', resolutionPhotoFile);
+      if (resolutionPhotoLat !== null) formData.append('resolutionLat', resolutionPhotoLat.toString());
+      if (resolutionPhotoLng !== null) formData.append('resolutionLng', resolutionPhotoLng.toString());
+    }
 
     try {
       await API.request(`/complaints/${selectedComplaint._id}/status`, 'PUT', formData, true);
       alert('Grievance status updated successfully!');
-      setSelectedComplaint(null);
+      resetModal();
       loadComplaints();
     } catch (err: any) {
       alert(err.message || 'Failed to update status');
     } finally {
       setUpdating(false);
     }
+  };
+
+  const resetModal = () => {
+    setSelectedComplaint(null);
+    setLocationVerified(false);
+    setLocationCheckLoading(false);
+    setLocationError('');
+    setLocationDistance(null);
+    setSubadminLat(null);
+    setSubadminLng(null);
+    setShowResolutionCamera(false);
+    setResolutionPhotoFile(null);
+    setResolutionPhotoPreview('');
+    setResolutionPhotoLat(null);
+    setResolutionPhotoLng(null);
   };
 
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
@@ -340,6 +425,16 @@ export const AdminDashboard: React.FC = () => {
                         setSelectedComplaint(item);
                         setNewStatus(item.status);
                         setResolutionNotes(item.resolutionNotes || '');
+                        setLocationVerified(false);
+                        setLocationCheckLoading(false);
+                        setLocationError('');
+                        setLocationDistance(null);
+                        setSubadminLat(null);
+                        setSubadminLng(null);
+                        setResolutionPhotoFile(null);
+                        setResolutionPhotoPreview('');
+                        setResolutionPhotoLat(null);
+                        setResolutionPhotoLng(null);
                       }}
                       className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
                     >
@@ -357,7 +452,7 @@ export const AdminDashboard: React.FC = () => {
       {/* Update Modal */}
       {selectedComplaint && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900">Update Grievance Status</h3>
 
             <form onSubmit={handleUpdateStatus} className="space-y-4">
@@ -387,20 +482,112 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Upload "After" Resolution Photo</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-                />
+              {/* ─── Step 1: Verify Location ─── */}
+              <div className="space-y-2.5 border border-slate-200 rounded-2xl p-4 bg-slate-50/50">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">1</span>
+                  <span className="text-xs font-bold text-slate-700 uppercase">Verify Your Location</span>
+                </div>
+
+                <p className="text-[11px] text-slate-500">
+                  Issue Location: <strong className="text-slate-700">{selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</strong>
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleVerifyLocation}
+                  disabled={locationCheckLoading}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
+                    locationVerified
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {locationCheckLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Acquiring GPS Location...</span>
+                    </>
+                  ) : locationVerified ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Location Verified! ({locationDistance}m away) — Re-verify</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>📍 Verify My Location</span>
+                    </>
+                  )}
+                </button>
+
+                {locationError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-[11px] text-red-700 font-semibold">{locationError}</span>
+                  </div>
+                )}
+
+                {locationVerified && (
+                  <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-emerald-700">
+                      <span className="font-bold">Location verified!</span> You are <strong>{locationDistance}m</strong> from the issue location. You can now take the resolution photo.
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ─── Step 2: Take Resolution Photo ─── */}
+              <div className={`space-y-2.5 border rounded-2xl p-4 ${locationVerified ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/30 opacity-60'}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-500'}`}>2</span>
+                  <span className="text-xs font-bold text-slate-700 uppercase">Take Resolution Photo</span>
+                  {!locationVerified && (
+                    <span className="text-[10px] text-slate-400 font-semibold ml-auto">🔒 Verify location first</span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowResolutionCamera(true)}
+                  disabled={!locationVerified}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
+                    locationVerified
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>{resolutionPhotoFile ? '📸 Retake Live Photo' : '📸 Take Live Photo'}</span>
+                </button>
+
+                {resolutionPhotoPreview && (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                    <img src={resolutionPhotoPreview} alt="Resolution proof" className="w-full h-40 object-cover" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-2 text-[10px] text-white font-mono">
+                      GPS: {resolutionPhotoLat?.toFixed(5)}, {resolutionPhotoLng?.toFixed(5)} | {new Date().toLocaleString('en-IN')}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResolutionPhotoFile(null);
+                        setResolutionPhotoPreview('');
+                        setResolutionPhotoLat(null);
+                        setResolutionPhotoLng(null);
+                      }}
+                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setSelectedComplaint(null)}
+                  onClick={resetModal}
                   className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800"
                 >
                   Cancel
@@ -416,6 +603,24 @@ export const AdminDashboard: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Resolution Camera Modal */}
+      {selectedComplaint && subadminLat !== null && subadminLng !== null && (
+        <ResolutionCameraModal
+          isOpen={showResolutionCamera}
+          onClose={() => setShowResolutionCamera(false)}
+          onCapture={(file, dataUrl, lat, lng) => {
+            setResolutionPhotoFile(file);
+            setResolutionPhotoPreview(dataUrl);
+            setResolutionPhotoLat(lat);
+            setResolutionPhotoLng(lng);
+          }}
+          currentLat={subadminLat}
+          currentLng={subadminLng}
+          complaintLat={selectedComplaint.latitude}
+          complaintLng={selectedComplaint.longitude}
+        />
       )}
     </div>
   );

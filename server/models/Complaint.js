@@ -46,6 +46,8 @@ const ComplaintSchema = new mongoose.Schema(
     resolvedImages: [
       {
         url: String,
+        latitude: Number,
+        longitude: Number,
         timestamp: { type: Date, default: Date.now },
       },
     ],

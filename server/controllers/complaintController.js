@@ -3,6 +3,21 @@ const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 const jwt = require('jsonwebtoken');
 
+// Haversine formula: distance between two GPS coordinates in meters
+const haversineDistance = (lat1, lon1, lat2, lon2) => {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371000; // Earth radius in meters
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const MAX_RESOLUTION_DISTANCE_METERS = 500;
+
 const uploadToCloudinary = (buffer, folder = 'civiclens/complaints') => {
   return new Promise((resolve, reject) => {
     if (!process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME === 'demo') {
@@ -521,7 +536,7 @@ const getSuperAdminComplaints = async (req, res) => {
 // 7. Update Status
 const updateComplaintStatus = async (req, res) => {
   try {
-    const { status, resolutionNotes } = req.body;
+    const { status, resolutionNotes, resolutionLat, resolutionLng } = req.body;
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
@@ -554,15 +569,44 @@ const updateComplaintStatus = async (req, res) => {
       }
     }
 
-    if (status) complaint.status = status;
-    if (resolutionNotes) complaint.resolutionNotes = resolutionNotes;
-
+    // GPS Location verification for resolution photo uploads
     if (req.file) {
+      const lat = parseFloat(resolutionLat);
+      const lng = parseFloat(resolutionLng);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Live GPS location is required when submitting resolution proof photo.',
+        });
+      }
+
+      const distance = haversineDistance(lat, lng, complaint.latitude, complaint.longitude);
+
+      if (distance > MAX_RESOLUTION_DISTANCE_METERS) {
+        return res.status(403).json({
+          success: false,
+          message: `Location not matched. You are ${distance >= 1000 ? (distance / 1000).toFixed(1) + ' km' : Math.round(distance) + 'm'} away from the complaint location. Reach the location to submit resolution proof.`,
+          distance: Math.round(distance),
+        });
+      }
+
       const result = await uploadToCloudinary(req.file.buffer, 'civiclens/resolutions');
       complaint.resolvedImageUrl = result.secure_url;
+
+      // Store resolution photo with GPS for audit trail
+      complaint.resolvedImages.push({
+        url: result.secure_url,
+        latitude: lat,
+        longitude: lng,
+        timestamp: new Date(),
+      });
     } else if (req.body.resolvedImageUrl) {
       complaint.resolvedImageUrl = req.body.resolvedImageUrl;
     }
+
+    if (status) complaint.status = status;
+    if (resolutionNotes) complaint.resolutionNotes = resolutionNotes;
 
     complaint.timeline.push({
       status: status || complaint.status,
