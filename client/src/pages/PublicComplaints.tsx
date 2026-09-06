@@ -252,6 +252,126 @@ export const PublicComplaints: React.FC = () => {
         </div>
       </div>
 
+      {/* Verified Municipal Resolutions Spotlight (before_after1.jpeg & before_after2.jpeg) */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Verified On-Site Redressal Showcase</span>
+            </div>
+            <h2 className="text-base sm:text-lg font-black text-slate-900 mt-1">
+              Real Impact: Verified Before &amp; After Resolutions
+            </h2>
+          </div>
+          <p className="text-[11px] text-slate-500 max-w-sm">
+            Sub-admins must reach the physical coordinates and capture a live matching photo to verify resolution.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Card 1: Streetlight Resolution (Venduruthy Bridge, Cochin) */}
+          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
+                  Street Lighting &bull; Kochi, Kerala
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Resolved
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Venduruthy Bridge: Complete LED Illumination Restored
+              </h3>
+            </div>
+
+            <div
+              onClick={() =>
+                setPreviewImage({
+                  url: '/images/before_after1.jpeg',
+                  title: 'Venduruthy Bridge, Cochin: Before & After Streetlight Illumination',
+                })
+              }
+              className="relative rounded-xl overflow-hidden border border-slate-200 cursor-pointer group shadow-xs"
+            >
+              <img
+                src="/images/before_after1.jpeg"
+                alt="Venduruthy Bridge Streetlight Before and After"
+                className="w-full h-44 sm:h-48 object-cover group-hover:scale-102 transition duration-300"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition"></div>
+              <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">
+                BEFORE: Dark Bridge
+              </div>
+              <div className="absolute bottom-2 right-2 bg-emerald-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                AFTER: Full LED Lighting
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-sky-600" />
+                <span>Geotagged Hardware Proof</span>
+              </span>
+              <span className="font-semibold text-slate-700">Verified by Cochin Municipal Corp</span>
+            </div>
+          </div>
+
+          {/* Card 2: Electrical Hazard Resolution (Utility Pole Replaced) */}
+          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  Public Safety &bull; Electrical Utility
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Resolved
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Hazardous Leaning Utility Post Straightened &amp; Insulated
+              </h3>
+            </div>
+
+            <div
+              onClick={() =>
+                setPreviewImage({
+                  url: '/images/before_after2.jpeg',
+                  title: 'Hazardous Leaning Utility Pole: Before & After Repair',
+                })
+              }
+              className="relative rounded-xl overflow-hidden border border-slate-200 cursor-pointer group shadow-xs"
+            >
+              <img
+                src="/images/before_after2.jpeg"
+                alt="Hazardous Leaning Utility Pole Before and After"
+                className="w-full h-44 sm:h-48 object-cover group-hover:scale-102 transition duration-300"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition"></div>
+              <div className="absolute top-2 left-2 bg-rose-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">
+                BEFORE: Leaning Danger
+              </div>
+              <div className="absolute bottom-2 right-2 bg-emerald-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                AFTER: Safely Replaced
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>On-Site Location Verified</span>
+              </span>
+              <span className="font-semibold text-slate-700">Verified by Electricity Board</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Filters Bar */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3.5 overflow-hidden">
         {/* Row 1: Search Box */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
+import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { API } from '../services/api';
 import { GeoService, FusedPosition } from '../services/geo';
 import { CameraModal } from '../components/CameraModal';
@@ -260,6 +260,37 @@ export const ReportIssue: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Coordinates are pulled strictly from your physical device GPS hardware.
           </p>
+        </div>
+
+        {/* Critical Civic Hazard Protocol Banner (img1.jpeg) */}
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50/50 to-rose-50 border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            {/* Image Preview */}
+            <div className="md:col-span-4 relative rounded-xl overflow-hidden border border-amber-300/60 shadow-sm bg-black max-h-[160px]">
+              <img
+                src="/images/img1.jpeg"
+                alt="Critical civic emergency: massive fallen tree blocking roadway and powerlines"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute top-2 left-2 bg-rose-600/90 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
+                <AlertTriangle className="w-3 h-3" />
+                <span>Urgent Road Hazard</span>
+              </div>
+            </div>
+
+            {/* Explanatory Guidance */}
+            <div className="md:col-span-8 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-amber-900 uppercase tracking-wide">
+                  Critical Emergency Protocol &bull; 2-Hour SLA
+                </span>
+              </div>
+              <p className="text-xs text-amber-950/80 leading-relaxed">
+                Reporting severe civic blockages like fallen trees, open manholes, or live snapped cables? Select <strong className="font-semibold text-rose-700">"High" Priority</strong> below. Your live hardware GPS coordinates instantly alert the municipal emergency disaster cell for rapid road clearance.
+              </p>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
