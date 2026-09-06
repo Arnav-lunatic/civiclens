@@ -703,7 +703,9 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
   "description": "Detailed 2-3 sentence description of observed municipal hazard if valid, or empty string if invalid"
 }`;
 
-    let groqModel = 'llama-3.2-11b-vision-preview';
+    let groqModel = 'qwen/qwen3.6-27b';
+    console.log(`[Groq AI] Sending image to Groq Vision API (${groqModel})...`);
+
     let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -727,12 +729,12 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       }),
     });
 
-    // If 11b fails with 400 or decommissioned, attempt 90b vision model
-    if (!response.ok && response.status === 400) {
+    // If qwen3.6-27b fails with 400 or decommissioned, attempt qwen3.8-27b
+    if (!response.ok && (response.status === 400 || response.status === 404)) {
       const errClone = await response.clone().json().catch(() => ({}));
-      if (errClone.error?.code === 'model_decommissioned' || errClone.error?.message?.includes('decommissioned')) {
-        console.warn(`[Groq AI Warning]: ${groqModel} is decommissioned. Trying llama-3.2-90b-vision-preview...`);
-        groqModel = 'llama-3.2-90b-vision-preview';
+      if (errClone.error?.code === 'model_decommissioned' || errClone.error?.message?.includes('decommissioned') || errClone.error?.code === 'model_not_found') {
+        console.warn(`[Groq AI Warning]: ${groqModel} error. Trying qwen/qwen3.8-27b...`);
+        groqModel = 'qwen/qwen3.8-27b';
         response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
