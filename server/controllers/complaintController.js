@@ -706,14 +706,9 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
     let groqModel = 'qwen/qwen3.6-27b';
     console.log(`[Groq AI] Sending image to Groq Vision API (${groqModel})...`);
 
-    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: groqModel,
+    const buildPayload = (modelName, includeReasoningParams = true) => {
+      const payload = {
+        model: modelName,
         messages: [
           {
             role: 'system',
@@ -728,40 +723,50 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
           },
         ],
         temperature: 0.1,
-        max_tokens: 600,
-      }),
+        max_tokens: 800,
+      };
+      if (includeReasoningParams) {
+        payload.reasoning_format = 'hidden';
+        payload.reasoning_effort = 'none';
+      }
+      return payload;
+    };
+
+    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(buildPayload(groqModel, true)),
     });
 
-    // If qwen3.6-27b fails with 400 or decommissioned, attempt qwen3.8-27b
+    // Handle 400 parameter errors (e.g. if reasoning_effort/reasoning_format not supported) or decommissioned model
     if (!response.ok && (response.status === 400 || response.status === 404)) {
       const errClone = await response.clone().json().catch(() => ({}));
-      if (errClone.error?.code === 'model_decommissioned' || errClone.error?.message?.includes('decommissioned') || errClone.error?.code === 'model_not_found') {
-        console.warn(`[Groq AI Warning]: ${groqModel} error. Trying qwen/qwen3.8-27b...`);
-        groqModel = 'qwen/qwen3.8-27b';
+      const errMsg = errClone.error?.message || '';
+      console.warn(`[Groq AI Warning]: ${groqModel} returned status ${response.status}: ${errMsg}`);
+
+      if (errMsg.toLowerCase().includes('reasoning') || errMsg.toLowerCase().includes('extra fields')) {
+        console.log('[Groq AI] Retrying without reasoning params...');
         response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${groqApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            model: groqModel,
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a municipal civic infrastructure AI validator for CivicLens. You evaluate images and always reply with a raw JSON object only matching the required schema, without markdown codeblocks, reasoning tags, or conversational text.',
-              },
-              {
-                role: 'user',
-                content: [
-                  { type: 'text', text: promptText },
-                  { type: 'image_url', image_url: { url: imageBase64 } },
-                ],
-              },
-            ],
-            temperature: 0.1,
-            max_tokens: 600,
-          }),
+          body: JSON.stringify(buildPayload(groqModel, false)),
+        });
+      } else if (errClone.error?.code === 'model_decommissioned' || errMsg.includes('decommissioned') || errClone.error?.code === 'model_not_found') {
+        groqModel = 'qwen/qwen3.8-27b';
+        console.log(`[Groq AI] Retrying with ${groqModel}...`);
+        response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(buildPayload(groqModel, true)),
         });
       }
     }
@@ -794,18 +799,67 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
     let parsed = {};
     try {
       const jsonMatch = contentWithoutThinking.match(/\{[\s\S]*\}/) || aiContent.match(/\{[\s\S]*\}/);
-      const cleanJsonStr = jsonMatch ? jsonMatch[0] : contentWithoutThinking.replace(/```json/g, '').replace(/```/g, '').trim();
+      let cleanJsonStr = jsonMatch ? jsonMatch[0] : contentWithoutThinking.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      // Auto-repair missing closing brace/quotes if response was cut off near token limit
+      if (cleanJsonStr.includes('{') && !cleanJsonStr.includes('}')) {
+        const unescapedQuotes = (cleanJsonStr.match(/(?<!\\)"/g) || []).length;
+        if (unescapedQuotes % 2 !== 0) cleanJsonStr += '"';
+        cleanJsonStr = cleanJsonStr.trim() + '\n}';
+      } else if (cleanJsonStr.startsWith('{') && !cleanJsonStr.endsWith('}')) {
+        const unescapedQuotes = (cleanJsonStr.match(/(?<!\\)"/g) || []).length;
+        if (unescapedQuotes % 2 !== 0) cleanJsonStr += '"';
+        cleanJsonStr = cleanJsonStr.replace(/\s*,?\s*$/, '') + '\n}';
+      }
+
       parsed = JSON.parse(cleanJsonStr);
     } catch (e) {
-      console.warn('[Groq JSON Parse Warning]:', e);
-      parsed = {
-        isValidCivicIssue: false,
-        rejectionReason: 'Could not verify image content as authentic municipal infrastructure.',
-        category: 'Other',
-        priority: 'Medium',
-        title: '',
-        description: '',
-      };
+      console.warn('[Groq JSON Parse Warning]:', e.message);
+
+      // Resilient Regex Fallback: extract fields directly even if JSON was truncated
+      const fullText = `${contentWithoutThinking}\n${aiContent}`;
+      const isValMatch = fullText.match(/"isValidCivicIssue"\s*:\s*(true|false)/i);
+      const catMatch = fullText.match(/"category"\s*:\s*"([^"]+)"/i);
+      const prioMatch = fullText.match(/"priority"\s*:\s*"([^"]+)"/i);
+      const titleMatch = fullText.match(/"title"\s*:\s*"([^"]+)"/i);
+      const descMatch = fullText.match(/"description"\s*:\s*"([^"\r\n]+)/i);
+      const rejMatch = fullText.match(/"rejectionReason"\s*:\s*"([^"\r\n]*)/i);
+
+      if (isValMatch) {
+        console.log('[Groq AI Recovery]: Successfully extracted fields via regex fallback.');
+        parsed = {
+          isValidCivicIssue: isValMatch[1].toLowerCase() === 'true',
+          category: catMatch ? catMatch[1] : 'Roads & Potholes',
+          priority: prioMatch ? prioMatch[1] : 'High',
+          title: titleMatch ? titleMatch[1] : 'Geotagged Civic Issue',
+          description: descMatch ? descMatch[1] : 'Public municipal infrastructure issue detected.',
+          rejectionReason: rejMatch ? rejMatch[1] : '',
+        };
+      } else {
+        // As a last-resort recovery, check if AI thinking concluded this is a valid civic hazard
+        const thinkValidMatch = fullText.match(/(?:valid civic issue\??\s*:?\s*yes|infrastructure issue|pothole|damaged road|garbage dump|water leakage)/i);
+        const thinkInvalidMatch = fullText.match(/(?:valid civic issue\??\s*:?\s*no|not a civic issue|personal photo|laptop|screen|indoor room)/i);
+
+        if (thinkValidMatch && !thinkInvalidMatch) {
+          console.log('[Groq AI Recovery]: Recovered valid civic status from thinking trace.');
+          parsed = {
+            isValidCivicIssue: true,
+            category: catMatch ? catMatch[1] : 'Roads & Potholes',
+            priority: prioMatch ? prioMatch[1] : 'High',
+            title: titleMatch ? titleMatch[1] : 'Public Infrastructure Hazard',
+            description: descMatch ? descMatch[1] : 'Municipal infrastructure damage observed in photo.',
+          };
+        } else {
+          parsed = {
+            isValidCivicIssue: false,
+            rejectionReason: 'Could not verify image content as authentic municipal infrastructure.',
+            category: 'Other',
+            priority: 'Medium',
+            title: '',
+            description: '',
+          };
+        }
+      }
     }
 
     // Convert string booleans ("true"/"false") to actual boolean
