@@ -197,7 +197,6 @@ export const PublicComplaints: React.FC = () => {
   const totalCount = complaints.length;
   const resolvedCount = complaints.filter((c) => c.status === 'Resolved').length;
   const activeCount = complaints.filter((c) => c.status !== 'Resolved' && c.status !== 'Rejected').length;
-  const nearestDistance = processedComplaints.find((c) => c.distanceMeters !== null)?.distanceMeters;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
@@ -237,81 +236,8 @@ export const PublicComplaints: React.FC = () => {
         </div>
       </div>
 
-      {/* Proximity Location Status Pill */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-            locationType === 'gps'
-              ? 'bg-emerald-50 text-emerald-600'
-              : locationType === 'ip'
-              ? 'bg-blue-50 text-blue-600'
-              : 'bg-slate-100 text-slate-500'
-          }`}>
-            {locationType === 'gps' ? (
-              <Navigation className="w-5 h-5 animate-pulse" />
-            ) : locationType === 'ip' ? (
-              <Globe className="w-5 h-5" />
-            ) : (
-              <Compass className="w-5 h-5" />
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase text-slate-900 tracking-wider">
-                {locationType === 'gps'
-                  ? 'Sorted by Live GPS Proximity'
-                  : locationType === 'ip'
-                  ? 'Sorted by Approximate IP Location'
-                  : 'Proximity Detection'}
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                locationType === 'gps'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : locationType === 'ip'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-slate-100 text-slate-600'
-              }`}>
-                {locationType === 'gps' ? 'High Precision GPS' : locationType === 'ip' ? 'IP Geo Fallback' : 'Standard'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {locationLoading ? (
-                'Detecting nearest location...'
-              ) : userLat !== null && userLng !== null ? (
-                <span>
-                  Your reference coordinates: <strong className="font-mono text-slate-700">{userLat.toFixed(4)}, {userLng.toFixed(4)}</strong>
-                  {locationType === 'ip' && ' (GPS not granted; approx IP used)'}
-                </span>
-              ) : (
-                locationError || 'Click to detect your location for proximity sorting'
-              )}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {locationType !== 'gps' && (
-            <button
-              onClick={detectLocation}
-              disabled={locationLoading}
-              className="px-3.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold rounded-xl border border-sky-200 transition flex items-center gap-1.5"
-            >
-              <Navigation className="w-3.5 h-3.5" />
-              <span>Allow GPS for Accurate Proximity</span>
-            </button>
-          )}
-          <button
-            onClick={() => setSortBy(sortBy === 'nearest' ? 'newest' : 'nearest')}
-            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5"
-          >
-            <ArrowUpDown className="w-3.5 h-3.5" />
-            <span>Sort: {sortBy === 'nearest' ? 'Nearest First' : 'Newest First'}</span>
-          </button>
-        </div>
-      </div>
-
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <div className="text-xs font-bold text-slate-500 uppercase">Total Public Issues</div>
           <div className="text-3xl font-black text-slate-900 mt-1">{totalCount}</div>
@@ -323,12 +249,6 @@ export const PublicComplaints: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <div className="text-xs font-bold text-emerald-600 uppercase">Resolved & Closed</div>
           <div className="text-3xl font-black text-emerald-600 mt-1">{resolvedCount}</div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-purple-600 uppercase">Nearest Issue</div>
-          <div className="text-2xl font-black text-purple-600 mt-1 truncate">
-            {nearestDistance !== undefined ? formatDistance(nearestDistance) : 'Detecting...'}
-          </div>
         </div>
       </div>
 
@@ -347,21 +267,31 @@ export const PublicComplaints: React.FC = () => {
             />
           </div>
 
-          {/* Status Tabs */}
-          <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
-            {(['All', 'Active', 'Resolved'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  statusFilter === st
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {st === 'Active' ? 'Active Issues' : st === 'Resolved' ? 'Resolved' : 'All Issues'}
-              </button>
-            ))}
+          {/* Sort Button & Status Tabs */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setSortBy(sortBy === 'nearest' ? 'newest' : 'nearest')}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span>{sortBy === 'nearest' ? 'Nearest First' : 'Newest First'}</span>
+            </button>
+
+            <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
+              {(['All', 'Active', 'Resolved'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setStatusFilter(st)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    statusFilter === st
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {st === 'Active' ? 'Active Issues' : st === 'Resolved' ? 'Resolved' : 'All Issues'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
