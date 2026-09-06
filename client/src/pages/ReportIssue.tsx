@@ -164,7 +164,7 @@ export const ReportIssue: React.FC = () => {
         if (res.title) setTitle(res.title);
         if (res.category) setCategory(res.category);
         if (res.priority) setPriority(res.priority);
-        if (res.description && (!description || description.length < 10)) {
+        if (res.description) {
           setDescription(res.description);
         }
         setAiSuccessBadge(`✨ Auto-detected by Groq AI Vision: ${res.category} (Severity: ${res.priority})`);

@@ -691,16 +691,33 @@ export const analyzeComplaintImage = async (req: Request, res: Response): Promis
 
     console.log('[Groq AI] Sending image to Groq Vision API (llama-3.2-11b-vision-preview)...');
 
-    const promptText = `You are a smart civic infrastructure AI analyzer for CivicLens governance platform. Analyze this image carefully to detect if it depicts a real public civic issue or problem (such as road damage/pothole, garbage dump/litter, water leakage/sewage overflow, broken streetlight/electrical hazard, damaged public building/infrastructure, traffic encroachment, or illegal dumping).
+    const promptText = `You are a strict municipal civic infrastructure AI validator and classifier for CivicLens.
+Your primary job is to verify if this image depicts an authentic, OUTDOOR or PUBLIC municipal infrastructure problem maintained by city authorities.
+
+VALID CIVIC ISSUES (MUST BE OUTDOOR OR PUBLIC INFRASTRUCTURE):
+- Roads & Potholes: Potholes, damaged roads, broken asphalt, pavement craters, damaged sidewalks/footpaths.
+- Garbage & Sanitation: Overflowing public municipal garbage bins, roadside garbage dumps, trash heaps.
+- Water Supply & Sewage: Broken public water pipelines, open sewage manholes, street drainage overflow.
+- Electricity & Streetlights: Damaged/broken municipal streetlights, broken electric poles on streets, dangling live power wires outdoors.
+- Public Infrastructure: Damaged public parks, broken benches, bus stop damage, broken public bridges, open storm drains.
+- Encroachment & Traffic: Illegal street encroachments blocking roads, severe traffic hazards.
+
+STRICT REJECTION CRITERIA (isValidCivicIssue MUST BE false):
+1. PERSONAL ELECTRONICS: Laptops, computer monitors, screens, keyboards, mice, trackpads, tablets, mobile phones, chargers, computer accessories, PC desk setups, televisions. A laptop screen, glowing monitor, or keyboard backlight is STRICTLY NOT a streetlight or electrical hazard!
+2. INDOOR / RESIDENTIAL / OFFICE OBJECTS: Desks, chairs, indoor rooms, domestic ceilings, home appliances, domestic wiring, indoor furniture, bedroom, office interior.
+3. PEOPLE / ANIMALS / SELFIES: Faces, selfies, pets, animals, food, clothes, portraits.
+4. UNRELATED / RANDOM: Blurry/dark images with no discernible civic damage, indoor documents, vehicle interiors, software screenshots.
+
+If the image shows ANY personal electronic device (like a laptop, computer, screen, or keyboard) or indoor environment, you MUST set "isValidCivicIssue": false.
 
 Respond ONLY with a valid JSON object matching this schema without any markdown surrounding text or codeblocks:
 {
   "isValidCivicIssue": true or false,
-  "rejectionReason": "If isValidCivicIssue is false, state why (e.g. Image does not show any civic issue, it appears to be a selfie/indoor photo/unrelated object)",
+  "rejectionReason": "If isValidCivicIssue is false, state why clearly (e.g. 'Photo shows personal electronics (laptop/screen) rather than a public municipal infrastructure issue. Please upload a photo of a civic problem.')",
   "category": "Must be one of: Roads & Potholes, Garbage & Sanitation, Water Supply & Sewage, Electricity & Streetlights, Public Infrastructure, Encroachment & Traffic, Other",
   "priority": "Must be one of: Low, Medium, High, Critical",
   "title": "A concise 4-7 word title summarizing the civic issue",
-  "description": "A brief 1-2 sentence description of the observed civic damage"
+  "description": "A detailed 2-3 sentence description of the observed public hazard, visible damage, and why municipal repair is needed."
 }`;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -720,7 +737,7 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
             ],
           },
         ],
-        temperature: 0.2,
+        temperature: 0.1,
         max_tokens: 500,
         response_format: { type: 'json_object' },
       }),
@@ -752,12 +769,28 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       };
     }
 
+    // Safety guardrail: Detect personal electronics or indoor objects that hallucinated as civic issues
+    const combinedContent = `${parsed.title || ''} ${parsed.description || ''} ${parsed.category || ''} ${aiContent}`.toLowerCase();
+    const nonCivicPatterns = [
+      'laptop', 'computer', 'macbook', 'notebook', 'keyboard', 'trackpad',
+      'monitor', 'screen', 'smartphone', 'cellphone', 'mobile phone', 'tablet',
+      'mouse', 'charger', 'desk', 'bedroom', 'living room', 'office desk',
+      'pc screen', 'backlight', 'indoor light', 'ceiling fan', 'television', 'tv screen'
+    ];
+    const detectedNonCivic = nonCivicPatterns.find((kw) => combinedContent.includes(kw));
+
+    if (detectedNonCivic) {
+      console.warn(`[Groq AI Guardrail]: Detected personal/indoor term '${detectedNonCivic}'. Rejecting non-civic submission.`);
+      parsed.isValidCivicIssue = false;
+      parsed.rejectionReason = `Detected personal electronics or indoor object (${detectedNonCivic}). CivicLens only accepts public municipal infrastructure issues (e.g. roads, streetlights, garbage, water leakage).`;
+    }
+
     if (parsed.isValidCivicIssue === false) {
       res.status(200).json({
         success: true,
         isValidCivicIssue: false,
         rejectionReason: parsed.rejectionReason || 'Image does not show any civic issue',
-        message: 'Image does not show any civic issue',
+        message: parsed.rejectionReason || 'Image does not show any civic issue',
       });
       return;
     }
@@ -778,7 +811,7 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       if (lowerCat.includes('road') || lowerCat.includes('pothole')) category = 'Roads & Potholes';
       else if (lowerCat.includes('garbage') || lowerCat.includes('waste') || lowerCat.includes('trash') || lowerCat.includes('clean')) category = 'Garbage & Sanitation';
       else if (lowerCat.includes('water') || lowerCat.includes('sewage') || lowerCat.includes('pipe') || lowerCat.includes('leak')) category = 'Water Supply & Sewage';
-      else if (lowerCat.includes('electric') || lowerCat.includes('wire') || lowerCat.includes('light') || lowerCat.includes('pole')) category = 'Electricity & Streetlights';
+      else if (lowerCat.includes('electric') || lowerCat.includes('wire') || lowerCat.includes('streetlight') || lowerCat.includes('street light') || lowerCat.includes('pole')) category = 'Electricity & Streetlights';
       else if (lowerCat.includes('traffic') || lowerCat.includes('park') || lowerCat.includes('encroach')) category = 'Encroachment & Traffic';
       else category = 'Other';
     }
