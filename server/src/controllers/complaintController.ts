@@ -703,17 +703,18 @@ VALID CIVIC ISSUES (MUST BE OUTDOOR OR PUBLIC INFRASTRUCTURE):
 - Encroachment & Traffic: Illegal street encroachments blocking roads, severe traffic hazards.
 
 STRICT REJECTION CRITERIA (isValidCivicIssue MUST BE false):
-1. PERSONAL ELECTRONICS: Laptops, computer monitors, screens, keyboards, mice, trackpads, tablets, mobile phones, chargers, computer accessories, PC desk setups, televisions. A laptop screen, glowing monitor, or keyboard backlight is STRICTLY NOT a streetlight or electrical hazard!
-2. INDOOR / RESIDENTIAL / OFFICE OBJECTS: Desks, chairs, indoor rooms, domestic ceilings, home appliances, domestic wiring, indoor furniture, bedroom, office interior.
-3. PEOPLE / ANIMALS / SELFIES: Faces, selfies, pets, animals, food, clothes, portraits.
-4. UNRELATED / RANDOM: Blurry/dark images with no discernible civic damage, indoor documents, vehicle interiors, software screenshots.
+1. PASSPORT PHOTOS / SINGLE HUMAN IMAGES / PORTRAITS: Passport-size photos, studio portraits, headshots, ID photos, single human pictures, face selfies, full-body poses, or any photo where a person is the main subject. Municipal authorities do not fix personal photos! You MUST set "isValidCivicIssue": false.
+2. OBSCENE / NSFW / INAPPROPRIATE CONTENT: Any nudity, sexually suggestive, obscene, vulgar, pornographic, or inappropriate images. You MUST set "isValidCivicIssue": false.
+3. PERSONAL ELECTRONICS: Laptops, computer monitors, screens, keyboards, mice, trackpads, tablets, mobile phones, chargers, computer accessories, PC desk setups, televisions. A laptop screen, glowing monitor, or keyboard backlight is STRICTLY NOT a streetlight or electrical hazard!
+4. INDOOR / RESIDENTIAL / OFFICE OBJECTS: Desks, chairs, indoor rooms, domestic ceilings, home appliances, domestic wiring, indoor furniture, bedroom, office interior.
+5. ANIMALS / FOOD / RANDOM: Animals, pets, food, clothes, blurry/dark images with no discernible civic damage, indoor documents, vehicle interiors, software screenshots.
 
-If the image shows ANY personal electronic device (like a laptop, computer, screen, or keyboard) or indoor environment, you MUST set "isValidCivicIssue": false.
+If the image shows ANY human portrait, passport photo, person, obscene content, personal electronic device (like a laptop, computer, screen, or keyboard), or indoor environment, you MUST set "isValidCivicIssue": false.
 
 Respond ONLY with a valid JSON object matching this schema without any markdown surrounding text or codeblocks:
 {
   "isValidCivicIssue": true or false,
-  "rejectionReason": "If isValidCivicIssue is false, state why clearly (e.g. 'Photo shows personal electronics (laptop/screen) rather than a public municipal infrastructure issue. Please upload a photo of a civic problem.')",
+  "rejectionReason": "If isValidCivicIssue is false, state why clearly (e.g. 'Passport-size or single human portraits are not public civic infrastructure issues. Please capture a photo of municipal damage.', or 'Obscene or inappropriate content is strictly prohibited.')",
   "category": "Must be one of: Roads & Potholes, Garbage & Sanitation, Water Supply & Sewage, Electricity & Streetlights, Public Infrastructure, Encroachment & Traffic, Other",
   "priority": "Must be one of: Low, Medium, High, Critical",
   "title": "A concise 4-7 word title summarizing the civic issue",
@@ -748,6 +749,15 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
     if (!response.ok) {
       console.error('[Groq API Error]:', data);
       const errDetail = data.error?.message || JSON.stringify(data);
+      if (errDetail.toLowerCase().includes('content') || errDetail.toLowerCase().includes('policy') || errDetail.toLowerCase().includes('safety')) {
+        res.status(200).json({
+          success: true,
+          isValidCivicIssue: false,
+          rejectionReason: 'Image was rejected by content safety filters. Inappropriate, obscene, or policy-violating photos are strictly prohibited.',
+          message: 'Image was rejected by content safety filters.',
+        });
+        return;
+      }
       throw new Error(`Groq API Error: ${errDetail}`);
     }
 
@@ -769,8 +779,34 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       };
     }
 
-    // Safety guardrail: Detect personal electronics or indoor objects that hallucinated as civic issues
+    // Safety guardrails: Multi-layer non-civic & policy violation checks
     const combinedContent = `${parsed.title || ''} ${parsed.description || ''} ${parsed.category || ''} ${aiContent}`.toLowerCase();
+
+    // 1. Obscene / NSFW / Adult content patterns
+    const obscenePatterns = ['nude', 'nudity', 'nsfw', 'porn', 'obscene', 'vulgar', 'explicit', 'naked', 'underwear', 'lingerie', 'intimate'];
+    const detectedObscene = obscenePatterns.find((kw) => combinedContent.includes(kw));
+    if (detectedObscene) {
+      console.warn(`[Groq AI Guardrail]: Detected obscene/inappropriate content '${detectedObscene}'. Rejecting.`);
+      parsed.isValidCivicIssue = false;
+      parsed.rejectionReason = 'Obscene, sexually explicit, or inappropriate content is strictly prohibited on CivicLens.';
+    }
+
+    // 2. Passport photo / Single human / Portrait patterns
+    const humanPortraitPatterns = [
+      'passport', 'passport-size', 'passport photo', 'headshot', 'portrait',
+      'face of a', 'single human', 'individual person', 'human portrait',
+      'selfie of a', 'photo of a person', 'photo of a man', 'photo of a woman',
+      'photo of a boy', 'photo of a girl', 'close-up of a person', 'close up of a face',
+      'id card', 'aadhaar', 'identity card', 'driving license'
+    ];
+    const detectedHuman = humanPortraitPatterns.find((kw) => combinedContent.includes(kw));
+    if (detectedHuman && !detectedObscene) {
+      console.warn(`[Groq AI Guardrail]: Detected human portrait / passport term '${detectedHuman}'. Rejecting.`);
+      parsed.isValidCivicIssue = false;
+      parsed.rejectionReason = 'Personal human portraits, passport photos, or selfies are not valid civic grievances. Please capture an outdoor photo of municipal infrastructure damage.';
+    }
+
+    // 3. Personal electronics & indoor objects patterns
     const nonCivicPatterns = [
       'laptop', 'computer', 'macbook', 'notebook', 'keyboard', 'trackpad',
       'monitor', 'screen', 'smartphone', 'cellphone', 'mobile phone', 'tablet',
@@ -778,9 +814,8 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       'pc screen', 'backlight', 'indoor light', 'ceiling fan', 'television', 'tv screen'
     ];
     const detectedNonCivic = nonCivicPatterns.find((kw) => combinedContent.includes(kw));
-
-    if (detectedNonCivic) {
-      console.warn(`[Groq AI Guardrail]: Detected personal/indoor term '${detectedNonCivic}'. Rejecting non-civic submission.`);
+    if (detectedNonCivic && !detectedObscene && !detectedHuman) {
+      console.warn(`[Groq AI Guardrail]: Detected personal/indoor term '${detectedNonCivic}'. Rejecting.`);
       parsed.isValidCivicIssue = false;
       parsed.rejectionReason = `Detected personal electronics or indoor object (${detectedNonCivic}). CivicLens only accepts public municipal infrastructure issues (e.g. roads, streetlights, garbage, water leakage).`;
     }
