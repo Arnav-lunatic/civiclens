@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, MapPin, ShieldCheck, ArrowRight, CheckCircle2, Clock, Users, Building2 } from 'lucide-react';
+import { Camera, MapPin, ShieldCheck, ArrowRight, CheckCircle2, Clock, Users, Building2, Globe } from 'lucide-react';
 
 export const Home: React.FC = () => {
   return (
@@ -23,17 +23,24 @@ export const Home: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <Link
             to="/report"
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl transition flex items-center justify-center gap-2 group"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl transition flex items-center justify-center gap-2 group"
           >
             <Camera className="w-5 h-5 group-hover:scale-110 transition" />
-            <span>File a Grievance Now</span>
+            <span>File Grievance</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            to="/dashboard"
-            className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-sm shadow-xs transition flex items-center justify-center gap-2"
+            to="/explore"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-sm shadow-xs transition flex items-center justify-center gap-2"
           >
-            <span>Track Grievance Status</span>
+            <Globe className="w-4 h-4 text-sky-600" />
+            <span>Explore Public Issues</span>
+          </Link>
+          <Link
+            to="/dashboard"
+            className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-sm shadow-xs transition flex items-center justify-center gap-2"
+          >
+            <span>Track Status</span>
           </Link>
         </div>
       </section>
@@ -89,6 +96,30 @@ export const Home: React.FC = () => {
           <div className="text-3xl sm:text-4xl font-black text-purple-400">Live</div>
           <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1">Resolution Audit</div>
         </div>
+      </section>
+
+      {/* Community Grievances Showcase Section */}
+      <section className="bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 border border-sky-100 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-2 max-w-xl text-center md:text-left">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-sky-700 text-xs font-bold border border-sky-200 shadow-2xs">
+            <Globe className="w-3.5 h-3.5 text-sky-600" />
+            <span>Open Public Transparency</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+            Explore Grievances Across All States
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+            No login required. Explore active & resolved issues reported by citizens nationwide, sorted automatically to show the civic complaints nearest to your current location first.
+          </p>
+        </div>
+
+        <Link
+          to="/explore"
+          className="px-6 py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-2xl shadow-md shadow-sky-600/20 transition flex items-center gap-2 shrink-0 group"
+        >
+          <span>View Nearest Grievances</span>
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+        </Link>
       </section>
 
       {/* Footer Navigation */}

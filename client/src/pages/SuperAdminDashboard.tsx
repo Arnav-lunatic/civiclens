@@ -1,8 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, UserPlus, Users, Building, Activity, RefreshCw, Edit3, Trash2, Mail, Send, ExternalLink } from 'lucide-react';
+import {
+  ShieldCheck,
+  UserPlus,
+  Users,
+  Building,
+  Activity,
+  RefreshCw,
+  Edit3,
+  Trash2,
+  Mail,
+  Send,
+  ExternalLink,
+  MapPin,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Building2,
+  Search,
+  SlidersHorizontal,
+  Eye,
+  X,
+  Map,
+} from 'lucide-react';
 import { API } from '../services/api';
-import { User } from '../types';
+import { User, Complaint } from '../types';
 
 export const SuperAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -10,7 +32,14 @@ export const SuperAdminDashboard: React.FC = () => {
   const role = API.getRole('superadmin');
   const [subAdmins, setSubAdmins] = useState<User[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // District oversight state
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('All');
+  const [complaintStatusFilter, setComplaintStatusFilter] = useState<string>('All');
+  const [complaintSearch, setComplaintSearch] = useState<string>('');
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
   // New subadmin modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,18 +79,155 @@ export const SuperAdminDashboard: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [adminRes, statRes] = await Promise.all([
+      const [adminRes, statRes, compRes] = await Promise.all([
         API.request('/admin/subadmins'),
         API.request('/admin/stats'),
+        API.request('/complaints/superadmin'),
       ]);
       setSubAdmins(adminRes.subAdmins || []);
       setStats(statRes.stats || null);
+      setComplaints(compRes.complaints || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Group complaints by District with comprehensive metrics
+  interface DistrictGroup {
+    name: string;
+    total: number;
+    resolved: number;
+    inProgress: number;
+    pending: number;
+    rejected: number;
+    resolutionRate?: string;
+    officers: string[];
+  }
+
+  const districtGroups: DistrictGroup[] = useMemo(() => {
+    const map: Record<string, DistrictGroup> = {};
+
+    // 1. Seed districts from registered officers
+    subAdmins.forEach((admin) => {
+      const dist = (admin.assignedDistrict || '').trim();
+      if (dist && dist !== 'All' && dist !== 'State Jurisdiction') {
+        if (!map[dist]) {
+          map[dist] = {
+            name: dist,
+            total: 0,
+            resolved: 0,
+            inProgress: 0,
+            pending: 0,
+            rejected: 0,
+            officers: [admin.name],
+          };
+        } else {
+          if (!map[dist].officers.includes(admin.name)) {
+            map[dist].officers.push(admin.name);
+          }
+        }
+      }
+    });
+
+    // 2. Aggregate complaints per district
+    complaints.forEach((comp) => {
+      const dist = (comp.district || (comp as any).assignedSubAdmin?.assignedDistrict || 'Central / Unassigned').trim();
+      if (!map[dist]) {
+        map[dist] = {
+          name: dist,
+          total: 0,
+          resolved: 0,
+          inProgress: 0,
+          pending: 0,
+          rejected: 0,
+          officers: [],
+        };
+      }
+      map[dist].total += 1;
+      if (comp.status === 'Resolved') map[dist].resolved += 1;
+      else if (comp.status === 'In Progress') map[dist].inProgress += 1;
+      else if (comp.status === 'Rejected') map[dist].rejected += 1;
+      else map[dist].pending += 1;
+    });
+
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }, [complaints, subAdmins]);
+
+  // Filtered complaints for the active selected district
+  const displayedComplaints = useMemo(() => {
+    return complaints.filter((c) => {
+      // District match
+      if (selectedDistrict !== 'All') {
+        const dist = (c.district || (c as any).assignedSubAdmin?.assignedDistrict || 'Central / Unassigned').trim();
+        if (dist.toLowerCase() !== selectedDistrict.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (complaintStatusFilter === 'Active') {
+        if (c.status === 'Resolved' || c.status === 'Rejected') return false;
+      } else if (complaintStatusFilter !== 'All') {
+        if (c.status !== complaintStatusFilter) return false;
+      }
+
+      // Search filter
+      if (complaintSearch.trim()) {
+        const q = complaintSearch.toLowerCase();
+        const matchTitle = c.title?.toLowerCase().includes(q);
+        const matchDesc = c.description?.toLowerCase().includes(q);
+        const matchPin = c.pincode?.includes(q);
+        const matchCat = c.category?.toLowerCase().includes(q);
+        const matchCit = (c as any).citizen?.name?.toLowerCase().includes(q);
+        const matchOff = (c as any).assignedSubAdmin?.name?.toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc && !matchPin && !matchCat && !matchCit && !matchOff) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [complaints, selectedDistrict, complaintStatusFilter, complaintSearch]);
+
+  // Selected district metrics
+  const selectedDistrictMeta: DistrictGroup = useMemo(() => {
+    if (selectedDistrict === 'All') {
+      const total = complaints.length;
+      const resolved = complaints.filter((c) => c.status === 'Resolved').length;
+      const inProgress = complaints.filter((c) => c.status === 'In Progress').length;
+      const pending = complaints.filter((c) => c.status === 'Pending' || c.status === 'Under Review').length;
+      return {
+        name: 'All Statewide Districts',
+        total,
+        resolved,
+        inProgress,
+        pending,
+        rejected: complaints.filter((c) => c.status === 'Rejected').length,
+        resolutionRate: total > 0 ? `${Math.round((resolved / total) * 100)}%` : '0%',
+        officers: subAdmins.map((a) => a.name),
+      };
+    }
+    const found = districtGroups.find((g) => g.name.toLowerCase() === selectedDistrict.toLowerCase());
+    if (found) {
+      return {
+        ...found,
+        resolutionRate: found.total > 0 ? `${Math.round((found.resolved / found.total) * 100)}%` : '0%',
+        officers: found.officers || [],
+      };
+    }
+    return {
+      name: selectedDistrict,
+      total: 0,
+      resolved: 0,
+      inProgress: 0,
+      pending: 0,
+      rejected: 0,
+      resolutionRate: '0%',
+      officers: [],
+    };
+  }, [selectedDistrict, complaints, districtGroups, subAdmins]);
 
   const handleCreateSubAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,6 +450,349 @@ export const SuperAdminDashboard: React.FC = () => {
             </table>
           </div>
         )}
+      </div>
+
+      {/* ─── District-Wise Civic Grievances Oversight ─── */}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200 shadow-2xs mb-1">
+              <Building2 className="w-3.5 h-3.5 text-blue-600" />
+              <span>Statewide Territorial Grievance Division</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+              District-Wise Civic Grievance Triage
+            </h2>
+            <p className="text-xs text-slate-500">
+              Click on any district card below to filter and inspect all civic complaints, assigned officers, and resolution status.
+            </p>
+          </div>
+          <button
+            onClick={loadData}
+            className="text-xs font-bold text-sky-600 hover:underline flex items-center gap-1 self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh Grievances</span>
+          </button>
+        </div>
+
+        {/* District Selector Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* All Districts Master Card */}
+          <button
+            onClick={() => setSelectedDistrict('All')}
+            className={`p-5 rounded-3xl border text-left transition flex flex-col justify-between space-y-3 ${
+              selectedDistrict === 'All'
+                ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-[1.01] ring-2 ring-sky-500'
+                : 'bg-white hover:bg-slate-50 text-slate-900 border-slate-200 shadow-sm'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                  selectedDistrict === 'All' ? 'text-sky-400' : 'text-slate-400'
+                }`}>
+                  Statewide Aggregate
+                </span>
+                <h3 className="text-lg font-black mt-0.5">All Districts</h3>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-black font-mono ${
+                selectedDistrict === 'All' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-slate-100 text-slate-800'
+              }`}>
+                {complaints.length} issues
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200/40 text-center">
+              <div>
+                <div className="text-[10px] text-emerald-400 font-bold uppercase">Resolved</div>
+                <div className="text-sm font-black font-mono mt-0.5">
+                  {complaints.filter((c) => c.status === 'Resolved').length}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-sky-400 font-bold uppercase">In Progress</div>
+                <div className="text-sm font-black font-mono mt-0.5">
+                  {complaints.filter((c) => c.status === 'In Progress').length}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-amber-400 font-bold uppercase">Pending</div>
+                <div className="text-sm font-black font-mono mt-0.5">
+                  {complaints.filter((c) => c.status === 'Pending' || c.status === 'Under Review').length}
+                </div>
+              </div>
+            </div>
+          </button>
+
+          {/* Individual District Cards */}
+          {districtGroups.map((group) => {
+            const isSelected = selectedDistrict.toLowerCase() === group.name.toLowerCase();
+            const resolutionPercent = group.total > 0 ? Math.round((group.resolved / group.total) * 100) : 0;
+
+            return (
+              <button
+                key={group.name}
+                onClick={() => setSelectedDistrict(group.name)}
+                className={`p-5 rounded-3xl border text-left transition flex flex-col justify-between space-y-3 ${
+                  isSelected
+                    ? 'bg-sky-600 text-white border-sky-600 shadow-lg scale-[1.01] ring-2 ring-sky-300'
+                    : 'bg-white hover:bg-slate-50 text-slate-900 border-slate-200 shadow-sm'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="min-w-0">
+                    <span className={`text-[10px] font-extrabold uppercase tracking-wider truncate block ${
+                      isSelected ? 'text-sky-100' : 'text-slate-400'
+                    }`}>
+                      District Jurisdiction
+                    </span>
+                    <h3 className="text-base font-black mt-0.5 truncate">{group.name}</h3>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-black font-mono shrink-0 ml-2 ${
+                    isSelected ? 'bg-white/20 text-white border border-white/30' : 'bg-slate-100 text-slate-800'
+                  }`}>
+                    {group.total}
+                  </span>
+                </div>
+
+                {/* Mini Metrics Row */}
+                <div className={`grid grid-cols-3 gap-1 pt-2 border-t text-center ${
+                  isSelected ? 'border-sky-500/60' : 'border-slate-100'
+                }`}>
+                  <div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-emerald-600'}`}>Resolved</div>
+                    <div className="text-xs font-black font-mono">{group.resolved}</div>
+                  </div>
+                  <div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-blue-600'}`}>Active</div>
+                    <div className="text-xs font-black font-mono">{group.inProgress}</div>
+                  </div>
+                  <div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-amber-600'}`}>Pending</div>
+                    <div className="text-xs font-black font-mono">{group.pending}</div>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-1 pt-0.5">
+                  <div className="flex justify-between text-[10px] font-semibold opacity-90">
+                    <span>Resolution Rate</span>
+                    <span>{resolutionPercent}%</span>
+                  </div>
+                  <div className={`h-1.5 w-full rounded-full overflow-hidden ${
+                    isSelected ? 'bg-sky-700' : 'bg-slate-100'
+                  }`}>
+                    <div
+                      className={`h-full rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`}
+                      style={{ width: `${resolutionPercent}%` }}
+                    />
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected District Feed Panel */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+          {/* Header Bar with District Stats */}
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-black text-slate-900">
+                  {selectedDistrictMeta.name}
+                </h3>
+                <span className="px-3 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200">
+                  {displayedComplaints.length} issues shown
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Resolution Rate: <strong className="text-emerald-600 font-bold">{selectedDistrictMeta.resolutionRate}</strong>
+                {selectedDistrictMeta.officers.length > 0 && (
+                  <span> &bull; Designated Officers: <strong className="text-slate-700">{selectedDistrictMeta.officers.join(', ')}</strong></span>
+                )}
+              </p>
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
+              {(['All', 'Active', 'In Progress', 'Pending', 'Resolved'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setComplaintStatusFilter(st)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    complaintStatusFilter === st
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={complaintSearch}
+              onChange={(e) => setComplaintSearch(e.target.value)}
+              placeholder={`Search within ${selectedDistrictMeta.name} by title, citizen, category, or PIN...`}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Grievances List */}
+          {displayedComplaints.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 space-y-2">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+              <p className="text-sm font-bold text-slate-800">No Complaints Found</p>
+              <p className="text-xs">No grievances matching this filter in {selectedDistrictMeta.name}.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayedComplaints.map((item) => {
+                const mainImg = item.images && item.images.length > 0 ? item.images[0].url : item.imageUrl;
+                const hasResolvedImage = Boolean(item.resolvedImageUrl);
+
+                return (
+                  <div
+                    key={item._id}
+                    className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition"
+                  >
+                    <div>
+                      {/* Photos Area */}
+                      <div className="relative aspect-video bg-slate-100 group">
+                        <img
+                          src={mainImg}
+                          alt={item.title}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onClick={() => setPreviewImage({ url: mainImg, title: `Complaint Photo: ${item.title}` })}
+                        />
+
+                        {/* Status Tag */}
+                        <span
+                          className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
+                            item.status === 'Resolved'
+                              ? 'bg-emerald-500 text-white'
+                              : item.status === 'In Progress'
+                              ? 'bg-blue-600 text-white'
+                              : item.status === 'Under Review'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-slate-700 text-white'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+
+                        {/* Bottom Bar: GPS + PIN */}
+                        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[10px] font-mono font-bold text-white">
+                          <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                            PIN {item.pincode}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                            {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-5 space-y-3">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-blue-600">{item.category}</span>
+                          <span className="text-slate-400 text-[10px]">{new Date(item.createdAt).toLocaleDateString()}</span>
+                        </div>
+
+                        <h4 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h4>
+                        <p className="text-slate-500 text-xs line-clamp-2 leading-relaxed">{item.description}</p>
+
+                        {/* Location */}
+                        <div className="space-y-1 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <div className="text-slate-700 font-semibold flex items-start gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                            <span className="line-clamp-2">{item.address || `District: ${item.district || 'N/A'}, PIN: ${item.pincode}`}</span>
+                          </div>
+                          <a
+                            href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sky-600 font-bold hover:text-sky-700 hover:underline pt-0.5 text-[10px]"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>View GPS on Google Maps ({item.latitude.toFixed(4)}, {item.longitude.toFixed(4)})</span>
+                          </a>
+                        </div>
+
+                        {/* Citizen details */}
+                        {item.citizen && (
+                          <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-0.5">
+                            <div>Reported by: <strong className="text-slate-900">{item.citizen.name}</strong></div>
+                            <div className="text-slate-500">{item.citizen.phone || item.citizen.email}</div>
+                          </div>
+                        )}
+
+                        {/* Resolved Proof Box */}
+                        {hasResolvedImage && (
+                          <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase text-emerald-800 flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Verified Resolution Photo</span>
+                              </span>
+                              <button
+                                onClick={() => setPreviewImage({ url: item.resolvedImageUrl!, title: `Resolution Proof: ${item.title}` })}
+                                className="text-[10px] text-emerald-700 font-bold hover:underline flex items-center gap-0.5"
+                              >
+                                <Eye className="w-3 h-3" />
+                                <span>View</span>
+                              </button>
+                            </div>
+                            <div
+                              onClick={() => setPreviewImage({ url: item.resolvedImageUrl!, title: `Resolution Proof: ${item.title}` })}
+                              className="relative aspect-video rounded-lg overflow-hidden cursor-pointer border border-emerald-300"
+                            >
+                              <img src={item.resolvedImageUrl} alt="Resolution proof" className="w-full h-full object-cover" />
+                            </div>
+                            {item.resolutionNotes && (
+                              <p className="text-[10px] text-emerald-900 italic line-clamp-2">
+                                "{item.resolutionNotes}"
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Officer Assignment */}
+                        {item.assignedSubAdmin && (
+                          <div className="text-[11px] text-slate-500 bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-1.5 border border-slate-100">
+                            <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>
+                              Assigned: <strong className="text-slate-700">{item.assignedSubAdmin.name}</strong> ({item.assignedSubAdmin.department || 'Officer'})
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-5 pt-0">
+                      <a
+                        href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Inspect Location on Map</span>
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Create Modal */}
@@ -589,6 +1098,26 @@ export const SuperAdminDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-3 p-4 border border-slate-200">
+            <div className="flex justify-between items-center px-2">
+              <h3 className="text-xs font-bold text-slate-900 truncate">{previewImage.title}</h3>
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="max-h-[75vh] overflow-hidden rounded-2xl bg-black flex items-center justify-center">
+              <img src={previewImage.url} alt="Zoom preview" className="max-h-[75vh] w-auto object-contain" />
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Camera, LogOut, User as UserIcon } from 'lucide-react';
+import { Camera, LogOut, User as UserIcon, Globe } from 'lucide-react';
 import { API } from '../services/api';
 
 export const Navbar: React.FC = () => {
@@ -39,13 +39,22 @@ export const Navbar: React.FC = () => {
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {!isAdminPath && !isSuperAdminPath && (
-            <Link
-              to="/report"
-              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-[11px] sm:text-xs font-bold shadow-sm hover:shadow transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span>Report Issue</span>
-            </Link>
+            <>
+              <Link
+                to="/explore"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-700 hover:text-sky-600 hover:bg-slate-50 text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shrink-0 whitespace-nowrap"
+              >
+                <Globe className="w-3.5 h-3.5 text-sky-600" />
+                <span>Public Issues</span>
+              </Link>
+              <Link
+                to="/report"
+                className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-[11px] sm:text-xs font-bold shadow-sm hover:shadow transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Report Issue</span>
+              </Link>
+            </>
           )}
 
           {user ? (

@@ -408,13 +408,26 @@ const getMyComplaints = async (req, res) => {
 // 4. Public feed
 const getPublicComplaints = async (req, res) => {
   try {
-    const { pincode, category, status } = req.query;
+    const { pincode, category, status, district, state, limit } = req.query;
     const query = {};
     if (pincode) query.pincode = pincode;
     if (category && category !== 'All') query.category = category;
     if (status && status !== 'All') query.status = status;
+    if (district && district !== 'All') query.district = new RegExp(district.trim(), 'i');
+    if (state && state !== 'All') query.state = new RegExp(state.trim(), 'i');
 
-    const complaints = await Complaint.find(query).select('-citizen').sort({ createdAt: -1 }).limit(50);
+    const maxLimit = limit === 'all' ? 0 : Math.min(parseInt(limit) || 300, 500);
+
+    let queryBuilder = Complaint.find(query)
+      .select('-citizen')
+      .populate('assignedSubAdmin', 'name email department officialId')
+      .sort({ createdAt: -1 });
+
+    if (maxLimit > 0) {
+      queryBuilder = queryBuilder.limit(maxLimit);
+    }
+
+    const complaints = await queryBuilder;
     res.status(200).json({ success: true, count: complaints.length, complaints });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

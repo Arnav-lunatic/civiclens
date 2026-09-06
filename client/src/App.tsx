@@ -10,6 +10,7 @@ import { SuperAdminLogin } from './pages/SuperAdminLogin';
 import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { PublicComplaints } from './pages/PublicComplaints';
 import { API } from './services/api';
 
 export const App: React.FC = () => {
@@ -43,6 +44,8 @@ export const App: React.FC = () => {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/explore" element={<PublicComplaints />} />
+            <Route path="/public-complaints" element={<PublicComplaints />} />
             <Route path="/report" element={<ReportIssue />} />
             <Route path="/login" element={<UserLogin />} />
             <Route path="/signup" element={<UserSignup />} />
