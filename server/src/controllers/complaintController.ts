@@ -742,8 +742,9 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
           },
         ],
         temperature: 0.1,
-        max_tokens: 500,
+        max_tokens: 2048,
         response_format: { type: 'json_object' },
+        reasoning_format: 'hidden',
       }),
     });
 
@@ -771,8 +772,9 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
               },
             ],
             temperature: 0.1,
-            max_tokens: 500,
+            max_tokens: 2048,
             response_format: { type: 'json_object' },
+            reasoning_format: 'hidden',
           }),
         });
       }
