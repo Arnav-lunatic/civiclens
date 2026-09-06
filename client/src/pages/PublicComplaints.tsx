@@ -199,9 +199,9 @@ export const PublicComplaints: React.FC = () => {
   const activeCount = complaints.filter((c) => c.status !== 'Resolved' && c.status !== 'Rejected').length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8 overflow-x-hidden">
       {/* Top Hero Banner */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row justify-between md:items-center gap-6">
+      <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl flex flex-col md:flex-row justify-between md:items-center gap-5 sm:gap-6 overflow-hidden">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-sky-400 text-xs font-bold shadow-xs">
             <Globe className="w-4 h-4 text-sky-400" />
@@ -210,15 +210,15 @@ export const PublicComplaints: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             Nationwide Public Grievance Feed
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl font-normal">
+          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl font-normal leading-relaxed">
             Browse geotagged civic grievances reported by citizens across India. Issues closest to your location are shown first, with real-time before & after resolution tracking.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
           <Link
             to="/report"
-            className="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-2"
+            className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-2"
           >
             <ShieldCheck className="w-4 h-4" />
             <span>File New Issue</span>
@@ -228,7 +228,7 @@ export const PublicComplaints: React.FC = () => {
               loadComplaints();
               detectLocation();
             }}
-            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-1.5 border border-slate-700"
+            className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-700"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh Feed</span>
@@ -237,62 +237,62 @@ export const PublicComplaints: React.FC = () => {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-slate-500 uppercase">Total Public Issues</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">{totalCount}</div>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm text-center sm:text-left">
+          <div className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase truncate">Total Issues</div>
+          <div className="text-xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{totalCount}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-blue-600 uppercase">Active / In Progress</div>
-          <div className="text-3xl font-black text-blue-600 mt-1">{activeCount}</div>
+        <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm text-center sm:text-left">
+          <div className="text-[10px] sm:text-xs font-bold text-blue-600 uppercase truncate">Active Issues</div>
+          <div className="text-xl sm:text-3xl font-black text-blue-600 mt-0.5 sm:mt-1">{activeCount}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-emerald-600 uppercase">Resolved & Closed</div>
-          <div className="text-3xl font-black text-emerald-600 mt-1">{resolvedCount}</div>
+        <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm text-center sm:text-left">
+          <div className="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase truncate">Resolved</div>
+          <div className="text-xl sm:text-3xl font-black text-emerald-600 mt-0.5 sm:mt-1">{resolvedCount}</div>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by issue title, pincode, district, or landmark..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            />
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3.5 overflow-hidden">
+        {/* Row 1: Search Box */}
+        <div className="relative w-full">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by title, pincode, district, or landmark..."
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+          />
+        </div>
+
+        {/* Row 2: Status Tabs & Sort Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full">
+          {/* Status Segmented Control (full-width on mobile, auto on desktop) */}
+          <div className="grid grid-cols-3 sm:flex gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
+            {(['All', 'Active', 'Resolved'] as const).map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`py-1.5 px-2 sm:px-3.5 rounded-lg text-xs font-bold transition text-center truncate ${
+                  statusFilter === st
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {st === 'Active' ? 'Active' : st === 'Resolved' ? 'Resolved' : 'All Issues'}
+              </button>
+            ))}
           </div>
 
-          {/* Sort Button & Status Tabs */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setSortBy(sortBy === 'nearest' ? 'newest' : 'nearest')}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0"
-            >
-              <ArrowUpDown className="w-3.5 h-3.5" />
-              <span>{sortBy === 'nearest' ? 'Nearest First' : 'Newest First'}</span>
-            </button>
-
-            <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
-              {(['All', 'Active', 'Resolved'] as const).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => setStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                    statusFilter === st
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {st === 'Active' ? 'Active Issues' : st === 'Resolved' ? 'Resolved' : 'All Issues'}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Sort Button (full-width on mobile, auto on desktop) */}
+          <button
+            onClick={() => setSortBy(sortBy === 'nearest' ? 'newest' : 'nearest')}
+            className="w-full sm:w-auto px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
+            <span>Sort: {sortBy === 'nearest' ? 'Nearest First' : 'Newest First'}</span>
+          </button>
         </div>
 
         {/* Category Filter Chips */}

@@ -37,51 +37,54 @@ export const Navbar: React.FC = () => {
           </span>
         </Link>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {!isAdminPath && !isSuperAdminPath && (
             <>
               <Link
                 to="/explore"
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-700 hover:text-sky-600 hover:bg-slate-50 text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shrink-0 whitespace-nowrap"
+                className="px-2 sm:px-3 py-1.5 rounded-xl text-slate-700 hover:text-sky-600 hover:bg-slate-50 text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shrink-0"
               >
                 <Globe className="w-3.5 h-3.5 text-sky-600" />
-                <span>Public Issues</span>
+                <span className="hidden sm:inline">Public </span>
+                <span>Feed</span>
               </Link>
               <Link
                 to="/report"
-                className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-[11px] sm:text-xs font-bold shadow-sm hover:shadow transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap"
+                className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-[11px] sm:text-xs font-bold shadow-sm hover:shadow transition flex items-center gap-1 sm:gap-1.5 shrink-0"
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>Report Issue</span>
+                <span>Report</span>
+                <span className="hidden sm:inline"> Issue</span>
               </Link>
             </>
           )}
 
           {user ? (
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3">
               <Link
                 to={activeRole === 'superadmin' ? '/superadmin/dashboard' : activeRole === 'subadmin' ? '/admin/dashboard' : '/dashboard'}
-                className="text-[11px] sm:text-xs font-semibold text-slate-600 hover:text-sky-600 transition whitespace-nowrap"
+                className="text-[11px] sm:text-xs font-semibold text-slate-600 hover:text-sky-600 transition"
               >
-                {activeRole === 'citizen' ? 'My Complaints' : 'Dashboard'}
+                {activeRole === 'citizen' ? 'Complaints' : 'Dashboard'}
               </Link>
               <button
                 onClick={handleLogout}
-                className="text-[11px] sm:text-xs font-semibold text-slate-500 hover:text-red-600 transition flex items-center gap-1 whitespace-nowrap"
+                className="text-[11px] sm:text-xs font-semibold text-slate-500 hover:text-red-600 transition flex items-center gap-1"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {!isAdminPath && !isSuperAdminPath && (
                 <Link
                   to="/login"
-                  className="px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-slate-700 hover:text-sky-600 transition flex items-center gap-1 whitespace-nowrap"
+                  className="px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-slate-700 hover:text-sky-600 transition flex items-center gap-1"
                 >
                   <UserIcon className="w-3.5 h-3.5" />
-                  <span>Citizen Sign In</span>
+                  <span className="hidden sm:inline">Citizen </span>
+                  <span>Sign In</span>
                 </Link>
               )}
             </div>
