@@ -661,13 +661,10 @@ const analyzeComplaintImage = async (req, res) => {
       console.warn('[Groq AI Warning]: GROQ_API_KEY is not configured in environment variables.');
       return res.status(200).json({
         success: true,
-        isValidCivicIssue: true,
+        isValidCivicIssue: null,
         isFallback: true,
-        category: 'Roads & Potholes',
-        priority: 'Medium',
-        title: 'Reported Civic Issue',
-        description: 'Auto-detected geotagged issue for municipal review.',
-        message: 'GROQ_API_KEY not set. Using default category & title.',
+        missingApiKey: true,
+        message: 'GROQ_API_KEY is not configured in server/.env. Please add your Groq API key to enable live AI photo verification.',
       });
     }
 

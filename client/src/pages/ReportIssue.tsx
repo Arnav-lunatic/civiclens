@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, AlertTriangle, Loader2, Lock } from 'lucide-react';
 import { API } from '../services/api';
 import { GeoService, FusedPosition } from '../services/geo';
 import { CameraModal } from '../components/CameraModal';
@@ -159,7 +159,9 @@ export const ReportIssue: React.FC = () => {
       if (res.isValidCivicIssue === false) {
         setIsValidCivicIssue(false);
         setAiError(res.rejectionReason || 'Image does not show any civic issue');
-      } else {
+        setTitle('');
+        setDescription('');
+      } else if (res.isValidCivicIssue === true) {
         setIsValidCivicIssue(true);
         if (res.title) setTitle(res.title);
         if (res.category) setCategory(res.category);
@@ -171,16 +173,19 @@ export const ReportIssue: React.FC = () => {
         } else {
           setAiSuccessBadge(`✨ Auto-detected by Groq AI Vision: ${res.category} (Severity: ${res.priority})`);
         }
+      } else {
+        // AI returned unverified or API key missing
+        setIsValidCivicIssue(null);
+        if (res.title && !title) setTitle(res.title);
+        if (res.description && !description) setDescription(res.description);
+        if (res.missingApiKey) {
+          setAiError(res.message || 'GROQ_API_KEY is not set in server/.env. AI validation is offline.');
+        }
       }
     } catch (err: any) {
       console.warn('Groq AI Vision Error:', err);
-      // Graceful local auto-fill fallback so fields are never left blank
-      setIsValidCivicIssue(true);
-      if (!title) setTitle('Reported Civic Hazard');
-      if (!category) setCategory('Roads & Potholes');
-      if (!priority) setPriority('Medium');
-      if (!description) setDescription('Geotagged public infrastructure issue captured via camera for municipal inspection.');
-      setAiSuccessBadge('✨ Pre-filled civic grievance details for review (Editable below)');
+      setIsValidCivicIssue(null);
+      setAiError(err.message || 'AI vision service check could not be completed.');
     } finally {
       setAnalyzingAi(false);
     }
@@ -601,13 +606,48 @@ export const ReportIssue: React.FC = () => {
           )}
 
           {isValidCivicIssue === false && !analyzingAi && (
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-rose-700 text-xs font-medium shadow-sm">
-              <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-extrabold text-sm text-rose-900 mb-0.5">Image does not show any civic issue</p>
-                <p className="text-slate-600 leading-relaxed">
-                  {aiError || 'Groq AI Vision system detected that this photo does not depict a public civic infrastructure problem. Submission is disabled until a photo of a valid civic issue is captured.'}
-                </p>
+            <div className="p-5 bg-rose-50 border-2 border-rose-400 rounded-2xl space-y-3 shadow-md animate-in fade-in duration-200">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-sm text-rose-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <span>Invalid Image Detected</span>
+                    </h4>
+                    <span className="px-2.5 py-0.5 bg-rose-200 text-rose-900 text-[10px] font-black rounded-md uppercase border border-rose-300">
+                      Rejected by AI
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-800 font-semibold mt-1.5 leading-relaxed">
+                    {aiError || 'Groq AI Vision system detected that this photo does not depict a public civic infrastructure problem.'}
+                  </p>
+                  <p className="text-[11px] text-rose-700 mt-1 font-medium">
+                    ⚠️ <strong>Step 3 (Grievance Details)</strong> and submission are completely locked. Please retake or upload a photo of a valid civic issue to continue.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-rose-200/80 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCameraOpen(true)}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Retake Photo with Camera</span>
+                </button>
+                {photos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(photos.length - 1)}
+                    className="px-4 py-2 bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Discard Rejected Photo</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -619,77 +659,99 @@ export const ReportIssue: React.FC = () => {
             </div>
           )}
 
-          {/* Issue Details */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Step 3: Issue Title *</label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Hazardous open manhole & broken road"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            />
-          </div>
+          {/* Issue Details - Disabled and Locked if Image is Invalid */}
+          <fieldset
+            disabled={isValidCivicIssue === false}
+            className={`space-y-6 transition-all duration-200 ${
+              isValidCivicIssue === false ? 'opacity-40 cursor-not-allowed select-none pointer-events-none' : ''
+            }`}
+          >
+            {isValidCivicIssue === false && (
+              <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2.5 text-amber-900 text-xs font-bold">
+                <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>Step 3 Locked: Form fields are disabled because the captured photo was rejected. Retake a valid photo above to unlock.</span>
+              </div>
+            )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Category *</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-              >
-                <option value="Roads & Potholes">Roads & Potholes (PWD)</option>
-                <option value="Garbage & Sanitation">Garbage & Sanitation (Waste Board)</option>
-                <option value="Water Supply & Sewage">Water Supply & Sewage (Jal Board)</option>
-                <option value="Electricity & Streetlights">Electricity & Streetlights</option>
-                <option value="Public Infrastructure">Public Infrastructure</option>
-                <option value="Encroachment & Traffic">Encroachment & Traffic</option>
-                <option value="Other">Other Issues</option>
-              </select>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Step 3: Issue Title *</label>
+              <input
+                type="text"
+                required
+                disabled={isValidCivicIssue === false}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Hazardous open manhole & broken road"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Category *</label>
+                <select
+                  disabled={isValidCivicIssue === false}
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                >
+                  <option value="Roads & Potholes">Roads & Potholes (PWD)</option>
+                  <option value="Garbage & Sanitation">Garbage & Sanitation (Waste Board)</option>
+                  <option value="Water Supply & Sewage">Water Supply & Sewage (Jal Board)</option>
+                  <option value="Electricity & Streetlights">Electricity & Streetlights</option>
+                  <option value="Public Infrastructure">Public Infrastructure</option>
+                  <option value="Encroachment & Traffic">Encroachment & Traffic</option>
+                  <option value="Other">Other Issues</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Severity / Priority</label>
+                <select
+                  disabled={isValidCivicIssue === false}
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                >
+                  <option value="Medium">Medium (Standard SLA)</option>
+                  <option value="High">High (Urgent)</option>
+                  <option value="Critical">Critical Emergency</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Severity / Priority</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-              >
-                <option value="Medium">Medium (Standard SLA)</option>
-                <option value="High">High (Urgent)</option>
-                <option value="Critical">Critical Emergency</option>
-                <option value="Low">Low</option>
-              </select>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Description *</label>
+              <textarea
+                rows={3}
+                required
+                disabled={isValidCivicIssue === false}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe the civic hazard and exact landmark..."
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+              />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Description *</label>
-            <textarea
-              rows={3}
-              required
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the civic hazard and exact landmark..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            />
-          </div>
+          </fieldset>
 
           <button
             type="submit"
             disabled={submitting || analyzingAi || isValidCivicIssue === false}
-            className="w-full py-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2 ${
+              isValidCivicIssue === false
+                ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-90'
+                : 'bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
           >
-            <Send className="w-4 h-4" />
+            {isValidCivicIssue === false ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
             <span>
               {submitting
                 ? 'Submitting Grievance...'
                 : analyzingAi
                 ? 'Groq AI Analyzing Photo...'
                 : isValidCivicIssue === false
-                ? 'Submission Disabled (Non-Civic Photo)'
+                ? 'Submission Locked (Invalid Civic Photo)'
                 : 'Submit Live Geotagged Grievance'}
             </span>
           </button>
