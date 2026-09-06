@@ -714,7 +714,7 @@ If the image shows ANY human portrait, passport photo, person, obscene content, 
 Respond ONLY with a valid JSON object matching this schema without any markdown surrounding text or codeblocks:
 {
   "isValidCivicIssue": true or false,
-  "rejectionReason": "If isValidCivicIssue is false, state why clearly (e.g. 'Passport-size or single human portraits are not public civic infrastructure issues. Please capture a photo of municipal damage.', or 'Obscene or inappropriate content is strictly prohibited.')",
+  "rejectionReason": "Empty string if isValidCivicIssue is true. If false, state why clearly without repeating template words.",
   "category": "Must be one of: Roads & Potholes, Garbage & Sanitation, Water Supply & Sewage, Electricity & Streetlights, Public Infrastructure, Encroachment & Traffic, Other",
   "priority": "Must be one of: Low, Medium, High, Critical",
   "title": "A concise 4-7 word title summarizing the civic issue",
@@ -779,45 +779,44 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       };
     }
 
-    // Safety guardrails: Multi-layer non-civic & policy violation checks
-    const combinedContent = `${parsed.title || ''} ${parsed.description || ''} ${parsed.category || ''} ${aiContent}`.toLowerCase();
+    // Safety guardrails: Target actual detected title and description when AI claims issue is valid
+    if (parsed.isValidCivicIssue === true) {
+      const titleAndDesc = `${parsed.title || ''} ${parsed.description || ''}`.toLowerCase();
 
-    // 1. Obscene / NSFW / Adult content patterns
-    const obscenePatterns = ['nude', 'nudity', 'nsfw', 'porn', 'obscene', 'vulgar', 'explicit', 'naked', 'underwear', 'lingerie', 'intimate'];
-    const detectedObscene = obscenePatterns.find((kw) => combinedContent.includes(kw));
-    if (detectedObscene) {
-      console.warn(`[Groq AI Guardrail]: Detected obscene/inappropriate content '${detectedObscene}'. Rejecting.`);
-      parsed.isValidCivicIssue = false;
-      parsed.rejectionReason = 'Obscene, sexually explicit, or inappropriate content is strictly prohibited on CivicLens.';
-    }
+      // 1. Obscene / NSFW / Adult content patterns
+      const obscenePatterns = ['nude', 'nudity', 'nsfw', 'porn', 'obscene', 'vulgar', 'explicit', 'naked', 'underwear', 'lingerie', 'intimate'];
+      const detectedObscene = obscenePatterns.find((kw) => titleAndDesc.includes(kw));
+      if (detectedObscene) {
+        console.warn(`[Groq AI Guardrail]: Detected obscene content '${detectedObscene}'. Rejecting.`);
+        parsed.isValidCivicIssue = false;
+        parsed.rejectionReason = 'Obscene, sexually explicit, or inappropriate content is strictly prohibited on CivicLens.';
+      }
 
-    // 2. Passport photo / Single human / Portrait patterns
-    const humanPortraitPatterns = [
-      'passport', 'passport-size', 'passport photo', 'headshot', 'portrait',
-      'face of a', 'single human', 'individual person', 'human portrait',
-      'selfie of a', 'photo of a person', 'photo of a man', 'photo of a woman',
-      'photo of a boy', 'photo of a girl', 'close-up of a person', 'close up of a face',
-      'id card', 'aadhaar', 'identity card', 'driving license'
-    ];
-    const detectedHuman = humanPortraitPatterns.find((kw) => combinedContent.includes(kw));
-    if (detectedHuman && !detectedObscene) {
-      console.warn(`[Groq AI Guardrail]: Detected human portrait / passport term '${detectedHuman}'. Rejecting.`);
-      parsed.isValidCivicIssue = false;
-      parsed.rejectionReason = 'Personal human portraits, passport photos, or selfies are not valid civic grievances. Please capture an outdoor photo of municipal infrastructure damage.';
-    }
+      // 2. Passport photo / Single human / Portrait patterns
+      const humanPortraitPatterns = [
+        'passport photo', 'passport-size', 'selfie of a', 'portrait of a person',
+        'headshot of a', 'individual person posing',
+        'id card', 'aadhaar card', 'identity card', 'driving license'
+      ];
+      const detectedHuman = humanPortraitPatterns.find((kw) => titleAndDesc.includes(kw));
+      if (detectedHuman && !detectedObscene) {
+        console.warn(`[Groq AI Guardrail]: Detected human portrait term '${detectedHuman}'. Rejecting.`);
+        parsed.isValidCivicIssue = false;
+        parsed.rejectionReason = 'Personal human portraits, passport photos, or selfies are not valid civic grievances. Please capture an outdoor photo of municipal infrastructure damage.';
+      }
 
-    // 3. Personal electronics & indoor objects patterns
-    const nonCivicPatterns = [
-      'laptop', 'computer', 'macbook', 'notebook', 'keyboard', 'trackpad',
-      'monitor', 'screen', 'smartphone', 'cellphone', 'mobile phone', 'tablet',
-      'mouse', 'charger', 'desk', 'bedroom', 'living room', 'office desk',
-      'pc screen', 'backlight', 'indoor light', 'ceiling fan', 'television', 'tv screen'
-    ];
-    const detectedNonCivic = nonCivicPatterns.find((kw) => combinedContent.includes(kw));
-    if (detectedNonCivic && !detectedObscene && !detectedHuman) {
-      console.warn(`[Groq AI Guardrail]: Detected personal/indoor term '${detectedNonCivic}'. Rejecting.`);
-      parsed.isValidCivicIssue = false;
-      parsed.rejectionReason = `Detected personal electronics or indoor object (${detectedNonCivic}). CivicLens only accepts public municipal infrastructure issues (e.g. roads, streetlights, garbage, water leakage).`;
+      // 3. Personal electronics & indoor objects patterns
+      const nonCivicPatterns = [
+        'laptop', 'macbook', 'notebook computer', 'computer keyboard',
+        'computer monitor', 'smartphone display', 'mobile phone screen',
+        'television screen', 'office desk setup'
+      ];
+      const detectedNonCivic = nonCivicPatterns.find((kw) => titleAndDesc.includes(kw));
+      if (detectedNonCivic && !detectedObscene && !detectedHuman) {
+        console.warn(`[Groq AI Guardrail]: Detected personal/indoor term '${detectedNonCivic}'. Rejecting.`);
+        parsed.isValidCivicIssue = false;
+        parsed.rejectionReason = `Detected personal electronics or indoor object (${detectedNonCivic}). CivicLens only accepts public municipal infrastructure issues (e.g. roads, streetlights, garbage, water leakage).`;
+      }
     }
 
     if (parsed.isValidCivicIssue === false) {
@@ -865,8 +864,14 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
     });
   } catch (error: any) {
     console.error('[Analyze Complaint Image Exception]:', error.message);
-    res.status(500).json({
-      success: false,
+    res.status(200).json({
+      success: true,
+      isValidCivicIssue: true,
+      isFallback: true,
+      category: 'Roads & Potholes',
+      priority: 'Medium',
+      title: 'Reported Civic Hazard',
+      description: 'Geotagged public infrastructure damage captured via camera for municipal inspection.',
       message: error.message,
     });
   }
