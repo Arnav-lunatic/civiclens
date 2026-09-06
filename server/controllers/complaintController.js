@@ -788,10 +788,13 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
     const aiContent = data.choices?.[0]?.message?.content || '{}';
     console.log('[Groq AI Response Raw]:', aiContent);
 
+    // 1. Strip reasoning/thinking tags from models like Qwen 3.6/3.8
+    const contentWithoutThinking = aiContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
     let parsed = {};
     try {
-      const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-      const cleanJsonStr = jsonMatch ? jsonMatch[0] : aiContent.replace(/```json/g, '').replace(/```/g, '').trim();
+      const jsonMatch = contentWithoutThinking.match(/\{[\s\S]*\}/) || aiContent.match(/\{[\s\S]*\}/);
+      const cleanJsonStr = jsonMatch ? jsonMatch[0] : contentWithoutThinking.replace(/```json/g, '').replace(/```/g, '').trim();
       parsed = JSON.parse(cleanJsonStr);
     } catch (e) {
       console.warn('[Groq JSON Parse Warning]:', e);
@@ -805,9 +808,14 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       };
     }
 
-    // Safety guardrails: Target actual detected title and description when AI claims issue is valid
+    // Convert string booleans ("true"/"false") to actual boolean
+    if (typeof parsed.isValidCivicIssue === 'string') {
+      parsed.isValidCivicIssue = parsed.isValidCivicIssue.trim().toLowerCase() === 'true';
+    }
+
+    // Safety guardrails: Target actual detected title and description only
     if (parsed.isValidCivicIssue === true) {
-      const textToInspect = `${parsed.title || ''} ${parsed.description || ''} ${parsed.category || ''} ${aiContent}`.toLowerCase();
+      const textToInspect = `${parsed.title || ''} ${parsed.description || ''}`.toLowerCase();
 
       // 1. Obscene / NSFW / Adult content patterns
       const obscenePatterns = [
@@ -839,13 +847,11 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
 
       // 3. Personal electronics & indoor objects patterns
       const nonCivicPatterns = [
-        'laptop', 'macbook', 'notebook computer', 'computer keyboard', 'keyboard',
-        'computer monitor', 'monitor', 'screen', 'laptop screen', 'trackpad', 'keypad',
-        'smartphone display', 'mobile phone screen', 'smartphone', 'mobile phone', 'cell phone',
-        'tablet', 'ipad', 'television screen', 'television', 'tv display', 'tv screen',
-        'office desk setup', 'office desk', 'computer desk', 'electronics',
+        'laptop', 'macbook', 'notebook computer', 'computer keyboard',
+        'computer monitor', 'laptop screen', 'smartphone screen', 'mobile phone screen',
+        'television screen', 'office desk setup', 'computer desk',
         'indoor room', 'bedroom', 'living room', 'ceiling fan', 'furniture', 'couch', 'sofa',
-        'bedsheet', 'indoor floor', 'domestic wall', 'cupboard', 'wardrobe'
+        'bedsheet', 'wardrobe'
       ];
       const detectedNonCivic = nonCivicPatterns.find((kw) => textToInspect.includes(kw));
       if (detectedNonCivic && !detectedObscene && !detectedHuman) {
