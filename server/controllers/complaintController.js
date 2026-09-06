@@ -660,15 +660,18 @@ const analyzeComplaintImage = async (req, res) => {
     if (!groqApiKey) {
       console.warn('[Groq AI Warning]: GROQ_API_KEY is not configured in environment variables.');
       return res.status(200).json({
-        success: true,
+        success: false,
         isValidCivicIssue: null,
         isFallback: true,
         missingApiKey: true,
-        message: 'GROQ_API_KEY is not configured in server/.env. Please add your Groq API key to enable live AI photo verification.',
+        title: '',
+        description: '',
+        category: '',
+        message: 'GROQ_API_KEY is not configured on server. Please add your Groq API key in Render / environment settings to enable live AI photo verification.',
       });
     }
 
-    console.log('[Groq AI] Sending image to Groq Vision API (llama-3.2-11b-vision-preview)...');
+    console.log('[Groq AI] Sending image to Groq Vision API...');
 
     const promptText = `You are a strict municipal civic infrastructure AI validator and classifier for CivicLens.
 Your primary job is to verify if this image depicts an authentic, OUTDOOR or PUBLIC municipal infrastructure problem maintained by city authorities.
@@ -682,32 +685,33 @@ VALID CIVIC ISSUES (MUST BE OUTDOOR OR PUBLIC INFRASTRUCTURE):
 - Encroachment & Traffic: Illegal street encroachments blocking roads, severe traffic hazards.
 
 STRICT REJECTION CRITERIA (isValidCivicIssue MUST BE false):
-1. PASSPORT PHOTOS / SINGLE HUMAN IMAGES / PORTRAITS: Passport-size photos, studio portraits, headshots, ID photos, single human pictures, face selfies, full-body poses, or any photo where a person is the main subject. Municipal authorities do not fix personal photos! You MUST set "isValidCivicIssue": false.
-2. OBSCENE / NSFW / INAPPROPRIATE CONTENT: Any nudity, sexually suggestive, obscene, vulgar, pornographic, or inappropriate images. You MUST set "isValidCivicIssue": false.
-3. PERSONAL ELECTRONICS: Laptops, computer monitors, screens, keyboards, mice, trackpads, tablets, mobile phones, chargers, computer accessories, PC desk setups, televisions. A laptop screen, glowing monitor, or keyboard backlight is STRICTLY NOT a streetlight or electrical hazard!
-4. INDOOR / RESIDENTIAL / OFFICE OBJECTS: Desks, chairs, indoor rooms, domestic ceilings, home appliances, domestic wiring, indoor furniture, bedroom, office interior.
-5. ANIMALS / FOOD / RANDOM: Animals, pets, food, clothes, blurry/dark images with no discernible civic damage, indoor documents, vehicle interiors, software screenshots.
+1. PASSPORT PHOTOS / SINGLE HUMAN IMAGES / PORTRAITS: Any passport-size photo, headshot, studio portrait, selfie, photo of a single person or human face, ID photo, or photo where a human is the primary subject. Municipal authorities do not fix personal photos! You MUST set "isValidCivicIssue": false.
+2. OBSCENE / NSFW / INAPPROPRIATE CONTENT: Any nudity, sexually suggestive, pornographic, obscene, or policy-violating photo. You MUST set "isValidCivicIssue": false.
+3. PERSONAL ELECTRONICS & SCREENS: Laptops, notebooks, computer keyboards, illuminated laptop screens, computer monitors, tablets, smartphones, phone screens, mice, televisions, desk setups. A laptop screen, glowing display, or keyboard backlight is STRICTLY NOT a streetlight or municipal electrical issue! You MUST set "isValidCivicIssue": false.
+4. INDOOR / RESIDENTIAL / DOMESTIC: Indoor rooms, bedrooms, domestic furniture, domestic ceilings, desks, household items, indoor walls, office interiors. CivicLens is STRICTLY for outdoor municipal infrastructure.
+5. NON-CIVIC / RANDOM: Animals, pets, food, vehicles/cars (unless blocking a road), clothes, indoor objects, screenshots.
 
-If the image shows ANY human portrait, passport photo, person, obscene content, personal electronic device (like a laptop, computer, screen, or keyboard), or indoor environment, you MUST set "isValidCivicIssue": false.
+If the image matches ANY of the rejection criteria above, you MUST set "isValidCivicIssue": false, state the exact reason in "rejectionReason", and leave "title" and "description" as empty strings.
 
 Respond ONLY with a valid JSON object matching this schema without any markdown surrounding text or codeblocks:
 {
   "isValidCivicIssue": true or false,
-  "rejectionReason": "Empty string if isValidCivicIssue is true. If false, state why clearly without repeating template words.",
-  "category": "Must be one of: Roads & Potholes, Garbage & Sanitation, Water Supply & Sewage, Electricity & Streetlights, Public Infrastructure, Encroachment & Traffic, Other",
-  "priority": "Must be one of: Low, Medium, High, Critical",
-  "title": "A concise 4-7 word title summarizing the civic issue",
-  "description": "A detailed 2-3 sentence description of the observed public hazard, visible damage, and why municipal repair is needed."
+  "rejectionReason": "Clear explanation if isValidCivicIssue is false, otherwise empty string.",
+  "category": "One of: Roads & Potholes, Garbage & Sanitation, Water Supply & Sewage, Electricity & Streetlights, Public Infrastructure, Encroachment & Traffic, Other",
+  "priority": "One of: Low, Medium, High, Critical",
+  "title": "Concise 4-7 word title if valid, or empty string if invalid",
+  "description": "Detailed 2-3 sentence description of observed municipal hazard if valid, or empty string if invalid"
 }`;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    let groqModel = 'llama-3.2-11b-vision-preview';
+    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${groqApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.2-11b-vision-preview',
+        model: groqModel,
         messages: [
           {
             role: 'user',
@@ -723,6 +727,37 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       }),
     });
 
+    // If 11b fails with 400 or decommissioned, attempt 90b vision model
+    if (!response.ok && response.status === 400) {
+      const errClone = await response.clone().json().catch(() => ({}));
+      if (errClone.error?.code === 'model_decommissioned' || errClone.error?.message?.includes('decommissioned')) {
+        console.warn(`[Groq AI Warning]: ${groqModel} is decommissioned. Trying llama-3.2-90b-vision-preview...`);
+        groqModel = 'llama-3.2-90b-vision-preview';
+        response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: groqModel,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: promptText },
+                  { type: 'image_url', image_url: { url: imageBase64 } },
+                ],
+              },
+            ],
+            temperature: 0.1,
+            max_tokens: 500,
+            response_format: { type: 'json_object' },
+          }),
+        });
+      }
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -734,6 +769,9 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
           isValidCivicIssue: false,
           rejectionReason: 'Image was rejected by content safety filters. Inappropriate, obscene, or policy-violating photos are strictly prohibited.',
           message: 'Image was rejected by content safety filters.',
+          title: '',
+          description: '',
+          category: '',
         });
       }
       throw new Error(`Groq API Error: ${errDetail}`);
@@ -749,51 +787,62 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
     } catch (e) {
       console.warn('[Groq JSON Parse Warning]:', e);
       parsed = {
-        isValidCivicIssue: true,
+        isValidCivicIssue: false,
+        rejectionReason: 'Could not verify image content as authentic municipal infrastructure.',
         category: 'Other',
         priority: 'Medium',
-        title: 'Geotagged Civic Issue',
-        description: aiContent.substring(0, 150),
+        title: '',
+        description: '',
       };
     }
 
     // Safety guardrails: Target actual detected title and description when AI claims issue is valid
     if (parsed.isValidCivicIssue === true) {
-      const titleAndDesc = `${parsed.title || ''} ${parsed.description || ''}`.toLowerCase();
+      const textToInspect = `${parsed.title || ''} ${parsed.description || ''} ${parsed.category || ''} ${aiContent}`.toLowerCase();
 
       // 1. Obscene / NSFW / Adult content patterns
-      const obscenePatterns = ['nude', 'nudity', 'nsfw', 'porn', 'obscene', 'vulgar', 'explicit', 'naked', 'underwear', 'lingerie', 'intimate'];
-      const detectedObscene = obscenePatterns.find((kw) => titleAndDesc.includes(kw));
+      const obscenePatterns = [
+        'nude', 'nudity', 'nsfw', 'porn', 'obscene', 'vulgar', 'explicit',
+        'naked', 'underwear', 'lingerie', 'intimate', 'erotic', 'sexual', 'genital'
+      ];
+      const detectedObscene = obscenePatterns.find((kw) => textToInspect.includes(kw));
       if (detectedObscene) {
         console.warn(`[Groq AI Guardrail]: Detected obscene content '${detectedObscene}'. Rejecting.`);
         parsed.isValidCivicIssue = false;
         parsed.rejectionReason = 'Obscene, sexually explicit, or inappropriate content is strictly prohibited on CivicLens.';
       }
 
-      // 2. Passport photo / Single human / Portrait patterns
+      // 2. Passport photo / Single human / Portrait / Selfie patterns
       const humanPortraitPatterns = [
-        'passport photo', 'passport-size', 'selfie of a', 'portrait of a person',
-        'headshot of a', 'individual person posing',
-        'id card', 'aadhaar card', 'identity card', 'driving license'
+        'passport photo', 'passport-size', 'selfie', 'portrait of a person',
+        'headshot', 'face photo', 'individual posing', 'person posing',
+        'single human', 'id card', 'aadhaar card', 'identity card', 'driving license',
+        'human face', 'profile picture', 'photo of a man', 'photo of a woman',
+        'photo of a boy', 'photo of a girl', 'photo of a child', 'man wearing',
+        'woman wearing', 'person smiling'
       ];
-      const detectedHuman = humanPortraitPatterns.find((kw) => titleAndDesc.includes(kw));
+      const detectedHuman = humanPortraitPatterns.find((kw) => textToInspect.includes(kw));
       if (detectedHuman && !detectedObscene) {
         console.warn(`[Groq AI Guardrail]: Detected human portrait term '${detectedHuman}'. Rejecting.`);
         parsed.isValidCivicIssue = false;
-        parsed.rejectionReason = 'Personal human portraits, passport photos, or selfies are not valid civic grievances. Please capture an outdoor photo of municipal infrastructure damage.';
+        parsed.rejectionReason = 'Personal human portraits, passport photos, or selfies are not valid civic grievances. Please capture an outdoor photo of public municipal infrastructure damage.';
       }
 
       // 3. Personal electronics & indoor objects patterns
       const nonCivicPatterns = [
-        'laptop', 'macbook', 'notebook computer', 'computer keyboard',
-        'computer monitor', 'smartphone display', 'mobile phone screen',
-        'television screen', 'office desk setup'
+        'laptop', 'macbook', 'notebook computer', 'computer keyboard', 'keyboard',
+        'computer monitor', 'monitor', 'screen', 'laptop screen', 'trackpad', 'keypad',
+        'smartphone display', 'mobile phone screen', 'smartphone', 'mobile phone', 'cell phone',
+        'tablet', 'ipad', 'television screen', 'television', 'tv display', 'tv screen',
+        'office desk setup', 'office desk', 'computer desk', 'electronics',
+        'indoor room', 'bedroom', 'living room', 'ceiling fan', 'furniture', 'couch', 'sofa',
+        'bedsheet', 'indoor floor', 'domestic wall', 'cupboard', 'wardrobe'
       ];
-      const detectedNonCivic = nonCivicPatterns.find((kw) => titleAndDesc.includes(kw));
+      const detectedNonCivic = nonCivicPatterns.find((kw) => textToInspect.includes(kw));
       if (detectedNonCivic && !detectedObscene && !detectedHuman) {
         console.warn(`[Groq AI Guardrail]: Detected personal/indoor term '${detectedNonCivic}'. Rejecting.`);
         parsed.isValidCivicIssue = false;
-        parsed.rejectionReason = `Detected personal electronics or indoor object (${detectedNonCivic}). CivicLens only accepts public municipal infrastructure issues (e.g. roads, streetlights, garbage, water leakage).`;
+        parsed.rejectionReason = `Detected non-civic object or indoor device (${detectedNonCivic}). CivicLens only accepts public municipal infrastructure hazards (e.g. damaged roads, potholes, garbage heaps, broken streetlights, sewage leakage).`;
       }
     }
 
@@ -801,8 +850,11 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       return res.status(200).json({
         success: true,
         isValidCivicIssue: false,
-        rejectionReason: parsed.rejectionReason || 'Image does not show any civic issue',
-        message: parsed.rejectionReason || 'Image does not show any civic issue',
+        rejectionReason: parsed.rejectionReason || 'Image does not depict a public civic infrastructure problem.',
+        message: parsed.rejectionReason || 'Image does not depict a public civic infrastructure problem.',
+        title: '',
+        description: '',
+        category: '',
       });
     }
 
@@ -842,14 +894,14 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
   } catch (error) {
     console.error('[Analyze Complaint Image Exception]:', error.message);
     res.status(200).json({
-      success: true,
-      isValidCivicIssue: true,
+      success: false,
+      isValidCivicIssue: null,
       isFallback: true,
-      category: 'Roads & Potholes',
+      category: '',
       priority: 'Medium',
-      title: 'Reported Civic Hazard',
-      description: 'Geotagged public infrastructure damage captured via camera for municipal inspection.',
-      message: error.message,
+      title: '',
+      description: '',
+      message: error.message || 'AI vision service check could not be completed.',
     });
   }
 };

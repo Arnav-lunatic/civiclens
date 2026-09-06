@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, AlertTriangle, Loader2, Lock } from 'lucide-react';
+import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, AlertTriangle, Loader2, Lock, Info } from 'lucide-react';
 import { API } from '../services/api';
 import { GeoService, FusedPosition } from '../services/geo';
 import { CameraModal } from '../components/CameraModal';
@@ -140,7 +140,8 @@ export const ReportIssue: React.FC = () => {
   };
 
   const handlePhotoCaptured = async (file: File, dataUrl: string, lat: number, lng: number) => {
-    setPhotos((prev) => [...prev, { file, dataUrl, lat, lng }]);
+    // If the previous photo was invalid or rejected, replace it with the new one!
+    setPhotos((prev) => (isValidCivicIssue === false ? [{ file, dataUrl, lat, lng }] : [...prev, { file, dataUrl, lat, lng }]));
     analyzePhotoWithGroq(file, dataUrl);
   };
 
@@ -158,7 +159,7 @@ export const ReportIssue: React.FC = () => {
 
       if (res.isValidCivicIssue === false) {
         setIsValidCivicIssue(false);
-        setAiError(res.rejectionReason || 'Image does not show any civic issue');
+        setAiError(res.rejectionReason || 'Image does not depict a public civic infrastructure problem.');
         setTitle('');
         setDescription('');
       } else if (res.isValidCivicIssue === true) {
@@ -176,10 +177,8 @@ export const ReportIssue: React.FC = () => {
       } else {
         // AI returned unverified or API key missing
         setIsValidCivicIssue(null);
-        if (res.title && !title) setTitle(res.title);
-        if (res.description && !description) setDescription(res.description);
         if (res.missingApiKey) {
-          setAiError(res.message || 'GROQ_API_KEY is not set in server/.env. AI validation is offline.');
+          setAiError(res.message || 'GROQ_API_KEY is not configured on server. Live AI verification is offline.');
         }
       }
     } catch (err: any) {
@@ -198,6 +197,8 @@ export const ReportIssue: React.FC = () => {
       setIsValidCivicIssue(null);
       setAiError('');
       setAiSuccessBadge(null);
+      setTitle('');
+      setDescription('');
     }
   };
 
@@ -659,17 +660,33 @@ export const ReportIssue: React.FC = () => {
             </div>
           )}
 
-          {/* Issue Details - Disabled and Locked if Image is Invalid */}
+          {/* Issue Details - Disabled and Locked if Image is Invalid or No Photo Taken */}
           <fieldset
-            disabled={isValidCivicIssue === false}
+            disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
             className={`space-y-6 transition-all duration-200 ${
-              isValidCivicIssue === false ? 'opacity-40 cursor-not-allowed select-none pointer-events-none' : ''
+              photos.length === 0 || isValidCivicIssue === false || analyzingAi
+                ? 'opacity-40 cursor-not-allowed select-none pointer-events-none'
+                : ''
             }`}
           >
-            {isValidCivicIssue === false && (
-              <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2.5 text-amber-900 text-xs font-bold">
-                <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <span>Step 3 Locked: Form fields are disabled because the captured photo was rejected. Retake a valid photo above to unlock.</span>
+            {photos.length === 0 && (
+              <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2.5 text-sky-800 text-xs font-bold">
+                <Info className="w-4 h-4 text-sky-600 flex-shrink-0" />
+                <span>Step 3 Locked: Please capture a live photo of the civic issue in Step 2 above to unlock grievance details and trigger AI analysis.</span>
+              </div>
+            )}
+
+            {analyzingAi && (
+              <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2.5 text-sky-800 text-xs font-bold">
+                <Loader2 className="w-4 h-4 text-sky-600 animate-spin flex-shrink-0" />
+                <span>Groq AI Vision is analyzing your captured photo... Step 3 will unlock upon verification.</span>
+              </div>
+            )}
+
+            {isValidCivicIssue === false && !analyzingAi && (
+              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl flex items-center gap-2.5 text-rose-900 text-xs font-bold">
+                <Lock className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>Step 3 Locked: Form fields are disabled because the captured photo was rejected. Retake a valid civic photo above to unlock.</span>
               </div>
             )}
 
@@ -678,7 +695,7 @@ export const ReportIssue: React.FC = () => {
               <input
                 type="text"
                 required
-                disabled={isValidCivicIssue === false}
+                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Hazardous open manhole & broken road"
@@ -690,7 +707,7 @@ export const ReportIssue: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Category *</label>
                 <select
-                  disabled={isValidCivicIssue === false}
+                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
@@ -708,7 +725,7 @@ export const ReportIssue: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Severity / Priority</label>
                 <select
-                  disabled={isValidCivicIssue === false}
+                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
@@ -726,7 +743,7 @@ export const ReportIssue: React.FC = () => {
               <textarea
                 rows={3}
                 required
-                disabled={isValidCivicIssue === false}
+                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the civic hazard and exact landmark..."
@@ -737,10 +754,12 @@ export const ReportIssue: React.FC = () => {
 
           <button
             type="submit"
-            disabled={submitting || analyzingAi || isValidCivicIssue === false}
+            disabled={submitting || analyzingAi || photos.length === 0 || isValidCivicIssue === false}
             className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2 ${
               isValidCivicIssue === false
                 ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-90'
+                : photos.length === 0
+                ? 'bg-slate-400 text-white cursor-not-allowed opacity-80'
                 : 'bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
           >
@@ -752,6 +771,8 @@ export const ReportIssue: React.FC = () => {
                 ? 'Groq AI Analyzing Photo...'
                 : isValidCivicIssue === false
                 ? 'Submission Locked (Invalid Civic Photo)'
+                : photos.length === 0
+                ? 'Capture Photo in Step 2 to Continue'
                 : 'Submit Live Geotagged Grievance'}
             </span>
           </button>
