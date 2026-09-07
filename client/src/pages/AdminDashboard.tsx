@@ -5,6 +5,8 @@ import { API } from '../services/api';
 import { Complaint, User } from '../types';
 import { ResolutionCameraModal } from '../components/ResolutionCameraModal';
 import { fetchFallbackLocation } from '../services/geo';
+import { ComplaintImage } from '../components/ComplaintImage';
+import { ImageModal } from '../components/ImageModal';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ export const AdminDashboard: React.FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
   // Status update modal
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
@@ -414,24 +417,37 @@ export const AdminDashboard: React.FC = () => {
               return (
                 <div key={item._id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition">
                   <div>
-                    <div className="relative aspect-video bg-slate-100">
-                      <img src={mainImg} alt={item.title} className="w-full h-full object-cover" />
-                      <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
-                        item.status === 'Resolved' ? 'bg-emerald-500 text-white' :
-                        item.status === 'In Progress' ? 'bg-blue-600 text-white' :
-                        item.status === 'Under Review' ? 'bg-amber-500 text-white' : 'bg-slate-700 text-white'
-                      }`}>
-                        {item.status}
-                      </span>
-                      <div className="absolute bottom-2 left-2 flex gap-1.5">
-                        <span className="px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-mono font-bold">
-                          PIN {item.pincode}
+                    <ComplaintImage
+                      src={mainImg}
+                      alt={item.title}
+                      heightClass="h-56 sm:h-64"
+                      onClick={() =>
+                        setPreviewImage({
+                          url: mainImg,
+                          title: item.title,
+                          subtitle: `Status: ${item.status} | Category: ${item.category} | District: ${item.district || 'N/A'} | PIN: ${item.pincode}`,
+                        })
+                      }
+                      topRightBadge={
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
+                          item.status === 'Resolved' ? 'bg-emerald-500 text-white' :
+                          item.status === 'In Progress' ? 'bg-blue-600 text-white' :
+                          item.status === 'Under Review' ? 'bg-amber-500 text-white' : 'bg-slate-700 text-white'
+                        }`}>
+                          {item.status}
                         </span>
-                        <span className="px-2.5 py-1 rounded-lg bg-blue-900/80 backdrop-blur-md text-blue-200 text-[10px] font-mono font-bold">
-                          GPS: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                        </span>
-                      </div>
-                    </div>
+                      }
+                      bottomOverlay={
+                        <div className="flex gap-1.5 items-center">
+                          <span className="px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-mono font-bold">
+                            PIN {item.pincode}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-lg bg-blue-900/80 backdrop-blur-md text-blue-200 text-[10px] font-mono font-bold">
+                            GPS: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                          </span>
+                        </div>
+                      }
+                    />
 
                     <div className="p-5 space-y-3">
                       <div className="flex justify-between items-center text-xs">
@@ -458,6 +474,43 @@ export const AdminDashboard: React.FC = () => {
                       {item.citizen && (
                         <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                           Reported by: <strong className="text-slate-900">{item.citizen.name}</strong> ({item.citizen.phone || item.citizen.email})
+                        </div>
+                      )}
+                      {item.resolvedImageUrl && (
+                        <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase text-emerald-800 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Resolution Proof Captured</span>
+                            </span>
+                            <span className="text-[10px] text-emerald-700 font-bold">Click to view</span>
+                          </div>
+                          <div className="rounded-xl overflow-hidden border border-emerald-300 shadow-2xs">
+                            <ComplaintImage
+                              src={item.resolvedImageUrl}
+                              alt="Resolution proof"
+                              heightClass="h-40 sm:h-44"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: item.resolvedImageUrl!,
+                                  title: `Official Resolution Proof: ${item.title}`,
+                                  subtitle: `Status: ${item.status} | PIN: ${item.pincode}`,
+                                })
+                              }
+                              bottomOverlay={
+                                <div className="flex justify-end">
+                                  <span className="px-2 py-0.5 bg-emerald-900/85 text-emerald-100 text-[9px] font-bold rounded">
+                                    Work Completed
+                                  </span>
+                                </div>
+                              }
+                            />
+                          </div>
+                          {item.resolutionNotes && (
+                            <p className="text-[10px] text-emerald-900 italic line-clamp-2">
+                              "{item.resolutionNotes}"
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -498,6 +551,41 @@ export const AdminDashboard: React.FC = () => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900">Update Grievance Status</h3>
+
+            {/* Real Issue Image & Grievance Context */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-blue-600">{selectedComplaint.category}</span>
+                <span className="text-slate-400 text-[10px]">{new Date(selectedComplaint.createdAt).toLocaleDateString()}</span>
+              </div>
+              <h4 className="font-bold text-slate-900 text-sm">{selectedComplaint.title}</h4>
+              <p className="text-slate-600 text-xs line-clamp-2">{selectedComplaint.description}</p>
+              
+              <div className="rounded-xl overflow-hidden border border-slate-200">
+                <ComplaintImage
+                  src={selectedComplaint.images && selectedComplaint.images.length > 0 ? selectedComplaint.images[0].url : selectedComplaint.imageUrl}
+                  alt={selectedComplaint.title}
+                  heightClass="h-44 sm:h-48"
+                  onClick={() =>
+                    setPreviewImage({
+                      url: selectedComplaint.images && selectedComplaint.images.length > 0 ? selectedComplaint.images[0].url : selectedComplaint.imageUrl,
+                      title: `Reported Grievance: ${selectedComplaint.title}`,
+                      subtitle: `Reported by ${selectedComplaint.citizen?.name || 'Citizen'} | PIN: ${selectedComplaint.pincode}`,
+                    })
+                  }
+                  bottomOverlay={
+                    <div className="flex justify-between items-center text-[10px] font-mono font-bold text-white">
+                      <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                        PIN {selectedComplaint.pincode}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                        {selectedComplaint.latitude.toFixed(4)}, {selectedComplaint.longitude.toFixed(4)}
+                      </span>
+                    </div>
+                  }
+                />
+              </div>
+            </div>
 
             <form onSubmit={handleUpdateStatus} className="space-y-4">
               <div>
@@ -616,10 +704,24 @@ export const AdminDashboard: React.FC = () => {
 
                 {resolutionPhotoPreview && (
                   <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                    <img src={resolutionPhotoPreview} alt="Resolution proof" className="w-full h-40 object-cover" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-2 text-[10px] text-white font-mono">
-                      GPS: {resolutionPhotoLat?.toFixed(5)}, {resolutionPhotoLng?.toFixed(5)} | {new Date().toLocaleString('en-IN')}
-                    </div>
+                    <ComplaintImage
+                      src={resolutionPhotoPreview}
+                      alt="Resolution proof"
+                      heightClass="h-48"
+                      onClick={() =>
+                        setPreviewImage({
+                          url: resolutionPhotoPreview,
+                          title: 'Resolution Proof Captured',
+                          subtitle: `GPS: ${resolutionPhotoLat?.toFixed(5)}, ${resolutionPhotoLng?.toFixed(5)} | ${new Date().toLocaleString('en-IN')}`,
+                        })
+                      }
+                      bottomOverlay={
+                        <div className="bg-black/75 backdrop-blur-sm p-1.5 rounded text-[10px] text-white font-mono flex justify-between items-center">
+                          <span>GPS: {resolutionPhotoLat?.toFixed(5)}, {resolutionPhotoLng?.toFixed(5)}</span>
+                          <span>{new Date().toLocaleTimeString('en-IN')}</span>
+                        </div>
+                      }
+                    />
                     <button
                       type="button"
                       onClick={() => {
@@ -628,9 +730,9 @@ export const AdminDashboard: React.FC = () => {
                         setResolutionPhotoLat(null);
                         setResolutionPhotoLng(null);
                       }}
-                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow"
+                      className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-30"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 )}
@@ -674,6 +776,15 @@ export const AdminDashboard: React.FC = () => {
           complaintLng={selectedComplaint.longitude}
         />
       )}
+
+      {/* High-Resolution Uncropped Image Modal */}
+      <ImageModal
+        isOpen={Boolean(previewImage)}
+        onClose={() => setPreviewImage(null)}
+        imageUrl={previewImage?.url || ''}
+        title={previewImage?.title}
+        subtitle={previewImage?.subtitle}
+      />
     </div>
   );
 };

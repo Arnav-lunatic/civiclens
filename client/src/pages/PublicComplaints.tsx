@@ -21,6 +21,8 @@ import {
 import { API } from '../services/api';
 import { fetchFallbackLocation } from '../services/geo';
 import { Complaint } from '../types';
+import { ComplaintImage } from '../components/ComplaintImage';
+import { ImageModal } from '../components/ImageModal';
 
 // Haversine formula: calculates distance in meters between two GPS coordinates
 const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -61,7 +63,7 @@ export const PublicComplaints: React.FC = () => {
   const [sortBy, setSortBy] = useState<'nearest' | 'newest'>('nearest');
 
   // Image zoom modal
-  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
   useEffect(() => {
     loadComplaints();
@@ -286,29 +288,32 @@ export const PublicComplaints: React.FC = () => {
               </h3>
             </div>
 
-            <div
-              onClick={() =>
-                setPreviewImage({
-                  url: '/images/before_after1.jpeg',
-                  title: 'Venduruthy Bridge, Cochin: Before & After Streetlight Illumination',
-                })
-              }
-              className="relative rounded-xl overflow-hidden border border-slate-200 cursor-pointer group shadow-xs"
-            >
-              <img
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+              <ComplaintImage
                 src="/images/before_after1.jpeg"
                 alt="Venduruthy Bridge Streetlight Before and After"
-                className="w-full h-44 sm:h-48 object-cover group-hover:scale-102 transition duration-300"
-                loading="lazy"
+                heightClass="h-48 sm:h-52"
+                onClick={() =>
+                  setPreviewImage({
+                    url: '/images/before_after1.jpeg',
+                    title: 'Venduruthy Bridge, Cochin: Before & After Streetlight Illumination',
+                    subtitle: 'Geotagged Hardware Proof | Verified by Cochin Municipal Corp',
+                  })
+                }
+                topLeftBadge={
+                  <span className="bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs shadow">
+                    BEFORE: Dark Bridge
+                  </span>
+                }
+                bottomOverlay={
+                  <div className="flex justify-end">
+                    <span className="bg-emerald-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1 shadow">
+                      <CheckCircle2 className="w-3 h-3" />
+                      AFTER: Full LED Lighting
+                    </span>
+                  </div>
+                }
               />
-              <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition"></div>
-              <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">
-                BEFORE: Dark Bridge
-              </div>
-              <div className="absolute bottom-2 right-2 bg-emerald-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                AFTER: Full LED Lighting
-              </div>
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
@@ -336,29 +341,32 @@ export const PublicComplaints: React.FC = () => {
               </h3>
             </div>
 
-            <div
-              onClick={() =>
-                setPreviewImage({
-                  url: '/images/before_after2.jpeg',
-                  title: 'Hazardous Leaning Utility Pole: Before & After Repair',
-                })
-              }
-              className="relative rounded-xl overflow-hidden border border-slate-200 cursor-pointer group shadow-xs"
-            >
-              <img
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+              <ComplaintImage
                 src="/images/before_after2.jpeg"
                 alt="Hazardous Leaning Utility Pole Before and After"
-                className="w-full h-44 sm:h-48 object-cover group-hover:scale-102 transition duration-300"
-                loading="lazy"
+                heightClass="h-48 sm:h-52"
+                onClick={() =>
+                  setPreviewImage({
+                    url: '/images/before_after2.jpeg',
+                    title: 'Hazardous Leaning Utility Pole: Before & After Repair',
+                    subtitle: 'Geotagged Hardware Proof | Public Safety Verification',
+                  })
+                }
+                topLeftBadge={
+                  <span className="bg-rose-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs shadow">
+                    BEFORE: Leaning Danger
+                  </span>
+                }
+                bottomOverlay={
+                  <div className="flex justify-end">
+                    <span className="bg-emerald-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1 shadow">
+                      <CheckCircle2 className="w-3 h-3" />
+                      AFTER: Safely Replaced
+                    </span>
+                  </div>
+                }
               />
-              <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition"></div>
-              <div className="absolute top-2 left-2 bg-rose-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">
-                BEFORE: Leaning Danger
-              </div>
-              <div className="absolute bottom-2 right-2 bg-emerald-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                AFTER: Safely Replaced
-              </div>
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
@@ -473,47 +481,51 @@ export const PublicComplaints: React.FC = () => {
                 >
                   <div>
                     {/* Photos Area: Before & (if resolved) After photo */}
-                    <div className="relative aspect-video bg-slate-100 group">
-                      <img
-                        src={mainImg}
-                        alt={item.title}
-                        className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => setPreviewImage({ url: mainImg, title: `Reported Issue: ${item.title}` })}
-                      />
-
-                      {/* Status Tag */}
-                      <span
-                        className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
-                          item.status === 'Resolved'
-                            ? 'bg-emerald-500 text-white'
-                            : item.status === 'In Progress'
-                            ? 'bg-blue-600 text-white'
-                            : item.status === 'Under Review'
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-slate-700 text-white'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-
-                      {/* Distance Badge (Nearest highlighted) */}
-                      {item.distanceMeters !== null && (
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-sky-400 text-[10px] font-bold flex items-center gap-1 shadow">
-                          <MapPin className="w-3 h-3 text-sky-400" />
-                          <span>{formatDistance(item.distanceMeters)}</span>
+                    <ComplaintImage
+                      src={mainImg}
+                      alt={item.title}
+                      heightClass="h-56 sm:h-64"
+                      onClick={() =>
+                        setPreviewImage({
+                          url: mainImg,
+                          title: `Reported Issue: ${item.title}`,
+                          subtitle: `Category: ${item.category} | PIN: ${item.pincode}`,
+                        })
+                      }
+                      topRightBadge={
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
+                            item.status === 'Resolved'
+                              ? 'bg-emerald-500 text-white'
+                              : item.status === 'In Progress'
+                              ? 'bg-blue-600 text-white'
+                              : item.status === 'Under Review'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-slate-700 text-white'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      }
+                      topLeftBadge={
+                        item.distanceMeters !== null ? (
+                          <div className="px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-sky-400 text-[10px] font-bold flex items-center gap-1 shadow">
+                            <MapPin className="w-3 h-3 text-sky-400" />
+                            <span>{formatDistance(item.distanceMeters)}</span>
+                          </div>
+                        ) : undefined
+                      }
+                      bottomOverlay={
+                        <div className="flex justify-between items-center text-[10px] font-mono font-bold text-white">
+                          <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                            PIN {item.pincode}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                            {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                          </span>
                         </div>
-                      )}
-
-                      {/* Bottom Image Overlay: GPS + PIN */}
-                      <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[10px] font-mono font-bold text-white">
-                        <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
-                          PIN {item.pincode}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
-                          {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                        </span>
-                      </div>
-                    </div>
+                      }
+                    />
 
                     {/* Card Content */}
                     <div className="p-5 space-y-3">
@@ -551,21 +563,40 @@ export const PublicComplaints: React.FC = () => {
                               <span>Verified Resolution Proof</span>
                             </span>
                             <button
-                              onClick={() => setPreviewImage({ url: item.resolvedImageUrl!, title: `Resolution Proof: ${item.title}` })}
+                              type="button"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: item.resolvedImageUrl!,
+                                  title: `Resolution Proof: ${item.title}`,
+                                  subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Municipal Officer'}`,
+                                })
+                              }
                               className="text-[10px] text-emerald-700 font-bold hover:underline flex items-center gap-0.5"
                             >
                               <Eye className="w-3 h-3" />
                               <span>Enlarge</span>
                             </button>
                           </div>
-                          <div
-                            onClick={() => setPreviewImage({ url: item.resolvedImageUrl!, title: `Resolution Proof: ${item.title}` })}
-                            className="relative aspect-video rounded-lg overflow-hidden cursor-pointer border border-emerald-300 shadow-2xs"
-                          >
-                            <img src={item.resolvedImageUrl} alt="Resolution proof" className="w-full h-full object-cover" />
-                            <span className="absolute bottom-1 right-1 px-2 py-0.5 bg-emerald-900/85 text-emerald-100 text-[9px] font-bold rounded">
-                              Work Completed
-                            </span>
+                          <div className="rounded-lg overflow-hidden border border-emerald-300 shadow-2xs">
+                            <ComplaintImage
+                              src={item.resolvedImageUrl!}
+                              alt="Resolution proof"
+                              heightClass="h-44 sm:h-48"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: item.resolvedImageUrl!,
+                                  title: `Resolution Proof: ${item.title}`,
+                                  subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Municipal Officer'}`,
+                                })
+                              }
+                              bottomOverlay={
+                                <div className="flex justify-end">
+                                  <span className="px-2 py-0.5 bg-emerald-900/85 text-emerald-100 text-[9px] font-bold rounded">
+                                    Work Completed
+                                  </span>
+                                </div>
+                              }
+                            />
                           </div>
                           {item.resolutionNotes && (
                             <p className="text-[10px] text-emerald-900 italic line-clamp-2">
@@ -605,25 +636,14 @@ export const PublicComplaints: React.FC = () => {
         )}
       </div>
 
-      {/* Image Zoom Modal */}
-      {previewImage && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-3 p-4 border border-slate-200">
-            <div className="flex justify-between items-center px-2">
-              <h3 className="text-xs font-bold text-slate-900 truncate">{previewImage.title}</h3>
-              <button
-                onClick={() => setPreviewImage(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="max-h-[75vh] overflow-hidden rounded-2xl bg-black flex items-center justify-center">
-              <img src={previewImage.url} alt="Zoom preview" className="max-h-[75vh] w-auto object-contain" />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* High-Resolution Uncropped Image Modal */}
+      <ImageModal
+        isOpen={Boolean(previewImage)}
+        onClose={() => setPreviewImage(null)}
+        imageUrl={previewImage?.url || ''}
+        title={previewImage?.title}
+        subtitle={previewImage?.subtitle}
+      />
     </div>
   );
 };

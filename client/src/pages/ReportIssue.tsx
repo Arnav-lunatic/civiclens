@@ -6,6 +6,8 @@ import { GeoService, FusedPosition } from '../services/geo';
 import { CameraModal } from '../components/CameraModal';
 import { OtpModal } from '../components/OtpModal';
 import { MapView } from '../components/MapView';
+import { ComplaintImage } from '../components/ComplaintImage';
+import { ImageModal } from '../components/ImageModal';
 
 interface PhotoItem {
   file: File;
@@ -17,6 +19,7 @@ interface PhotoItem {
 export const ReportIssue: React.FC = () => {
   const navigate = useNavigate();
   const [user] = useState(API.getUser('citizen'));
+  const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
   // Form states
   const [name, setName] = useState(user?.name || '');
@@ -313,17 +316,25 @@ export const ReportIssue: React.FC = () => {
         <div className="bg-gradient-to-r from-amber-50 via-orange-50/50 to-rose-50 border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
             {/* Image Preview */}
-            <div className="md:col-span-4 relative rounded-xl overflow-hidden border border-amber-300/60 shadow-sm bg-black max-h-[160px]">
-              <img
+            <div className="md:col-span-4 rounded-xl overflow-hidden border border-amber-300/60 shadow-sm">
+              <ComplaintImage
                 src="/images/img1.jpeg"
                 alt="Critical civic emergency: massive fallen tree blocking roadway and powerlines"
-                className="w-full h-full object-cover"
-                loading="lazy"
+                heightClass="h-36 sm:h-40"
+                onClick={() =>
+                  setPreviewImage({
+                    url: '/images/img1.jpeg',
+                    title: 'Critical Civic Emergency Protocol Example',
+                    subtitle: 'Roadway blocked & powerline hazard example photo',
+                  })
+                }
+                topLeftBadge={
+                  <div className="bg-rose-600/90 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>Urgent Road Hazard</span>
+                  </div>
+                }
               />
-              <div className="absolute top-2 left-2 bg-rose-600/90 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
-                <AlertTriangle className="w-3 h-3" />
-                <span>Urgent Road Hazard</span>
-              </div>
             </div>
 
             {/* Explanatory Guidance */}
@@ -578,20 +589,37 @@ export const ReportIssue: React.FC = () => {
             {photos.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
                 {photos.map((p, idx) => (
-                  <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-4/3 group">
-                    <img src={p.dataUrl} alt="Issue" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(idx)}
-                        className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 text-[10px] text-emerald-300 font-mono p-1.5 truncate">
-                      Snapshot: {p.lat.toFixed(5)}, {p.lng.toFixed(5)}
-                    </div>
+                  <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-200 group">
+                    <ComplaintImage
+                      src={p.dataUrl}
+                      alt={`Captured civic hazard proof ${idx + 1}`}
+                      heightClass="h-40 sm:h-44"
+                      onClick={() =>
+                        setPreviewImage({
+                          url: p.dataUrl,
+                          title: `Captured Photo Evidence #${idx + 1}`,
+                          subtitle: `Watermarked GPS: ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`,
+                        })
+                      }
+                      topRightBadge={
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemovePhoto(idx);
+                          }}
+                          className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow transition pointer-events-auto"
+                          title="Remove photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      }
+                      bottomOverlay={
+                        <div className="bg-slate-950/85 text-[10px] text-emerald-300 font-mono p-1 rounded backdrop-blur-xs truncate">
+                          GPS: {p.lat.toFixed(5)}, {p.lng.toFixed(5)}
+                        </div>
+                      }
+                    />
                   </div>
                 ))}
               </div>
@@ -798,6 +826,15 @@ export const ReportIssue: React.FC = () => {
         devOtp={devOtp}
         onVerify={handleVerifyOtp}
         onResend={handleResendOtp}
+      />
+
+      {/* High-Resolution Uncropped Image Modal */}
+      <ImageModal
+        isOpen={Boolean(previewImage)}
+        onClose={() => setPreviewImage(null)}
+        imageUrl={previewImage?.url || ''}
+        title={previewImage?.title}
+        subtitle={previewImage?.subtitle}
       />
     </div>
   );

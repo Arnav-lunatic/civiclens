@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Camera, CheckCircle2, Clock, AlertTriangle, RefreshCw, MapPin, ExternalLink } from 'lucide-react';
 import { API } from '../services/api';
 import { Complaint } from '../types';
+import { ComplaintImage } from '../components/ComplaintImage';
+import { ImageModal } from '../components/ImageModal';
 
 export const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = API.getUser('citizen');
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
   useEffect(() => {
     if (!user || API.getRole('citizen') !== 'citizen') {
@@ -117,29 +120,48 @@ export const UserDashboard: React.FC = () => {
                   className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition"
                 >
                   <div>
-                    <div className="relative aspect-video bg-slate-100 overflow-hidden">
-                      <img src={mainImg} alt={item.title} className="w-full h-full object-cover" />
-                      <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-md ${
-                        item.status === 'Resolved' ? 'bg-emerald-500 text-white' :
-                        item.status === 'In Progress' ? 'bg-blue-600 text-white' :
-                        item.status === 'Under Review' ? 'bg-amber-500 text-white' : 'bg-slate-700 text-white'
-                      }`}>
-                        {item.status}
-                      </span>
-                      <div className="absolute bottom-2 left-2 flex gap-1.5">
-                        <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-mono font-bold">
-                          PIN {item.pincode}
+                    <ComplaintImage
+                      src={mainImg}
+                      alt={item.title}
+                      heightClass="h-56 sm:h-64"
+                      onClick={() =>
+                        setPreviewImage({
+                          url: mainImg,
+                          title: item.title,
+                          subtitle: `Status: ${item.status} | Category: ${item.category} | PIN: ${item.pincode}`,
+                        })
+                      }
+                      topRightBadge={
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-md ${
+                            item.status === 'Resolved'
+                              ? 'bg-emerald-500 text-white'
+                              : item.status === 'In Progress'
+                              ? 'bg-blue-600 text-white'
+                              : item.status === 'Under Review'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-slate-700 text-white'
+                          }`}
+                        >
+                          {item.status}
                         </span>
-                        <span className="px-2 py-0.5 rounded-lg bg-sky-900/80 backdrop-blur-md text-sky-200 text-[10px] font-mono">
-                          GPS: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                        </span>
-                        {photosCount > 1 && (
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 text-white text-[10px] font-bold">
-                            +{photosCount - 1} Photos
+                      }
+                      bottomOverlay={
+                        <div className="flex gap-1.5 items-center">
+                          <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-mono font-bold">
+                            PIN {item.pincode}
                           </span>
-                        )}
-                      </div>
-                    </div>
+                          <span className="px-2 py-0.5 rounded-lg bg-sky-900/80 backdrop-blur-md text-sky-200 text-[10px] font-mono">
+                            GPS: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                          </span>
+                          {photosCount > 1 && (
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 text-white text-[10px] font-bold">
+                              +{photosCount - 1} Photos
+                            </span>
+                          )}
+                        </div>
+                      }
+                    />
 
                     <div className="p-5 space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
@@ -164,7 +186,7 @@ export const UserDashboard: React.FC = () => {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-sky-600 hover:text-sky-700 font-bold text-[11px] bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-lg border border-sky-200 transition"
                         >
-                          <MapPin className="w-3 h-3 text-sky-600" />
+                          <MapPin className="w-3.5 h-3.5 text-sky-600" />
                           <span>📍 View Location on Google Maps</span>
                           <ExternalLink className="w-3 h-3 ml-0.5" />
                         </a>
@@ -181,9 +203,32 @@ export const UserDashboard: React.FC = () => {
                     </div>
 
                     {item.resolvedImageUrl && (
-                      <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200">
-                        <div className="text-[10px] font-bold text-emerald-800 uppercase mb-1">Official Resolution Proof:</div>
-                        <img src={item.resolvedImageUrl} alt="Resolved" className="rounded-lg h-24 w-full object-cover shadow-sm" />
+                      <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
+                        <div className="text-[10px] font-bold text-emerald-800 uppercase flex items-center justify-between">
+                          <span>Official Resolution Proof:</span>
+                          <span className="text-[9px] text-emerald-700 font-normal">Click to enlarge</span>
+                        </div>
+                        <div className="rounded-lg overflow-hidden border border-emerald-300 shadow-2xs">
+                          <ComplaintImage
+                            src={item.resolvedImageUrl}
+                            alt="Resolved"
+                            heightClass="h-40 sm:h-44"
+                            onClick={() =>
+                              setPreviewImage({
+                                url: item.resolvedImageUrl!,
+                                title: `Official Resolution Proof: ${item.title}`,
+                                subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'District Officer'}`,
+                              })
+                            }
+                            bottomOverlay={
+                              <div className="flex justify-end">
+                                <span className="px-2 py-0.5 bg-emerald-900/85 text-emerald-100 text-[9px] font-bold rounded">
+                                  Work Completed
+                                </span>
+                              </div>
+                            }
+                          />
+                        </div>
                         {item.resolutionNotes && (
                           <p className="text-[11px] text-emerald-900 mt-1.5 italic font-medium">
                             "{item.resolutionNotes}"
@@ -202,6 +247,15 @@ export const UserDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* High-Resolution Uncropped Image Modal */}
+      <ImageModal
+        isOpen={Boolean(previewImage)}
+        onClose={() => setPreviewImage(null)}
+        imageUrl={previewImage?.url || ''}
+        title={previewImage?.title}
+        subtitle={previewImage?.subtitle}
+      />
     </div>
   );
 };

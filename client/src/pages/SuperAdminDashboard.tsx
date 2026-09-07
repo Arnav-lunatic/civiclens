@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { API } from '../services/api';
 import { User, Complaint } from '../types';
+import { ComplaintImage } from '../components/ComplaintImage';
+import { ImageModal } from '../components/ImageModal';
 
 export const SuperAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ export const SuperAdminDashboard: React.FC = () => {
   const [selectedDistrict, setSelectedDistrict] = useState<string>('All');
   const [complaintStatusFilter, setComplaintStatusFilter] = useState<string>('All');
   const [complaintSearch, setComplaintSearch] = useState<string>('');
-  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
   // New subadmin modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -665,39 +667,43 @@ export const SuperAdminDashboard: React.FC = () => {
                   >
                     <div>
                       {/* Photos Area */}
-                      <div className="relative aspect-video bg-slate-100 group">
-                        <img
-                          src={mainImg}
-                          alt={item.title}
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => setPreviewImage({ url: mainImg, title: `Complaint Photo: ${item.title}` })}
-                        />
-
-                        {/* Status Tag */}
-                        <span
-                          className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
-                            item.status === 'Resolved'
-                              ? 'bg-emerald-500 text-white'
-                              : item.status === 'In Progress'
-                              ? 'bg-blue-600 text-white'
-                              : item.status === 'Under Review'
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-slate-700 text-white'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-
-                        {/* Bottom Bar: GPS + PIN */}
-                        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[10px] font-mono font-bold text-white">
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
-                            PIN {item.pincode}
+                      <ComplaintImage
+                        src={mainImg}
+                        alt={item.title}
+                        heightClass="h-56 sm:h-64"
+                        onClick={() =>
+                          setPreviewImage({
+                            url: mainImg,
+                            title: `Complaint Photo: ${item.title}`,
+                            subtitle: `Category: ${item.category} | District: ${item.district || 'N/A'} | PIN: ${item.pincode}`,
+                          })
+                        }
+                        topRightBadge={
+                          <span
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
+                              item.status === 'Resolved'
+                                ? 'bg-emerald-500 text-white'
+                                : item.status === 'In Progress'
+                                ? 'bg-blue-600 text-white'
+                                : item.status === 'Under Review'
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-slate-700 text-white'
+                            }`}
+                          >
+                            {item.status}
                           </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
-                            {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                          </span>
-                        </div>
-                      </div>
+                        }
+                        bottomOverlay={
+                          <div className="flex justify-between items-center text-[10px] font-mono font-bold text-white">
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                              PIN {item.pincode}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                              {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                            </span>
+                          </div>
+                        }
+                      />
 
                       {/* Content */}
                       <div className="p-5 space-y-3">
@@ -721,7 +727,7 @@ export const SuperAdminDashboard: React.FC = () => {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-sky-600 font-bold hover:text-sky-700 hover:underline pt-0.5 text-[10px]"
                           >
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-3.5 h-3.5" />
                             <span>View GPS on Google Maps ({item.latitude.toFixed(4)}, {item.longitude.toFixed(4)})</span>
                           </a>
                         </div>
@@ -743,18 +749,40 @@ export const SuperAdminDashboard: React.FC = () => {
                                 <span>Verified Resolution Photo</span>
                               </span>
                               <button
-                                onClick={() => setPreviewImage({ url: item.resolvedImageUrl!, title: `Resolution Proof: ${item.title}` })}
+                                type="button"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    url: item.resolvedImageUrl!,
+                                    title: `Resolution Proof: ${item.title}`,
+                                    subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Officer'}`,
+                                  })
+                                }
                                 className="text-[10px] text-emerald-700 font-bold hover:underline flex items-center gap-0.5"
                               >
                                 <Eye className="w-3 h-3" />
                                 <span>View</span>
                               </button>
                             </div>
-                            <div
-                              onClick={() => setPreviewImage({ url: item.resolvedImageUrl!, title: `Resolution Proof: ${item.title}` })}
-                              className="relative aspect-video rounded-lg overflow-hidden cursor-pointer border border-emerald-300"
-                            >
-                              <img src={item.resolvedImageUrl} alt="Resolution proof" className="w-full h-full object-cover" />
+                            <div className="rounded-lg overflow-hidden border border-emerald-300 shadow-2xs">
+                              <ComplaintImage
+                                src={item.resolvedImageUrl!}
+                                alt="Resolution proof"
+                                heightClass="h-44 sm:h-48"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    url: item.resolvedImageUrl!,
+                                    title: `Resolution Proof: ${item.title}`,
+                                    subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Officer'}`,
+                                  })
+                                }
+                                bottomOverlay={
+                                  <div className="flex justify-end">
+                                    <span className="px-2 py-0.5 bg-emerald-900/85 text-emerald-100 text-[9px] font-bold rounded">
+                                      Work Completed
+                                    </span>
+                                  </div>
+                                }
+                              />
                             </div>
                             {item.resolutionNotes && (
                               <p className="text-[10px] text-emerald-900 italic line-clamp-2">
@@ -1102,25 +1130,14 @@ export const SuperAdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Image Preview Modal */}
-      {previewImage && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-3 p-4 border border-slate-200">
-            <div className="flex justify-between items-center px-2">
-              <h3 className="text-xs font-bold text-slate-900 truncate">{previewImage.title}</h3>
-              <button
-                onClick={() => setPreviewImage(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="max-h-[75vh] overflow-hidden rounded-2xl bg-black flex items-center justify-center">
-              <img src={previewImage.url} alt="Zoom preview" className="max-h-[75vh] w-auto object-contain" />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* High-Resolution Uncropped Image Modal */}
+      <ImageModal
+        isOpen={Boolean(previewImage)}
+        onClose={() => setPreviewImage(null)}
+        imageUrl={previewImage?.url || ''}
+        title={previewImage?.title}
+        subtitle={previewImage?.subtitle}
+      />
     </div>
   );
 };
