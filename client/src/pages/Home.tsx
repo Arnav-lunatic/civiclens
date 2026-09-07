@@ -272,19 +272,6 @@ export const Home: React.FC = () => {
           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
         </Link>
       </section>
-
-      {/* Footer Navigation */}
-      <footer className="border-t border-slate-200 pt-8 pb-12 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
-        <div>&copy; 2026 CivicLens &bull; Smart Grievance Redressal System</div>
-        <div className="flex items-center space-x-6">
-          <Link to="/admin/login" className="hover:text-blue-600 font-semibold">
-            District Sub-Admin Portal
-          </Link>
-          <Link to="/superadmin/login" className="hover:text-sky-700 font-semibold">
-            State Governance Super Admin
-          </Link>
-        </div>
-      </footer>
     </div>
   );
 };

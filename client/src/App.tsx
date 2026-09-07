@@ -11,6 +11,10 @@ import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { PublicComplaints } from './pages/PublicComplaints';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfService } from './pages/TermsOfService';
+import { GrievancePolicy } from './pages/GrievancePolicy';
+import { Footer } from './components/Footer';
 import { API } from './services/api';
 
 export const App: React.FC = () => {
@@ -54,8 +58,17 @@ export const App: React.FC = () => {
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
+
+            {/* Policy & Legal Routes */}
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/grievance-policy" element={<GrievancePolicy />} />
+            <Route path="/citizen-charter" element={<GrievancePolicy />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </Router>
   );
