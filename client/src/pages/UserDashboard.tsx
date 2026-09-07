@@ -173,7 +173,7 @@ export const UserDashboard: React.FC = () => {
                         )}
                       </div>
                       <h3 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h3>
-                      <p className="text-slate-500 text-xs line-clamp-2">{item.description}</p>
+                      <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
                       
                       <div className="space-y-1.5 pt-1">
                         <div className="text-[11px] text-slate-600 flex items-start gap-1.5">

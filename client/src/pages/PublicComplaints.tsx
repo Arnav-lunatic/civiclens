@@ -535,7 +535,7 @@ export const PublicComplaints: React.FC = () => {
                       </div>
 
                       <h3 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h3>
-                      <p className="text-slate-500 text-xs line-clamp-2 leading-relaxed">{item.description}</p>
+                      <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
 
                       {/* Location Box */}
                       <div className="space-y-1 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">

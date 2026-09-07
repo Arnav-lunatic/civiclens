@@ -455,7 +455,7 @@ export const AdminDashboard: React.FC = () => {
                         <span className="text-slate-400 text-[10px]">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                       <h3 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h3>
-                      <p className="text-slate-500 text-xs line-clamp-2">{item.description}</p>
+                      <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
                       <div className="space-y-1.5 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <div className="text-slate-700 font-semibold flex items-start gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -559,7 +559,7 @@ export const AdminDashboard: React.FC = () => {
                 <span className="text-slate-400 text-[10px]">{new Date(selectedComplaint.createdAt).toLocaleDateString()}</span>
               </div>
               <h4 className="font-bold text-slate-900 text-sm">{selectedComplaint.title}</h4>
-              <p className="text-slate-600 text-xs line-clamp-2">{selectedComplaint.description}</p>
+              <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{selectedComplaint.description}</p>
               
               <div className="rounded-xl overflow-hidden border border-slate-200">
                 <ComplaintImage
