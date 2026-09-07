@@ -21,10 +21,10 @@ export const UserDashboard: React.FC = () => {
     loadComplaints();
   }, []);
 
-  const loadComplaints = async () => {
+  const loadComplaints = async (skipCache = false) => {
     setLoading(true);
     try {
-      const res = await API.request('/complaints/my');
+      const res = await API.request('/complaints/my', 'GET', null, false, { skipCache });
       setComplaints(res.complaints || []);
     } catch (err) {
       console.error(err);
@@ -86,16 +86,19 @@ export const UserDashboard: React.FC = () => {
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-900">My Reported Issues</h2>
           <button
-            onClick={loadComplaints}
-            className="text-xs font-bold text-sky-600 hover:underline flex items-center gap-1"
+            onClick={() => loadComplaints(true)}
+            className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 transition"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-slate-400">Loading your complaints...</div>
+          <div className="py-16 text-center text-slate-400 space-y-2">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-sky-500" />
+            <p className="text-xs">Fetching your reported grievances from database...</p>
+          </div>
         ) : complaints.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
             <CheckCircle2 className="w-12 h-12 text-sky-600 mx-auto mb-3" />

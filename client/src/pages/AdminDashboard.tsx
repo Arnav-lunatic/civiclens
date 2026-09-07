@@ -57,11 +57,11 @@ export const AdminDashboard: React.FC = () => {
     loadComplaints();
   }, []);
 
-  const loadComplaints = async () => {
+  const loadComplaints = async (skipCache = false) => {
     setLoading(true);
     setLoadError('');
     try {
-      const res = await API.request('/complaints/subadmin');
+      const res = await API.request('/complaints/subadmin', 'GET', null, false, { skipCache });
       setComplaints(res.complaints || []);
     } catch (err: any) {
       console.error('Failed to load complaints:', err);
@@ -299,7 +299,7 @@ export const AdminDashboard: React.FC = () => {
       {loadError && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
           <span className="text-red-600 font-bold text-sm">⚠️ {loadError}</span>
-          <button onClick={loadComplaints} className="ml-auto px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700">
+          <button onClick={() => loadComplaints(true)} className="ml-auto px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700">
             Retry
           </button>
         </div>
@@ -391,14 +391,20 @@ export const AdminDashboard: React.FC = () => {
               Showing {filteredComplaints.length} of {complaints.length} assigned grievances
             </p>
           </div>
-          <button onClick={loadComplaints} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 self-start sm:self-auto">
-            <RefreshCw className="w-3.5 h-3.5" />
+          <button
+            onClick={() => loadComplaints(true)}
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 self-start sm:self-auto transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh List</span>
           </button>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-slate-400">Querying district grievances...</div>
+          <div className="py-16 text-center text-slate-400 space-y-2">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-500" />
+            <p className="text-xs">Fetching grievances from municipal database...</p>
+          </div>
         ) : filteredComplaints.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />

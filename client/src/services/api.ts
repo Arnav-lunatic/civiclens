@@ -100,6 +100,11 @@ export const API = {
     }
   },
 
+  // In-Memory cache & in-flight request deduplication for ultra-fast UI rendering
+  clearCache: () => {
+    requestCache.clear();
+  },
+
   // Ping backend health check to keep Render awake
   pingHealth: async (): Promise<boolean> => {
     try {
@@ -110,19 +115,44 @@ export const API = {
     }
   },
 
-  request: async (endpoint: string, method: string = 'GET', data: any = null, isFormData: boolean = false) => {
-    const headers: Record<string, string> = {};
+  request: async (
+    endpoint: string,
+    method: string = 'GET',
+    data: any = null,
+    isFormData: boolean = false,
+    options: { skipCache?: boolean } = {}
+  ) => {
+    const isGet = method.toUpperCase() === 'GET';
+
+    // If writing/mutating, invalidate cache so all dashboards show fresh data immediately
+    if (!isGet) {
+      requestCache.clear();
+    }
 
     let targetRole: string | undefined;
     if (endpoint.includes('superadmin') || window.location.pathname.startsWith('/superadmin')) {
       targetRole = 'superadmin';
     } else if (endpoint.includes('subadmin') || endpoint.startsWith('/admin') || window.location.pathname.startsWith('/admin')) {
-      // Always prefer the subadmin token when on the admin dashboard
       targetRole = localStorage.getItem('civiclens_subadmin_token') ? 'subadmin' : 'superadmin';
     }
 
     const token = API.getToken(targetRole);
+    const cacheKey = `${targetRole || 'anon'}:${method}:${endpoint}`;
 
+    // 1. Check in-memory cache for GET requests
+    if (isGet && !options.skipCache) {
+      const cached = requestCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        return cached.data;
+      }
+
+      // 2. In-flight deduplication: reuse active promise if already pending
+      if (inFlightRequests.has(cacheKey)) {
+        return inFlightRequests.get(cacheKey);
+      }
+    }
+
+    const headers: Record<string, string> = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -140,18 +170,44 @@ export const API = {
       config.body = isFormData ? data : JSON.stringify(data);
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-      const resData = await response.json();
+    const fetchPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        const resData = await response.json();
 
-      if (!response.ok) {
-        throw new Error(resData.message || 'API request failed');
+        if (!response.ok) {
+          throw new Error(resData.message || 'API request failed');
+        }
+
+        // Cache successful GET results
+        if (isGet && !options.skipCache) {
+          requestCache.set(cacheKey, {
+            data: resData,
+            timestamp: Date.now(),
+          });
+        }
+
+        return resData;
+      } catch (error) {
+        console.error(`API Error [${endpoint}]:`, error);
+        throw error;
+      } finally {
+        inFlightRequests.delete(cacheKey);
       }
+    })();
 
-      return resData;
-    } catch (error) {
-      console.error(`API Error [${endpoint}]:`, error);
-      throw error;
+    if (isGet && !options.skipCache) {
+      inFlightRequests.set(cacheKey, fetchPromise);
     }
+
+    return fetchPromise;
   },
 };
+
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+const requestCache = new Map<string, CacheEntry>();
+const inFlightRequests = new Map<string, Promise<any>>();
+const CACHE_TTL_MS = 20 * 1000; // 20 seconds fresh cache for instant page switches

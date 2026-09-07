@@ -78,13 +78,13 @@ export const SuperAdminDashboard: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (skipCache = false) => {
     setLoading(true);
     try {
       const [adminRes, statRes, compRes] = await Promise.all([
-        API.request('/admin/subadmins'),
-        API.request('/admin/stats'),
-        API.request('/complaints/superadmin'),
+        API.request('/admin/subadmins', 'GET', null, false, { skipCache }),
+        API.request('/admin/stats', 'GET', null, false, { skipCache }),
+        API.request('/complaints/superadmin', 'GET', null, false, { skipCache }),
       ]);
       setSubAdmins(adminRes.subAdmins || []);
       setStats(statRes.stats || null);
@@ -379,8 +379,11 @@ export const SuperAdminDashboard: React.FC = () => {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-6">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-bold text-slate-900">Registered District Officers & Mapped PIN Codes</h2>
-          <button onClick={loadData} className="text-xs font-bold text-sky-600 hover:underline flex items-center gap-1">
-            <RefreshCw className="w-3.5 h-3.5" />
+          <button
+            onClick={() => loadData(true)}
+            className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>
@@ -470,10 +473,10 @@ export const SuperAdminDashboard: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={loadData}
-            className="text-xs font-bold text-sky-600 hover:underline flex items-center gap-1 self-start sm:self-auto"
+            onClick={() => loadData(true)}
+            className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 self-start sm:self-auto transition"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh Grievances</span>
           </button>
         </div>

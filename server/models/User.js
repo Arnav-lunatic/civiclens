@@ -87,4 +87,9 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// High-Performance Query Indexes
+UserSchema.index({ role: 1 });
+UserSchema.index({ assignedDistrict: 1 });
+UserSchema.index({ assignedPincodes: 1 });
+
 module.exports = mongoose.model('User', UserSchema);

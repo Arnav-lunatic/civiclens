@@ -396,8 +396,10 @@ const submitComplaintWithOTP = async (req, res) => {
 const getMyComplaints = async (req, res) => {
   try {
     const complaints = await Complaint.find({ citizen: req.user._id })
+      .select('-timeline')
       .populate('assignedSubAdmin', 'name email department phone officialId')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({ success: true, count: complaints.length, complaints });
   } catch (error) {
@@ -416,12 +418,13 @@ const getPublicComplaints = async (req, res) => {
     if (district && district !== 'All') query.district = new RegExp(district.trim(), 'i');
     if (state && state !== 'All') query.state = new RegExp(state.trim(), 'i');
 
-    const maxLimit = limit === 'all' ? 0 : Math.min(parseInt(limit) || 300, 500);
+    const maxLimit = limit === 'all' ? 0 : Math.min(parseInt(limit) || 100, 300);
 
     let queryBuilder = Complaint.find(query)
-      .select('-citizen')
+      .select('-citizen -timeline')
       .populate('assignedSubAdmin', 'name email department officialId')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     if (maxLimit > 0) {
       queryBuilder = queryBuilder.limit(maxLimit);
@@ -440,31 +443,32 @@ const getSubAdminComplaints = async (req, res) => {
     const subAdmin = req.user;
     const pincodes = subAdmin.assignedPincodes || [];
     const district = (subAdmin.assignedDistrict || '').trim();
-    const cleanDist = district.replace(/district|city|county/gi, '').trim();
 
-    // Auto-repair & backfill any older complaints missing district metadata
-    try {
-      const emptyDistrictComplaints = await Complaint.find({
-        $or: [{ district: '' }, { district: { $exists: false } }, { district: 'Unknown' }],
-        latitude: { $ne: null },
-        longitude: { $ne: null },
-      }).limit(10);
+    // Run non-critical backfill asynchronously in background without blocking response
+    setImmediate(async () => {
+      try {
+        const emptyDistrictComplaints = await Complaint.find({
+          $or: [{ district: '' }, { district: { $exists: false } }, { district: 'Unknown' }],
+          latitude: { $ne: null },
+          longitude: { $ne: null },
+        }).limit(5);
 
-      for (const comp of emptyDistrictComplaints) {
-        if (comp.latitude && comp.longitude) {
-          const geo = await fetchReverseGeocode(comp.latitude, comp.longitude);
-          if (geo) {
-            let updated = false;
-            if (geo.district) { comp.district = geo.district; updated = true; }
-            if (geo.pincode && (!comp.pincode || comp.pincode === '')) { comp.pincode = geo.pincode; updated = true; }
-            if (geo.address && (!comp.address || comp.address === 'Geotagged location')) { comp.address = geo.address; updated = true; }
-            if (updated) await comp.save();
+        for (const comp of emptyDistrictComplaints) {
+          if (comp.latitude && comp.longitude) {
+            const geo = await fetchReverseGeocode(comp.latitude, comp.longitude);
+            if (geo) {
+              let updated = false;
+              if (geo.district) { comp.district = geo.district; updated = true; }
+              if (geo.pincode && (!comp.pincode || comp.pincode === '')) { comp.pincode = geo.pincode; updated = true; }
+              if (geo.address && (!comp.address || comp.address === 'Geotagged location')) { comp.address = geo.address; updated = true; }
+              if (updated) await comp.save();
+            }
           }
         }
+      } catch (e) {
+        // silent background backfill
       }
-    } catch (e) {
-      // non-blocking backfill
-    }
+    });
 
     let query = {};
 
@@ -492,27 +496,31 @@ const getSubAdminComplaints = async (req, res) => {
         ],
       };
 
-      // Auto-assign any unassigned matching complaints to this subadmin
-      try {
-        await Complaint.updateMany(
-          {
-            assignedSubAdmin: null,
-            $or: [
-              ...districtOrConditions,
-              ...(pincodes.length > 0 ? [{ pincode: { $in: pincodes } }] : []),
-            ],
-          },
-          { $set: { assignedSubAdmin: subAdmin._id } }
-        );
-      } catch (e) {
-        // non-blocking auto-assignment
-      }
+      // Auto-assign matching unassigned complaints in background
+      setImmediate(async () => {
+        try {
+          await Complaint.updateMany(
+            {
+              assignedSubAdmin: null,
+              $or: [
+                ...districtOrConditions,
+                ...(pincodes.length > 0 ? [{ pincode: { $in: pincodes } }] : []),
+              ],
+            },
+            { $set: { assignedSubAdmin: subAdmin._id } }
+          );
+        } catch (e) {
+          // background non-blocking
+        }
+      });
     }
 
     const complaints = await Complaint.find(query)
+      .select('-timeline')
       .populate('citizen', 'name email phone')
       .populate('assignedSubAdmin', 'name email department officialId')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({ success: true, count: complaints.length, assignedDistrict: district, assignedPincodes: pincodes, complaints });
   } catch (error) {
@@ -536,9 +544,11 @@ const getSuperAdminComplaints = async (req, res) => {
     if (category && category !== 'All') query.category = category;
 
     const complaints = await Complaint.find(query)
+      .select('-timeline')
       .populate('citizen', 'name email phone')
       .populate('assignedSubAdmin', 'name email department officialId')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({ success: true, count: complaints.length, complaints });
   } catch (error) {

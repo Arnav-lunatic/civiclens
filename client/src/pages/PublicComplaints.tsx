@@ -70,10 +70,10 @@ export const PublicComplaints: React.FC = () => {
     detectLocation();
   }, []);
 
-  const loadComplaints = async () => {
+  const loadComplaints = async (skipCache = false) => {
     setLoading(true);
     try {
-      const res = await API.request('/complaints/public?limit=all');
+      const res = await API.request('/complaints/public?limit=100', 'GET', null, false, { skipCache });
       setComplaints(res.complaints || []);
     } catch (err: any) {
       console.error('Failed to load public complaints:', err);
@@ -227,7 +227,7 @@ export const PublicComplaints: React.FC = () => {
           </Link>
           <button
             onClick={() => {
-              loadComplaints();
+              loadComplaints(true);
               detectLocation();
             }}
             className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-700"

@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const https = require('https');
@@ -12,7 +13,17 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Middlewares
+// Middlewares: Enable Gzip / Deflate response compression for ultra-fast JSON transfer
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  threshold: 1024, // compress anything larger than 1KB
+}));
+
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

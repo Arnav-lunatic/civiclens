@@ -134,4 +134,13 @@ const ComplaintSchema = new mongoose.Schema(
 // Geospatial index for nearby queries
 ComplaintSchema.index({ location: '2dsphere' });
 
+// High-Performance Query & Sorting Indexes
+ComplaintSchema.index({ createdAt: -1 });
+ComplaintSchema.index({ citizen: 1, createdAt: -1 });
+ComplaintSchema.index({ status: 1, createdAt: -1 });
+ComplaintSchema.index({ district: 1, createdAt: -1 });
+ComplaintSchema.index({ pincode: 1, createdAt: -1 });
+ComplaintSchema.index({ assignedSubAdmin: 1, status: 1 });
+ComplaintSchema.index({ category: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Complaint', ComplaintSchema);

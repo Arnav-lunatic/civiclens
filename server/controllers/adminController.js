@@ -96,7 +96,8 @@ exports.getAllSubAdmins = async (req, res) => {
   try {
     const subAdmins = await User.find({ role: 'subadmin' })
       .select('-password')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -113,29 +114,56 @@ exports.getAllSubAdmins = async (req, res) => {
 // @access  Private (Super-Admin)
 exports.getAnalytics = async (req, res) => {
   try {
-    const totalComplaints = await Complaint.countDocuments();
-    const pendingComplaints = await Complaint.countDocuments({ status: 'Pending' });
-    const inProgressComplaints = await Complaint.countDocuments({ status: 'In Progress' });
-    const resolvedComplaints = await Complaint.countDocuments({ status: 'Resolved' });
-    const rejectedComplaints = await Complaint.countDocuments({ status: 'Rejected' });
-
-    const totalCitizens = await User.countDocuments({ role: 'citizen' });
-    const totalSubAdmins = await User.countDocuments({ role: 'subadmin' });
-
-    // Category breakdown
-    const categoryStats = await Complaint.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
+    // Run all aggregation and count queries in parallel via Promise.all
+    const [
+      statusCounts,
+      totalCitizens,
+      totalSubAdmins,
+      categoryStats,
+      pincodeStats,
+    ] = await Promise.all([
+      Complaint.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      User.countDocuments({ role: 'citizen' }),
+      User.countDocuments({ role: 'subadmin' }),
+      Complaint.aggregate([
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+      Complaint.aggregate([
+        {
+          $group: {
+            _id: '$pincode',
+            count: { $sum: 1 },
+            resolved: { $sum: { $cond: [{ $eq: ['$status', 'Resolved'] }, 1, 0] } },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+      ]),
     ]);
 
-    // District / Pincode breakdown
-    const pincodeStats = await Complaint.aggregate([
-      { $group: { _id: '$pincode', count: { $sum: 1 }, resolved: { $sum: { $cond: [{ $eq: ['$status', 'Resolved'] }, 1, 0] } } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 },
-    ]);
+    let totalComplaints = 0;
+    let pendingComplaints = 0;
+    let inProgressComplaints = 0;
+    let resolvedComplaints = 0;
+    let rejectedComplaints = 0;
 
-    const resolutionRate = totalComplaints > 0 ? ((resolvedComplaints / totalComplaints) * 100).toFixed(1) : 0;
+    for (const sc of statusCounts) {
+      totalComplaints += sc.count;
+      if (sc._id === 'Pending') pendingComplaints = sc.count;
+      else if (sc._id === 'In Progress' || sc._id === 'Under Review') inProgressComplaints += sc.count;
+      else if (sc._id === 'Resolved') resolvedComplaints = sc.count;
+      else if (sc._id === 'Rejected') rejectedComplaints = sc.count;
+    }
+
+    const resolutionRate = totalComplaints > 0 ? ((resolvedComplaints / totalComplaints) * 100).toFixed(1) : '0.0';
 
     res.status(200).json({
       success: true,
