@@ -212,6 +212,8 @@ const createComplaintRecord = async ({
     ],
   });
 
+  invalidatePublicCache();
+
   return { complaint, assignedAdmin };
 };
 
@@ -392,6 +394,22 @@ const submitComplaintWithOTP = async (req, res) => {
   }
 };
 
+// In-Memory cache for public complaints feed
+const publicComplaintsCache = new Map();
+const PUBLIC_CACHE_TTL = 30 * 1000; // 30 seconds
+
+const invalidatePublicCache = () => {
+  publicComplaintsCache.clear();
+};
+
+// Deduplicate redundant 660KB base64 strings so JSON payload size drops by 50%
+const optimizeComplaintPayload = (c) => {
+  if (c && c.images && c.images.length > 0 && c.imageUrl && c.imageUrl === c.images[0].url) {
+    c.imageUrl = '';
+  }
+  return c;
+};
+
 // 3. Get My Complaints
 const getMyComplaints = async (req, res) => {
   try {
@@ -400,6 +418,8 @@ const getMyComplaints = async (req, res) => {
       .populate('assignedSubAdmin', 'name email department phone officialId')
       .sort({ createdAt: -1 })
       .lean();
+
+    complaints.forEach(optimizeComplaintPayload);
 
     res.status(200).json({ success: true, count: complaints.length, complaints });
   } catch (error) {
@@ -411,14 +431,29 @@ const getMyComplaints = async (req, res) => {
 const getPublicComplaints = async (req, res) => {
   try {
     const { pincode, category, status, district, state, limit } = req.query;
+
+    const maxLimit = limit === 'all' ? 0 : Math.min(parseInt(limit) || 100, 300);
+
+    const cacheKey = JSON.stringify({
+      pincode: pincode || '',
+      category: category || '',
+      status: status || '',
+      district: district || '',
+      state: state || '',
+      limit: maxLimit,
+    });
+
+    const cached = publicComplaintsCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < PUBLIC_CACHE_TTL) {
+      return res.status(200).json(cached.data);
+    }
+
     const query = {};
     if (pincode) query.pincode = pincode;
     if (category && category !== 'All') query.category = category;
     if (status && status !== 'All') query.status = status;
     if (district && district !== 'All') query.district = new RegExp(district.trim(), 'i');
     if (state && state !== 'All') query.state = new RegExp(state.trim(), 'i');
-
-    const maxLimit = limit === 'all' ? 0 : Math.min(parseInt(limit) || 100, 300);
 
     let queryBuilder = Complaint.find(query)
       .select('-citizen -timeline')
@@ -431,7 +466,15 @@ const getPublicComplaints = async (req, res) => {
     }
 
     const complaints = await queryBuilder;
-    res.status(200).json({ success: true, count: complaints.length, complaints });
+    complaints.forEach(optimizeComplaintPayload);
+
+    const responsePayload = { success: true, count: complaints.length, complaints };
+    publicComplaintsCache.set(cacheKey, {
+      data: responsePayload,
+      timestamp: Date.now(),
+    });
+
+    res.status(200).json(responsePayload);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -522,6 +565,8 @@ const getSubAdminComplaints = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    complaints.forEach(optimizeComplaintPayload);
+
     res.status(200).json({ success: true, count: complaints.length, assignedDistrict: district, assignedPincodes: pincodes, complaints });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -549,6 +594,8 @@ const getSuperAdminComplaints = async (req, res) => {
       .populate('assignedSubAdmin', 'name email department officialId')
       .sort({ createdAt: -1 })
       .lean();
+
+    complaints.forEach(optimizeComplaintPayload);
 
     res.status(200).json({ success: true, count: complaints.length, complaints });
   } catch (error) {
@@ -640,6 +687,8 @@ const updateComplaintStatus = async (req, res) => {
     });
 
     await complaint.save();
+
+    invalidatePublicCache();
 
     res.status(200).json({ success: true, message: `Complaint marked as ${complaint.status}`, complaint });
   } catch (error) {

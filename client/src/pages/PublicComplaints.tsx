@@ -46,8 +46,16 @@ const formatDistance = (meters: number | null | undefined): string => {
 };
 
 export const PublicComplaints: React.FC = () => {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('civiclens_cache_public_complaints');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState<boolean>(() => complaints.length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Visitor location state
   const [userLat, setUserLat] = useState<number | null>(null);
@@ -71,14 +79,24 @@ export const PublicComplaints: React.FC = () => {
   }, []);
 
   const loadComplaints = async (skipCache = false) => {
-    setLoading(true);
+    if (complaints.length === 0) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     try {
       const res = await API.request('/complaints/public?limit=100', 'GET', null, false, { skipCache });
-      setComplaints(res.complaints || []);
+      if (res.complaints) {
+        setComplaints(res.complaints);
+        try {
+          sessionStorage.setItem('civiclens_cache_public_complaints', JSON.stringify(res.complaints));
+        } catch {}
+      }
     } catch (err: any) {
       console.error('Failed to load public complaints:', err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -232,7 +250,7 @@ export const PublicComplaints: React.FC = () => {
             }}
             className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-700"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh Feed</span>
           </button>
         </div>

@@ -32,10 +32,32 @@ export const SuperAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = API.getUser('superadmin');
   const role = API.getRole('superadmin');
-  const [subAdmins, setSubAdmins] = useState<User[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [subAdmins, setSubAdmins] = useState<User[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('civiclens_cache_super_subadmins');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [stats, setStats] = useState<any>(() => {
+    try {
+      const saved = sessionStorage.getItem('civiclens_cache_super_stats');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('civiclens_cache_super_complaints');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState<boolean>(() => complaints.length === 0 && subAdmins.length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // District oversight state
   const [selectedDistrict, setSelectedDistrict] = useState<string>('All');
@@ -79,20 +101,34 @@ export const SuperAdminDashboard: React.FC = () => {
   }, []);
 
   const loadData = async (skipCache = false) => {
-    setLoading(true);
+    if (complaints.length === 0 && subAdmins.length === 0) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     try {
       const [adminRes, statRes, compRes] = await Promise.all([
         API.request('/admin/subadmins', 'GET', null, false, { skipCache }),
         API.request('/admin/stats', 'GET', null, false, { skipCache }),
         API.request('/complaints/superadmin', 'GET', null, false, { skipCache }),
       ]);
-      setSubAdmins(adminRes.subAdmins || []);
-      setStats(statRes.stats || null);
-      setComplaints(compRes.complaints || []);
+      if (adminRes.subAdmins) {
+        setSubAdmins(adminRes.subAdmins);
+        try { sessionStorage.setItem('civiclens_cache_super_subadmins', JSON.stringify(adminRes.subAdmins)); } catch {}
+      }
+      if (statRes.stats) {
+        setStats(statRes.stats);
+        try { sessionStorage.setItem('civiclens_cache_super_stats', JSON.stringify(statRes.stats)); } catch {}
+      }
+      if (compRes.complaints) {
+        setComplaints(compRes.complaints);
+        try { sessionStorage.setItem('civiclens_cache_super_complaints', JSON.stringify(compRes.complaints)); } catch {}
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -383,7 +419,7 @@ export const SuperAdminDashboard: React.FC = () => {
             onClick={() => loadData(true)}
             className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 transition"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>
@@ -476,7 +512,7 @@ export const SuperAdminDashboard: React.FC = () => {
             onClick={() => loadData(true)}
             className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 self-start sm:self-auto transition"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh Grievances</span>
           </button>
         </div>

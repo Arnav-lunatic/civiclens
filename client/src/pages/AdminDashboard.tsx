@@ -12,8 +12,16 @@ export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = API.getUser('subadmin') || API.getUser('superadmin');
   const role = API.getRole('subadmin') || API.getRole('superadmin');
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('civiclens_cache_admin_complaints');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState<boolean>(() => complaints.length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
@@ -58,16 +66,26 @@ export const AdminDashboard: React.FC = () => {
   }, []);
 
   const loadComplaints = async (skipCache = false) => {
-    setLoading(true);
+    if (complaints.length === 0) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     setLoadError('');
     try {
       const res = await API.request('/complaints/subadmin', 'GET', null, false, { skipCache });
-      setComplaints(res.complaints || []);
+      if (res.complaints) {
+        setComplaints(res.complaints);
+        try {
+          sessionStorage.setItem('civiclens_cache_admin_complaints', JSON.stringify(res.complaints));
+        } catch {}
+      }
     } catch (err: any) {
       console.error('Failed to load complaints:', err);
       setLoadError(err.message || 'Failed to load complaints. Please try re-logging in.');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -395,7 +413,7 @@ export const AdminDashboard: React.FC = () => {
             onClick={() => loadComplaints(true)}
             className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 self-start sm:self-auto transition"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh List</span>
           </button>
         </div>

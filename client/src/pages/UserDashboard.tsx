@@ -9,8 +9,16 @@ import { ImageModal } from '../components/ImageModal';
 export const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = API.getUser('citizen');
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('civiclens_cache_user_complaints');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState<boolean>(() => complaints.length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
   useEffect(() => {
@@ -22,14 +30,24 @@ export const UserDashboard: React.FC = () => {
   }, []);
 
   const loadComplaints = async (skipCache = false) => {
-    setLoading(true);
+    if (complaints.length === 0) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     try {
       const res = await API.request('/complaints/my', 'GET', null, false, { skipCache });
-      setComplaints(res.complaints || []);
+      if (res.complaints) {
+        setComplaints(res.complaints);
+        try {
+          sessionStorage.setItem('civiclens_cache_user_complaints', JSON.stringify(res.complaints));
+        } catch {}
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -89,7 +107,7 @@ export const UserDashboard: React.FC = () => {
             onClick={() => loadComplaints(true)}
             className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 transition"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>
