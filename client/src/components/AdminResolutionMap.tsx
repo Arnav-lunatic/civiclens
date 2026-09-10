@@ -132,7 +132,7 @@ export const AdminResolutionMap: React.FC<AdminResolutionMapProps> = ({
   }, [issueLat, issueLng, issueTitle, adminLat, adminLng, distance, isMatched]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-sm h-64 sm:h-72 w-full z-10 bg-slate-950">
+    <div className="relative rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm h-64 sm:h-72 w-full z-10 bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Top Floating Telemetry Status Banner */}

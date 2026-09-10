@@ -366,25 +366,25 @@ export const SuperAdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 text-slate-800">
       {/* State Master Command Deck Banner */}
-      <div className="relative bg-slate-950 text-white rounded-3xl p-6 sm:p-9 shadow-2xl border border-slate-800 flex flex-col md:flex-row justify-between md:items-center gap-6 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 text-white rounded-3xl p-6 sm:p-9 shadow-xl border border-slate-800 flex flex-col md:flex-row justify-between md:items-center gap-6 overflow-hidden">
         <div className="absolute top-0 right-1/4 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative space-y-2.5 z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900 text-sky-400 text-xs font-bold border border-slate-800 shadow-2xs">
-            <ShieldCheck className="w-4 h-4 text-sky-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-sky-200 text-xs font-bold border border-white/20 shadow-2xs">
+            <ShieldCheck className="w-4 h-4 text-sky-300" />
             <span>State Governance Master Console</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">{user?.name || 'State Central Admin'}</h1>
-          <p className="text-xs text-slate-400 font-normal">
+          <p className="text-xs text-slate-300 font-normal">
             Statewide municipal oversight, officer provisioning, and cross-district grievance auditing.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="relative z-10 px-6 py-3.5 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition flex items-center gap-2 self-start md:self-auto"
+          className="relative z-10 px-6 py-3.5 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition flex items-center gap-2 self-start md:self-auto"
         >
           <UserPlus className="w-4 h-4" />
           <span>Register District Sub-Admin</span>
@@ -394,34 +394,34 @@ export const SuperAdminDashboard: React.FC = () => {
       {/* Metrics Grid */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">Statewide Grievances</div>
-            <div className="text-3xl font-black font-mono text-white">{stats.totalComplaints}</div>
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">Statewide Grievances</div>
+            <div className="text-3xl font-black font-mono text-slate-900">{stats.totalComplaints}</div>
           </div>
-          <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-            <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider font-mono">State Resolution Rate</div>
-            <div className="text-3xl font-black font-mono text-emerald-400">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider font-mono">State Resolution Rate</div>
+            <div className="text-3xl font-black font-mono text-emerald-600">
               {stats.resolutionRate ? `${stats.resolutionRate.toString().replace(/%/g, '')}%` : '0%'}
             </div>
           </div>
-          <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-            <div className="text-[11px] font-bold text-sky-400 uppercase tracking-wider font-mono">Active Citizens</div>
-            <div className="text-3xl font-black font-mono text-sky-400">{stats.totalCitizens}</div>
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-[11px] font-bold text-sky-700 uppercase tracking-wider font-mono">Active Citizens</div>
+            <div className="text-3xl font-black font-mono text-sky-600">{stats.totalCitizens}</div>
           </div>
-          <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-            <div className="text-[11px] font-bold text-purple-400 uppercase tracking-wider font-mono">District Sub-Admins</div>
-            <div className="text-3xl font-black font-mono text-purple-400">{stats.totalSubAdmins}</div>
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-[11px] font-bold text-purple-700 uppercase tracking-wider font-mono">District Sub-Admins</div>
+            <div className="text-3xl font-black font-mono text-purple-600">{stats.totalSubAdmins}</div>
           </div>
         </div>
       )}
 
       {/* Sub-Admins Table */}
-      <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800 shadow-xl overflow-hidden space-y-4 p-6">
+      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-4 p-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold text-white">Registered District Officers &amp; Mapped PIN Codes</h2>
+          <h2 className="text-lg font-bold text-slate-900">Registered District Officers &amp; Mapped PIN Codes</h2>
           <button
             onClick={() => loadData(true)}
-            className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1.5 transition bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-xl border border-sky-500/30"
+            className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1.5 transition bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-xl border border-sky-200"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -429,13 +429,13 @@ export const SuperAdminDashboard: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="py-8 text-center text-slate-400">Loading officers...</div>
+          <div className="py-8 text-center text-slate-500">Loading officers...</div>
         ) : subAdmins.length === 0 ? (
-          <div className="py-8 text-center text-slate-400">No district officers registered yet. Click "Register District Sub-Admin" above.</div>
+          <div className="py-8 text-center text-slate-500">No district officers registered yet. Click "Register District Sub-Admin" above.</div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-800/80 text-slate-400 uppercase font-bold border-b border-slate-800">
+              <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Officer Name</th>
                   <th className="py-3 px-4">Official Email</th>
@@ -445,17 +445,17 @@ export const SuperAdminDashboard: React.FC = () => {
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80 text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-700">
                 {subAdmins.map((admin) => (
-                  <tr key={admin._id || admin.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4 font-bold text-white">{admin.name}</td>
-                    <td className="py-3 px-4 text-slate-400 font-mono">{admin.email}</td>
-                    <td className="py-3 px-4 text-sky-400 font-semibold">{admin.department || 'General'}</td>
-                    <td className="py-3 px-4 text-slate-300">{admin.assignedDistrict || 'All'}</td>
+                  <tr key={admin._id || admin.id} className="hover:bg-slate-50 transition">
+                    <td className="py-3 px-4 font-bold text-slate-900">{admin.name}</td>
+                    <td className="py-3 px-4 text-slate-600 font-mono">{admin.email}</td>
+                    <td className="py-3 px-4 text-sky-700 font-semibold">{admin.department || 'General'}</td>
+                    <td className="py-3 px-4 text-slate-700">{admin.assignedDistrict || 'All'}</td>
                     <td className="py-3 px-4">
                       <div className="flex flex-wrap gap-1">
                         {admin.assignedPincodes?.map((pin) => (
-                          <span key={pin} className="px-2 py-0.5 bg-slate-800 text-sky-300 font-mono rounded font-bold border border-slate-700">
+                          <span key={pin} className="px-2 py-0.5 bg-sky-50 text-sky-700 font-mono rounded font-bold border border-sky-200 text-[11px]">
                             {pin}
                           </span>
                         ))}
@@ -468,23 +468,23 @@ export const SuperAdminDashboard: React.FC = () => {
                             setEmailingAdmin(admin);
                             setMailPassword('');
                           }}
-                          className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-emerald-500/30"
+                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-emerald-200"
                         >
-                          <Mail className="w-3 h-3" />
+                          <Mail className="w-3 h-3 text-emerald-600" />
                           <span>Mail Info</span>
                         </button>
                         <button
                           onClick={() => openEditModal(admin)}
-                          className="px-2.5 py-1 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-sky-500/30"
+                          className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-sky-200"
                         >
-                          <Edit3 className="w-3 h-3" />
+                          <Edit3 className="w-3 h-3 text-sky-600" />
                           <span>Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteSubAdmin(admin)}
-                          className="px-2.5 py-1 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-rose-500/30"
+                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-rose-200"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3 h-3 text-rose-600" />
                           <span>Delete</span>
                         </button>
                       </div>
@@ -501,20 +501,20 @@ export const SuperAdminDashboard: React.FC = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-300 text-xs font-bold border border-blue-500/30 shadow-2xs mb-1">
-              <Building2 className="w-3.5 h-3.5 text-blue-400" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200 shadow-2xs mb-1">
+              <Building2 className="w-3.5 h-3.5 text-blue-600" />
               <span>Statewide Territorial Grievance Division</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
               District-Wise Civic Grievance Triage
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Click on any district card below to filter and inspect all civic complaints, assigned officers, and resolution status.
             </p>
           </div>
           <button
             onClick={() => loadData(true)}
-            className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1.5 self-start sm:self-auto transition bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-xl border border-sky-500/30"
+            className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1.5 self-start sm:self-auto transition bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-xl border border-sky-200"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh Grievances</span>
@@ -529,41 +529,41 @@ export const SuperAdminDashboard: React.FC = () => {
             className={`p-5 rounded-3xl border text-left transition flex flex-col justify-between space-y-3 ${
               selectedDistrict === 'All'
                 ? 'bg-slate-900 text-white border-sky-500/60 shadow-lg shadow-sky-500/15 scale-[1.01] ring-2 ring-sky-500'
-                : 'bg-slate-900/80 backdrop-blur-xl hover:border-slate-700 text-white border-slate-800 shadow-sm'
+                : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-sm'
             }`}
           >
             <div className="flex justify-between items-start">
               <div>
                 <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                  selectedDistrict === 'All' ? 'text-sky-400' : 'text-slate-400'
+                  selectedDistrict === 'All' ? 'text-sky-300' : 'text-slate-500'
                 }`}>
                   Statewide Aggregate
                 </span>
-                <h3 className="text-lg font-black mt-0.5 text-white">All Districts</h3>
+                <h3 className={`text-lg font-black mt-0.5 ${selectedDistrict === 'All' ? 'text-white' : 'text-slate-900'}`}>All Districts</h3>
               </div>
               <span className={`px-2.5 py-1 rounded-full text-xs font-black font-mono ${
-                selectedDistrict === 'All' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                selectedDistrict === 'All' ? 'bg-sky-500/20 text-sky-200 border border-sky-500/30' : 'bg-slate-100 text-slate-700 border border-slate-200'
               }`}>
                 {complaints.length} issues
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800 text-center">
+            <div className={`grid grid-cols-3 gap-2 pt-1 border-t text-center ${selectedDistrict === 'All' ? 'border-slate-800' : 'border-slate-100'}`}>
               <div>
-                <div className="text-[10px] text-emerald-400 font-bold uppercase">Resolved</div>
-                <div className="text-sm font-black font-mono mt-0.5 text-emerald-400">
+                <div className={`text-[10px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>Resolved</div>
+                <div className={`text-sm font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>
                   {complaints.filter((c) => c.status === 'Resolved').length}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-sky-400 font-bold uppercase">In Progress</div>
-                <div className="text-sm font-black font-mono mt-0.5 text-sky-400">
+                <div className={`text-[10px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>In Progress</div>
+                <div className={`text-sm font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>
                   {complaints.filter((c) => c.status === 'In Progress').length}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-amber-400 font-bold uppercase">Pending</div>
-                <div className="text-sm font-black font-mono mt-0.5 text-amber-400">
+                <div className={`text-[10px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>Pending</div>
+                <div className={`text-sm font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>
                   {complaints.filter((c) => c.status === 'Pending' || c.status === 'Under Review').length}
                 </div>
               </div>
@@ -582,20 +582,20 @@ export const SuperAdminDashboard: React.FC = () => {
                 className={`p-5 rounded-3xl border text-left transition flex flex-col justify-between space-y-3 ${
                   isSelected
                     ? 'bg-gradient-to-tr from-sky-600 to-blue-700 text-white border-sky-400 shadow-lg shadow-sky-500/20 scale-[1.01] ring-2 ring-sky-300'
-                    : 'bg-slate-900/80 backdrop-blur-xl hover:border-slate-700 text-white border-slate-800 shadow-sm'
+                    : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-sm'
                 }`}
               >
                 <div className="flex justify-between items-start">
                   <div className="min-w-0">
                     <span className={`text-[10px] font-extrabold uppercase tracking-wider truncate block ${
-                      isSelected ? 'text-sky-100' : 'text-slate-400'
+                      isSelected ? 'text-sky-100' : 'text-slate-500'
                     }`}>
                       District Jurisdiction
                     </span>
-                    <h3 className="text-base font-black mt-0.5 truncate text-white">{group.name}</h3>
+                    <h3 className={`text-base font-black mt-0.5 truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>{group.name}</h3>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-black font-mono shrink-0 ml-2 ${
-                    isSelected ? 'bg-white/20 text-white border border-white/30' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                    isSelected ? 'bg-white/20 text-white border border-white/30' : 'bg-slate-100 text-slate-700 border border-slate-200'
                   }`}>
                     {group.total}
                   </span>
@@ -603,18 +603,18 @@ export const SuperAdminDashboard: React.FC = () => {
 
                 {/* Mini Metrics Row */}
                 <div className={`grid grid-cols-3 gap-1 pt-2 border-t text-center ${
-                  isSelected ? 'border-sky-500/60' : 'border-slate-800'
+                  isSelected ? 'border-sky-500/60' : 'border-slate-100'
                 }`}>
                   <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-emerald-400'}`}>Resolved</div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-emerald-600'}`}>Resolved</div>
                     <div className="text-xs font-black font-mono">{group.resolved}</div>
                   </div>
                   <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-sky-400'}`}>Active</div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-sky-600'}`}>Active</div>
                     <div className="text-xs font-black font-mono">{group.inProgress}</div>
                   </div>
                   <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-amber-400'}`}>Pending</div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-amber-600'}`}>Pending</div>
                     <div className="text-xs font-black font-mono">{group.pending}</div>
                   </div>
                 </div>
@@ -626,7 +626,7 @@ export const SuperAdminDashboard: React.FC = () => {
                     <span>{resolutionPercent}%</span>
                   </div>
                   <div className={`h-1.5 w-full rounded-full overflow-hidden ${
-                    isSelected ? 'bg-sky-800' : 'bg-slate-800'
+                    isSelected ? 'bg-sky-800' : 'bg-slate-100'
                   }`}>
                     <div
                       className={`h-full rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`}
@@ -640,36 +640,36 @@ export const SuperAdminDashboard: React.FC = () => {
         </div>
 
         {/* Selected District Feed Panel */}
-        <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800 shadow-xl p-6 space-y-6">
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 space-y-6">
           {/* Header Bar with District Stats */}
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pb-4 border-b border-slate-800">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pb-4 border-b border-slate-200">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black text-white">
+                <h3 className="text-xl font-black text-slate-900">
                   {selectedDistrictMeta.name}
                 </h3>
-                <span className="px-3 py-0.5 rounded-full bg-sky-500/15 text-sky-400 text-xs font-bold border border-sky-500/30">
+                <span className="px-3 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200">
                   {displayedComplaints.length} issues shown
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Resolution Rate: <strong className="text-emerald-400 font-bold">{selectedDistrictMeta.resolutionRate}</strong>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Resolution Rate: <strong className="text-emerald-600 font-bold">{selectedDistrictMeta.resolutionRate}</strong>
                 {selectedDistrictMeta.officers.length > 0 && (
-                  <span> &bull; Designated Officers: <strong className="text-slate-300">{selectedDistrictMeta.officers.join(', ')}</strong></span>
+                  <span> &bull; Designated Officers: <strong className="text-slate-700">{selectedDistrictMeta.officers.join(', ')}</strong></span>
                 )}
               </p>
             </div>
 
             {/* Status Tabs */}
-            <div className="flex flex-wrap gap-1 bg-slate-800/80 p-1 rounded-xl shrink-0 border border-slate-700/80">
+            <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl shrink-0 border border-slate-200">
               {(['All', 'Active', 'In Progress', 'Pending', 'Resolved'] as const).map((st) => (
                 <button
                   key={st}
                   onClick={() => setComplaintStatusFilter(st)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                     complaintStatusFilter === st
-                      ? 'bg-slate-900 text-white shadow-xs border border-slate-700'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {st}
@@ -686,15 +686,15 @@ export const SuperAdminDashboard: React.FC = () => {
               value={complaintSearch}
               onChange={(e) => setComplaintSearch(e.target.value)}
               placeholder={`Search within ${selectedDistrictMeta.name} by title, citizen, category, or PIN...`}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-800/60 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-400 focus:bg-slate-900 focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none transition"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none transition"
             />
           </div>
 
           {/* Grievances List */}
           {displayedComplaints.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 space-y-2">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-              <p className="text-sm font-bold text-white">No Complaints Found</p>
+            <div className="py-12 text-center text-slate-500 space-y-2">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+              <p className="text-sm font-bold text-slate-900">No Complaints Found</p>
               <p className="text-xs">No grievances matching this filter in {selectedDistrictMeta.name}.</p>
             </div>
           ) : (
@@ -706,7 +706,7 @@ export const SuperAdminDashboard: React.FC = () => {
                 return (
                   <div
                     key={item._id}
-                    className="bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800 shadow-xl overflow-hidden flex flex-col justify-between hover:border-slate-700 transition"
+                    className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition"
                   >
                     <div>
                       {/* Photos Area */}
@@ -725,9 +725,9 @@ export const SuperAdminDashboard: React.FC = () => {
                           <span
                             className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
                               item.status === 'Resolved'
-                                ? 'bg-emerald-500 text-white'
+                                ? 'bg-emerald-600 text-white'
                                 : item.status === 'In Progress'
-                                ? 'bg-blue-600 text-white'
+                                ? 'bg-sky-600 text-white'
                                 : item.status === 'Under Review'
                                 ? 'bg-amber-500 text-white'
                                 : 'bg-slate-700 text-white'
@@ -751,24 +751,24 @@ export const SuperAdminDashboard: React.FC = () => {
                       {/* Content */}
                       <div className="p-5 space-y-3">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-sky-400">{item.category}</span>
-                          <span className="text-slate-400 text-[10px] font-mono">{new Date(item.createdAt).toLocaleDateString()}</span>
+                          <span className="font-bold text-sky-600">{item.category}</span>
+                          <span className="text-slate-500 text-[10px] font-mono">{new Date(item.createdAt).toLocaleDateString()}</span>
                         </div>
 
-                        <h4 className="font-bold text-white text-base line-clamp-1">{item.title}</h4>
-                        <p className="text-slate-300 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
+                        <h4 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h4>
+                        <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
 
                         {/* Location */}
-                        <div className="space-y-1 text-[11px] bg-slate-800/60 p-3 rounded-xl border border-slate-700/80">
-                          <div className="text-slate-300 font-semibold flex items-start gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-200">
+                          <div className="text-slate-700 font-semibold flex items-start gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
                             <span className="line-clamp-2">{item.address || `District: ${item.district || 'N/A'}, PIN: ${item.pincode}`}</span>
                           </div>
                           <a
                             href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sky-400 font-bold hover:text-sky-300 hover:underline pt-0.5 text-[10px]"
+                            className="inline-flex items-center gap-1 text-sky-600 font-bold hover:text-sky-700 hover:underline pt-0.5 text-[10px]"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                             <span>View GPS on Google Maps ({item.latitude.toFixed(4)}, {item.longitude.toFixed(4)})</span>
@@ -777,18 +777,18 @@ export const SuperAdminDashboard: React.FC = () => {
 
                         {/* Citizen details */}
                         {item.citizen && (
-                          <div className="text-[11px] text-slate-300 bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/80 space-y-0.5">
-                            <div>Reported by: <strong className="text-white">{item.citizen.name}</strong></div>
-                            <div className="text-slate-400">{item.citizen.phone || item.citizen.email}</div>
+                          <div className="text-[11px] text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+                            <div>Reported by: <strong className="text-slate-900">{item.citizen.name}</strong></div>
+                            <div className="text-slate-500">{item.citizen.phone || item.citizen.email}</div>
                           </div>
                         )}
 
                         {/* Resolved Proof Box */}
                         {hasResolvedImage && (
-                          <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 space-y-2">
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-black uppercase text-emerald-400 flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-[10px] font-black uppercase text-emerald-800 flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                 <span>Verified Resolution Photo</span>
                               </span>
                               <button
@@ -800,13 +800,13 @@ export const SuperAdminDashboard: React.FC = () => {
                                     subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Officer'}`,
                                   })
                                 }
-                                className="text-[10px] text-emerald-300 font-bold hover:underline flex items-center gap-0.5"
+                                className="text-[10px] text-emerald-700 font-bold hover:underline flex items-center gap-0.5"
                               >
                                 <Eye className="w-3 h-3" />
                                 <span>View</span>
                               </button>
                             </div>
-                            <div className="rounded-lg overflow-hidden border border-emerald-500/30 shadow-2xs">
+                            <div className="rounded-lg overflow-hidden border border-emerald-200 shadow-2xs">
                               <ComplaintImage
                                 src={item.resolvedImageUrl!}
                                 alt="Resolution proof"
@@ -828,7 +828,7 @@ export const SuperAdminDashboard: React.FC = () => {
                               />
                             </div>
                             {item.resolutionNotes && (
-                              <p className="text-[10px] text-slate-300 italic line-clamp-2">
+                              <p className="text-[10px] text-slate-700 italic line-clamp-2">
                                 "{item.resolutionNotes}"
                               </p>
                             )}
@@ -837,10 +837,10 @@ export const SuperAdminDashboard: React.FC = () => {
 
                         {/* Officer Assignment */}
                         {item.assignedSubAdmin && (
-                          <div className="text-[11px] text-slate-400 bg-slate-800/60 px-3 py-2 rounded-xl flex items-center gap-1.5 border border-slate-700/80">
+                          <div className="text-[11px] text-slate-600 bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-1.5 border border-slate-200">
                             <Building2 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                             <span>
-                              Assigned: <strong className="text-slate-200">{item.assignedSubAdmin.name}</strong> ({item.assignedSubAdmin.department || 'Officer'})
+                              Assigned: <strong className="text-slate-800">{item.assignedSubAdmin.name}</strong> ({item.assignedSubAdmin.department || 'Officer'})
                             </span>
                           </div>
                         )}
@@ -852,7 +852,7 @@ export const SuperAdminDashboard: React.FC = () => {
                         href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2 bg-slate-800 hover:bg-slate-750 text-sky-400 hover:text-sky-300 border border-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
+                        className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-sky-700 hover:text-sky-800 border border-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         <span>Inspect Location on Map</span>
@@ -868,55 +868,55 @@ export const SuperAdminDashboard: React.FC = () => {
 
       {/* Create Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl text-slate-100">
-            <h3 className="text-lg font-bold text-white">Register District Sub-Admin</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl text-slate-800">
+            <h3 className="text-lg font-bold text-slate-900">Register District Sub-Admin</h3>
 
             <form onSubmit={handleCreateSubAdmin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Officer Name *</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Officer Name *</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Officer Rajesh Kumar"
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Official Email *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Official Email *</label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="rajesh@civiclens.gov.in"
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Set Password *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Set Password *</label>
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Department</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Department</label>
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   >
                     <option value="All Departments">All Departments</option>
                     <option value="Roads & Potholes">Roads & Potholes (PWD)</option>
@@ -929,19 +929,19 @@ export const SuperAdminDashboard: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">District Name</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">District Name</label>
                   <input
                     type="text"
                     value={assignedDistrict}
                     onChange={(e) => setAssignedDistrict(e.target.value)}
                     placeholder="e.g. South Delhi"
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                   Assigned Postal Pincodes (Comma separated) *
                 </label>
                 <input
@@ -950,9 +950,9 @@ export const SuperAdminDashboard: React.FC = () => {
                   value={assignedPincodes}
                   onChange={(e) => setAssignedPincodes(e.target.value)}
                   placeholder="110001, 110002, 110003"
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs font-mono font-bold text-sky-400 placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-sky-700 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[10px] text-slate-500 mt-1">
                   All grievances submitted within these PIN codes will auto-route to this officer's dashboard.
                 </p>
               </div>
@@ -961,7 +961,7 @@ export const SuperAdminDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition"
                 >
                   Cancel
                 </button>
@@ -980,53 +980,53 @@ export const SuperAdminDashboard: React.FC = () => {
 
       {/* Edit Modal */}
       {editingAdmin && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl text-slate-100">
-            <h3 className="text-lg font-bold text-white">Edit Sub-Admin Officer Details</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl text-slate-800">
+            <h3 className="text-lg font-bold text-slate-900">Edit Sub-Admin Officer Details</h3>
 
             <form onSubmit={handleUpdateSubAdmin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Officer Name *</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Officer Name *</label>
                 <input
                   type="text"
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Official Email *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Official Email *</label>
                   <input
                     type="email"
                     required
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
                     placeholder="officer@civiclens.gov.in"
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Reset Password (Optional)</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Reset Password (Optional)</label>
                   <input
                     type="password"
                     value={editPassword}
                     onChange={(e) => setEditPassword(e.target.value)}
                     placeholder="Leave blank to keep current"
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Department</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Department</label>
                   <select
                     value={editDepartment}
                     onChange={(e) => setEditDepartment(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   >
                     <option value="All Departments">All Departments</option>
                     <option value="Roads & Potholes">Roads & Potholes (PWD)</option>
@@ -1039,18 +1039,18 @@ export const SuperAdminDashboard: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1">District Name</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">District Name</label>
                   <input
                     type="text"
                     value={editDistrict}
                     onChange={(e) => setEditDistrict(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                   Assigned Postal Pincodes (Comma separated) *
                 </label>
                 <input
@@ -1058,7 +1058,7 @@ export const SuperAdminDashboard: React.FC = () => {
                   required
                   value={editPincodes}
                   onChange={(e) => setEditPincodes(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs font-mono font-bold text-sky-400 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-sky-700 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -1066,7 +1066,7 @@ export const SuperAdminDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEditingAdmin(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition"
                 >
                   Cancel
                 </button>
@@ -1085,48 +1085,48 @@ export const SuperAdminDashboard: React.FC = () => {
 
       {/* Mail Credentials Modal */}
       {emailingAdmin && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl text-slate-100">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl text-slate-800">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold border border-emerald-500/30">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-200">
                 <Mail className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Send Officer Credentials Email</h3>
-                <p className="text-xs text-slate-400">Dispatch official login credentials & portal URL to officer's inbox</p>
+                <h3 className="text-lg font-bold text-slate-900">Send Officer Credentials Email</h3>
+                <p className="text-xs text-slate-500">Dispatch official login credentials & portal URL to officer's inbox</p>
               </div>
             </div>
 
-            <div className="bg-slate-950/70 rounded-2xl p-4 border border-slate-800 space-y-2 text-xs">
-              <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                <span className="font-bold text-slate-400 uppercase">Officer Name:</span>
-                <span className="font-bold text-white">{emailingAdmin.name}</span>
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2 text-xs">
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="font-bold text-slate-500 uppercase">Officer Name:</span>
+                <span className="font-bold text-slate-900">{emailingAdmin.name}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                <span className="font-bold text-slate-400 uppercase">Official Email:</span>
-                <span className="font-semibold text-slate-300 font-mono">{emailingAdmin.email}</span>
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="font-bold text-slate-500 uppercase">Official Email:</span>
+                <span className="font-semibold text-slate-700 font-mono">{emailingAdmin.email}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                <span className="font-bold text-slate-400 uppercase">Department:</span>
-                <span className="font-semibold text-sky-400">{emailingAdmin.department || 'General Administration'}</span>
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="font-bold text-slate-500 uppercase">Department:</span>
+                <span className="font-semibold text-sky-700">{emailingAdmin.department || 'General Administration'}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                <span className="font-bold text-slate-400 uppercase">Assigned District:</span>
-                <span className="font-bold text-sky-300">{emailingAdmin.assignedDistrict || 'State Jurisdiction'}</span>
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="font-bold text-slate-500 uppercase">Assigned District:</span>
+                <span className="font-bold text-sky-800">{emailingAdmin.assignedDistrict || 'State Jurisdiction'}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                <span className="font-bold text-slate-400 uppercase">Mapped Pincodes:</span>
-                <span className="font-mono font-bold text-sky-400">
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="font-bold text-slate-500 uppercase">Mapped Pincodes:</span>
+                <span className="font-mono font-bold text-sky-700">
                   {emailingAdmin.assignedPincodes?.join(', ') || 'None'}
                 </span>
               </div>
               <div className="flex justify-between pt-1">
-                <span className="font-bold text-slate-400 uppercase">Admin Login URL:</span>
+                <span className="font-bold text-slate-500 uppercase">Admin Login URL:</span>
                 <a
                   href="https://civiclens-yeq3.vercel.app/admin/login"
                   target="_blank"
                   rel="noreferrer"
-                  className="font-bold text-sky-400 hover:text-sky-300 hover:underline flex items-center gap-1"
+                  className="font-bold text-sky-600 hover:text-sky-700 hover:underline flex items-center gap-1"
                 >
                   <span>civiclens.../admin/login</span>
                   <ExternalLink className="w-3 h-3" />
@@ -1136,7 +1136,7 @@ export const SuperAdminDashboard: React.FC = () => {
 
             <form onSubmit={handleSendCredentialsEmail} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                   Include / Reset Password (Optional)
                 </label>
                 <input
@@ -1144,9 +1144,9 @@ export const SuperAdminDashboard: React.FC = () => {
                   value={mailPassword}
                   onChange={(e) => setMailPassword(e.target.value)}
                   placeholder="Enter password to include in email (e.g. OfficerPass@123)"
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-500 mt-1">
                   Leave blank if the officer already knows their current password.
                 </p>
               </div>
@@ -1155,7 +1155,7 @@ export const SuperAdminDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEmailingAdmin(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition border border-slate-700"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition border border-slate-200"
                 >
                   Cancel
                 </button>

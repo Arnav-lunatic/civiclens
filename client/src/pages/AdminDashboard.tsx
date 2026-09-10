@@ -330,14 +330,14 @@ export const AdminDashboard: React.FC = () => {
   const resolved = complaints.filter((c) => c.status === 'Resolved').length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 text-slate-800">
       {/* Officer Scope Command Header */}
-      <div className="relative bg-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl flex flex-col md:flex-row justify-between md:items-center gap-6 overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="relative bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-xl flex flex-col md:flex-row justify-between md:items-center gap-6 overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative space-y-2.5 z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900 text-sky-400 text-xs font-bold border border-slate-800 shadow-2xs">
-            <Shield className="w-4 h-4 text-sky-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-sky-200 text-xs font-bold border border-white/20 shadow-2xs">
+            <Shield className="w-4 h-4 text-sky-300" />
             <span>{role === 'superadmin' ? 'State Governance Super Admin' : 'District Administrative Operations'}</span>
           </div>
 
@@ -345,14 +345,14 @@ export const AdminDashboard: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-black text-white">
               {role === 'superadmin' ? (currentUser?.name || 'State Central Admin') : (currentUser?.name === 'State Central Admin' ? 'District Admin' : (currentUser?.name || 'District Admin'))}
             </h1>
-            <span className="px-3 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 font-mono font-bold text-xs">
+            <span className="px-3 py-0.5 rounded-full bg-sky-400/20 text-sky-200 border border-sky-300/30 font-mono font-bold text-xs">
               {role === 'superadmin' ? 'Super Admin' : 'District Officer'}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 pt-0.5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 pt-0.5">
             <div className="flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-sky-400" />
+              <Building2 className="w-4 h-4 text-sky-300" />
               <span>District: <strong className="text-white font-bold">{currentUser?.assignedDistrict || 'Central District'}</strong></span>
             </div>
             <span>&bull;</span>
@@ -371,20 +371,20 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Assigned Pincodes Badge Box */}
-        <div className="relative z-10 bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-2.5 md:min-w-[260px] shadow-sm">
+        <div className="relative z-10 bg-white/10 p-4 sm:p-5 rounded-2xl border border-white/20 space-y-2.5 md:min-w-[260px] shadow-sm backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Assigned PIN Codes:</span>
-            <MapPin className="w-3.5 h-3.5 text-sky-400" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-300">Assigned PIN Codes:</span>
+            <MapPin className="w-3.5 h-3.5 text-sky-300" />
           </div>
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {currentUser?.assignedPincodes && currentUser.assignedPincodes.length > 0 ? (
               currentUser.assignedPincodes.map((p: string) => (
-                <span key={p} className="px-2.5 py-1 bg-slate-950 border border-sky-500/30 rounded-lg text-xs font-mono font-bold text-sky-300 shadow-2xs">
+                <span key={p} className="px-2.5 py-1 bg-slate-900/80 border border-sky-400/30 rounded-lg text-xs font-mono font-bold text-sky-300 shadow-2xs">
                   PIN {p}
                 </span>
               ))
             ) : (
-              <span className="text-xs font-bold text-sky-300 bg-sky-950/80 px-3 py-1 rounded-lg border border-sky-500/30">
+              <span className="text-xs font-bold text-sky-200 bg-sky-900/60 px-3 py-1 rounded-lg border border-sky-400/30">
                 Statewide / All PIN Codes
               </span>
             )}
@@ -404,32 +404,32 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">Assigned In District</div>
-          <div className="text-3xl font-black font-mono text-white">{total}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">Assigned In District</div>
+          <div className="text-3xl font-black font-mono text-slate-900">{total}</div>
         </div>
-        <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-          <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider font-mono">Action Required</div>
-          <div className="text-3xl font-black font-mono text-amber-400">{pending}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider font-mono">Action Required</div>
+          <div className="text-3xl font-black font-mono text-amber-600">{pending}</div>
         </div>
-        <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-          <div className="text-[11px] font-bold text-sky-400 uppercase tracking-wider font-mono">In Progress</div>
-          <div className="text-3xl font-black font-mono text-sky-400">{inProgress}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-sky-700 uppercase tracking-wider font-mono">In Progress</div>
+          <div className="text-3xl font-black font-mono text-sky-600">{inProgress}</div>
         </div>
-        <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-          <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider font-mono">Resolved &amp; Closed</div>
-          <div className="text-3xl font-black font-mono text-emerald-400">{resolved}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider font-mono">Resolved &amp; Closed</div>
+          <div className="text-3xl font-black font-mono text-emerald-600">{resolved}</div>
         </div>
       </div>
 
       {/* Section-Wise Department Summary Cards */}
-      <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800 p-6 space-y-4 shadow-lg">
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 space-y-4 shadow-sm">
         <div className="flex justify-between items-center">
-          <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-sky-400" />
+          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-sky-600" />
             <span>Section-Wise Department Breakdown</span>
           </h2>
-          <span className="text-xs text-slate-400">Click any department to filter feed</span>
+          <span className="text-xs text-slate-500">Click any department to filter feed</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -451,18 +451,18 @@ export const AdminDashboard: React.FC = () => {
                 onClick={() => setSelectedDepartment(dept)}
                 className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-gradient-to-tr from-sky-500 to-blue-600 text-white border-sky-400/50 shadow-md shadow-sky-500/20 scale-[1.02]'
-                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700/80'
+                    ? 'bg-gradient-to-tr from-sky-500 to-blue-600 text-white border-sky-500 shadow-md shadow-sky-500/20 scale-[1.02]'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                 }`}
               >
-                <span className={`text-[10px] font-bold truncate ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                <span className={`text-[10px] font-bold truncate ${isSelected ? 'text-white' : 'text-slate-500'}`}>
                   {dept}
                 </span>
                 <div className="flex items-baseline justify-between mt-2">
-                  <span className={`text-xl font-black font-mono ${isSelected ? 'text-white' : 'text-white'}`}>
+                  <span className={`text-xl font-black font-mono ${isSelected ? 'text-white' : 'text-slate-900'}`}>
                     {count}
                   </span>
-                  <span className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-200' : 'text-slate-500'}`}>
+                  <span className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-slate-400'}`}>
                     issues
                   </span>
                 </div>
@@ -476,15 +476,15 @@ export const AdminDashboard: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <div>
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-slate-900">
               District Grievance Triage Feed
               {selectedDepartment !== 'All' && (
-                <span className="ml-2 text-xs font-semibold text-sky-400 bg-sky-500/15 px-2.5 py-1 rounded-full border border-sky-500/30">
+                <span className="ml-2 text-xs font-semibold text-sky-700 bg-sky-100 px-2.5 py-1 rounded-full border border-sky-200">
                   {selectedDepartment} ({filteredComplaints.length})
                 </span>
               )}
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Showing {filteredComplaints.length} of {complaints.length} assigned grievances
             </p>
           </div>
@@ -518,7 +518,7 @@ export const AdminDashboard: React.FC = () => {
               const mainImg = item.images && item.images.length > 0 ? item.images[0].url : item.imageUrl;
 
               return (
-                <div key={item._id} className="bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800 shadow-xl overflow-hidden flex flex-col justify-between hover:border-slate-700 transition">
+                <div key={item._id} className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition">
                   <div>
                     <ComplaintImage
                       src={mainImg}
@@ -533,9 +533,9 @@ export const AdminDashboard: React.FC = () => {
                       }
                       topRightBadge={
                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
-                          item.status === 'Resolved' ? 'bg-emerald-500 text-white' :
+                          item.status === 'Resolved' ? 'bg-emerald-600 text-white' :
                           item.status === 'In Progress' ? 'bg-blue-600 text-white' :
-                          item.status === 'Under Review' ? 'bg-amber-500 text-white' : 'bg-slate-700 text-white'
+                          item.status === 'Under Review' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-white'
                         }`}>
                           {item.status}
                         </span>
@@ -554,41 +554,41 @@ export const AdminDashboard: React.FC = () => {
 
                     <div className="p-5 space-y-3">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-sky-400">{item.category}</span>
+                        <span className="font-bold text-sky-600">{item.category}</span>
                         <span className="text-slate-400 text-[10px] font-mono">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <h3 className="font-bold text-white text-base line-clamp-1">{item.title}</h3>
-                      <p className="text-slate-300 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
-                      <div className="space-y-1.5 text-[11px] bg-slate-800/60 p-3 rounded-xl border border-slate-700/80">
-                        <div className="text-slate-300 font-semibold flex items-start gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-sky-400 flex-shrink-0 mt-0.5" />
+                      <h3 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h3>
+                      <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
+                      <div className="space-y-1.5 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div className="text-slate-800 font-semibold flex items-start gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-sky-600 flex-shrink-0 mt-0.5" />
                           <span className="line-clamp-2">{item.address || `District: ${item.district || 'N/A'}, PIN: ${item.pincode}`}</span>
                         </div>
                         <a
                           href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sky-400 font-bold hover:text-sky-300 hover:underline pt-0.5"
+                          className="inline-flex items-center gap-1 text-sky-600 font-bold hover:text-sky-700 hover:underline pt-0.5"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           <span>View Location on Google Maps ({item.latitude.toFixed(5)}, {item.longitude.toFixed(5)})</span>
                         </a>
                       </div>
                       {item.citizen && (
-                        <div className="text-[11px] text-slate-300 bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/80">
-                          Reported by: <strong className="text-white">{item.citizen.name}</strong> ({item.citizen.phone || item.citizen.email})
+                        <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          Reported by: <strong className="text-slate-900">{item.citizen.name}</strong> ({item.citizen.phone || item.citizen.email})
                         </div>
                       )}
                       {item.resolvedImageUrl && (
-                        <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl space-y-2">
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-[10px] font-black uppercase text-emerald-800 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               <span>Resolution Proof Captured</span>
                             </span>
-                            <span className="text-[10px] text-emerald-300 font-bold">Click to view</span>
+                            <span className="text-[10px] text-emerald-700 font-bold">Click to view</span>
                           </div>
-                          <div className="rounded-xl overflow-hidden border border-emerald-500/30 shadow-2xs">
+                          <div className="rounded-xl overflow-hidden border border-emerald-200 shadow-2xs">
                             <ComplaintImage
                               src={item.resolvedImageUrl}
                               alt="Resolution proof"
@@ -602,7 +602,7 @@ export const AdminDashboard: React.FC = () => {
                               }
                               bottomOverlay={
                                 <div className="flex justify-end">
-                                  <span className="px-2 py-0.5 bg-emerald-950/90 text-emerald-200 text-[9px] font-bold rounded">
+                                  <span className="px-2 py-0.5 bg-emerald-700 text-white text-[9px] font-bold rounded">
                                     Work Completed
                                   </span>
                                 </div>
@@ -610,7 +610,7 @@ export const AdminDashboard: React.FC = () => {
                             />
                           </div>
                           {item.resolutionNotes && (
-                            <p className="text-[10px] text-slate-300 italic line-clamp-2">
+                            <p className="text-[10px] text-slate-600 italic line-clamp-2">
                               "{item.resolutionNotes}"
                             </p>
                           )}
@@ -658,32 +658,32 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Update Modal */}
       {selectedComplaint && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto text-slate-100">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto text-slate-800">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <PenSquare className="w-5 h-5 text-sky-400" />
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <PenSquare className="w-5 h-5 text-sky-600" />
                 <span>Update Grievance Status</span>
               </h3>
               <button
                 type="button"
                 onClick={resetModal}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700/60"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition border border-slate-200"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Real Issue Image & Grievance Context */}
-            <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 space-y-2">
+            <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 space-y-2">
               <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-sky-400">{selectedComplaint.category}</span>
-                <span className="text-slate-400 text-[10px]">{new Date(selectedComplaint.createdAt).toLocaleDateString()}</span>
+                <span className="font-bold text-sky-600">{selectedComplaint.category}</span>
+                <span className="text-slate-500 text-[10px] font-mono">{new Date(selectedComplaint.createdAt).toLocaleDateString()}</span>
               </div>
-              <h4 className="font-bold text-white text-sm">{selectedComplaint.title}</h4>
-              <p className="text-slate-300 text-xs leading-relaxed whitespace-pre-line break-words">{selectedComplaint.description}</p>
+              <h4 className="font-bold text-slate-900 text-sm">{selectedComplaint.title}</h4>
+              <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{selectedComplaint.description}</p>
               
-              <div className="rounded-xl overflow-hidden border border-slate-800">
+              <div className="rounded-xl overflow-hidden border border-slate-200">
                 <ComplaintImage
                   src={selectedComplaint.images && selectedComplaint.images.length > 0 ? selectedComplaint.images[0].url : selectedComplaint.imageUrl}
                   alt={selectedComplaint.title}
@@ -712,15 +712,15 @@ export const AdminDashboard: React.FC = () => {
             <form onSubmit={handleUpdateStatus} className="space-y-4">
               {/* Status Selector (Always Accessible) */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase mb-1 flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
                   <span>Select Target Status</span>
                   {newStatus === 'Resolved' ? (
-                    <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> On-Site GPS &amp; AI Verification Required
+                    <span className="text-[10px] text-amber-700 font-bold bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-amber-600" /> On-Site GPS &amp; AI Verification Required
                     </span>
                   ) : (
-                    <span className="text-[10px] text-sky-400 font-bold bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> Instant Status Update
+                    <span className="text-[10px] text-sky-700 font-bold bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-sky-600" /> Instant Status Update
                     </span>
                   )}
                 </label>
@@ -733,7 +733,7 @@ export const AdminDashboard: React.FC = () => {
                       handleVerifyLocation(selectedComplaint);
                     }
                   }}
-                  className="w-full px-4 py-2.5 border border-slate-800 rounded-xl text-xs bg-slate-950/80 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none transition text-white font-medium"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition text-slate-900 font-medium"
                 >
                   <option value="Under Review">Under Review</option>
                   <option value="In Progress">In Progress (Field Team Dispatched)</option>
@@ -745,23 +745,23 @@ export const AdminDashboard: React.FC = () => {
               {/* ───────────── NON-RESOLVED STATUS FLOW (Under Review / In Progress / Rejected) ───────────── */}
               {newStatus !== 'Resolved' && (
                 <div className="space-y-3">
-                  <div className="bg-sky-500/10 border border-sky-500/20 rounded-2xl p-4 flex items-start gap-3 shadow-inner">
-                    <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                  <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
                       <Sparkles className="w-4 h-4" />
                     </div>
-                    <div className="space-y-0.5 text-xs text-sky-200">
+                    <div className="space-y-0.5 text-xs text-sky-900">
                       <div className="font-bold">Fast Status Update Mode</div>
-                      <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                        Updating status to <strong className="text-white">"{newStatus}"</strong> does not require GPS location or resolution photos. Click <strong className="text-sky-400">Save Status Update</strong> below to update everywhere.
+                      <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                        Updating status to <strong className="text-slate-900">"{newStatus}"</strong> does not require GPS location or resolution photos. Click <strong className="text-sky-600">Save Status Update</strong> below to update everywhere.
                       </p>
                     </div>
                   </div>
 
                   {/* Resolution Notes (Disabled for non-resolved) */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1 flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center justify-between">
                       <span>Resolution Notes</span>
-                      <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                      <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
                         <Lock className="w-3 h-3" /> Disabled (Only for Resolved status)
                       </span>
                     </label>
@@ -770,18 +770,18 @@ export const AdminDashboard: React.FC = () => {
                       disabled
                       value=""
                       placeholder="Resolution notes are disabled for this status. They are only required when marking as Resolved."
-                      className="w-full px-4 py-2 border border-slate-800 rounded-xl text-xs bg-slate-950/40 text-slate-500 cursor-not-allowed resize-none"
+                      className="w-full px-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-100 text-slate-400 cursor-not-allowed resize-none"
                     />
                   </div>
 
                   {/* Photo Upload (Disabled for non-resolved) */}
-                  <div className="border border-slate-800 rounded-2xl p-3 bg-slate-950/40 opacity-60">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                  <div className="border border-slate-200 rounded-2xl p-3 bg-slate-100 opacity-70">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                       <span className="flex items-center gap-2">
-                        <Camera className="w-3.5 h-3.5 text-slate-500" />
+                        <Camera className="w-3.5 h-3.5 text-slate-400" />
                         <span>Resolution Photo Upload</span>
                       </span>
-                      <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                      <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
                         <Lock className="w-3 h-3" /> Disabled (Only for Resolved status)
                       </span>
                     </div>
@@ -793,24 +793,24 @@ export const AdminDashboard: React.FC = () => {
               {newStatus === 'Resolved' && (
                 <div className="space-y-4">
                   {/* Step 1: Live On-Site GPS & Map Verification */}
-                  <div className="space-y-3 border border-slate-800 rounded-2xl p-4 bg-slate-950/60">
+                  <div className="space-y-3 border border-slate-200 rounded-2xl p-4 bg-slate-50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-emerald-600 text-white' : 'bg-sky-600 text-white'}`}>
                           1
                         </span>
-                        <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                           Step 1: Live On-Site GPS Verification &amp; Map
                         </span>
                       </div>
                       {locationVerified ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold flex items-center gap-1 border border-emerald-500/30">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold flex items-center gap-1 border border-emerald-300">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           <span>Unlocked (On-Site)</span>
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 text-[10px] font-bold flex items-center gap-1 border border-rose-500/30">
-                          <Lock className="w-3 h-3 text-rose-400" />
+                        <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold flex items-center gap-1 border border-rose-300">
+                          <Lock className="w-3 h-3 text-rose-600" />
                           <span>Locked (Verify Location)</span>
                         </span>
                       )}
@@ -838,7 +838,7 @@ export const AdminDashboard: React.FC = () => {
                       disabled={locationCheckLoading}
                       className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
                         locationVerified
-                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
                           : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-500/20'
                       }`}
                     >
@@ -849,7 +849,7 @@ export const AdminDashboard: React.FC = () => {
                         </>
                       ) : locationVerified ? (
                         <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                           <span>✅ Location Verified! ({locationDistance}m away) — Click to Re-check GPS</span>
                         </>
                       ) : (
@@ -861,13 +861,13 @@ export const AdminDashboard: React.FC = () => {
                     </button>
 
                     {locationError && (
-                      <div className="space-y-1.5 bg-rose-950/30 border border-rose-500/30 rounded-xl p-3">
+                      <div className="space-y-1.5 bg-rose-50 border border-rose-200 rounded-xl p-3">
                         <div className="flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                          <span className="text-[11px] text-rose-300 font-semibold">{locationError}</span>
+                          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                          <span className="text-[11px] text-rose-700 font-semibold">{locationError}</span>
                         </div>
                         {subadminLat !== null && subadminLng !== null && (
-                          <div className="text-[10px] text-rose-400 pl-6 space-y-0.5 font-mono">
+                          <div className="text-[10px] text-rose-600 pl-6 space-y-0.5 font-mono">
                             <div>Your Detected GPS: {subadminLat.toFixed(5)}, {subadminLng.toFixed(5)}</div>
                             <div>Complaint Issue GPS: {selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</div>
                           </div>
@@ -876,9 +876,9 @@ export const AdminDashboard: React.FC = () => {
                     )}
 
                     {locationVerified && (
-                      <div className="flex items-start gap-2 bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <div className="text-[11px] text-emerald-300">
+                      <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <div className="text-[11px] text-emerald-800">
                           <span className="font-bold">Location Matched!</span> You are <strong>{locationDistance}m</strong> from the issue site (within 500m geofence). Resolution tools below are now <strong>unlocked</strong>.
                         </div>
                       </div>
@@ -887,15 +887,15 @@ export const AdminDashboard: React.FC = () => {
 
                   {/* Lock Notice if Location is not matched */}
                   {!locationVerified && (
-                    <div className="bg-rose-950/30 border border-rose-500/30 rounded-2xl p-4 flex items-start gap-3 shadow-inner">
-                      <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+                    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
                         <Lock className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <div className="text-xs font-black text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="text-xs font-black text-rose-800 uppercase tracking-wider flex items-center gap-1.5">
                           <span>Resolution Actions Locked</span>
                         </div>
-                        <p className="text-[11px] text-rose-300/80 leading-relaxed font-medium">
+                        <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
                           CivicLens strictly requires physical presence on-site. Because your detected location does not match the issue location (within 500m), resolution notes, camera photo capture, and publishing as Resolved are locked until you reach the site.
                         </p>
                       </div>
@@ -904,14 +904,14 @@ export const AdminDashboard: React.FC = () => {
 
                   {/* Step 2: Resolution Notes (Enabled only when GPS matches) */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1 flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
                       <span className="flex items-center gap-2">
-                        <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-sky-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                        <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-sky-600 text-white' : 'bg-slate-300 text-slate-600'}`}>
                           2
                         </span>
-                        <span>Resolution Notes <span className="text-rose-400">*</span></span>
+                        <span>Resolution Notes <span className="text-rose-600">*</span></span>
                       </span>
-                      {!locationVerified && <span className="text-[10px] text-rose-400 font-semibold flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>}
+                      {!locationVerified && <span className="text-[10px] text-rose-600 font-semibold flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>}
                     </label>
                     <textarea
                       rows={3}
@@ -926,23 +926,23 @@ export const AdminDashboard: React.FC = () => {
                       }
                       className={`w-full px-4 py-2.5 border rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none transition ${
                         locationVerified
-                          ? 'bg-slate-950/80 border-slate-800 focus:bg-slate-950 text-white'
-                          : 'bg-slate-950/40 border-slate-800/80 text-slate-600 cursor-not-allowed'
+                          ? 'bg-slate-50 border-slate-300 focus:bg-white text-slate-900'
+                          : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                       }`}
                     />
                   </div>
 
                   {/* Step 3: Take Resolution Photo & Groq AI Verification */}
-                  <div className={`space-y-3 border rounded-2xl p-4 transition ${locationVerified ? 'border-slate-800 bg-slate-950/60' : 'border-slate-800/80 bg-slate-950/30 opacity-60'}`}>
+                  <div className={`space-y-3 border rounded-2xl p-4 transition ${locationVerified ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-slate-100 opacity-70'}`}>
                     <div className="flex items-center gap-2">
-                      <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-sky-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                      <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-sky-600 text-white' : 'bg-slate-300 text-slate-600'}`}>
                         3
                       </span>
-                      <span className="text-xs font-bold text-slate-200 uppercase">
-                        Take On-Site Resolution Photo <span className="text-rose-400">*</span>
+                      <span className="text-xs font-bold text-slate-800 uppercase">
+                        Take On-Site Resolution Photo <span className="text-rose-600">*</span>
                       </span>
                       {!locationVerified && (
-                        <span className="text-[10px] text-rose-400 font-semibold ml-auto flex items-center gap-1">
+                        <span className="text-[10px] text-rose-600 font-semibold ml-auto flex items-center gap-1">
                           <Lock className="w-3 h-3" /> Locked (Verify location first)
                         </span>
                       )}
@@ -955,7 +955,7 @@ export const AdminDashboard: React.FC = () => {
                       className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
                         locationVerified
                           ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-emerald-600/20'
-                          : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                       }`}
                     >
                       <Camera className="w-3.5 h-3.5" />
@@ -964,7 +964,7 @@ export const AdminDashboard: React.FC = () => {
 
                     {resolutionPhotoPreview && (
                       <div className="space-y-2.5 pt-1">
-                        <div className="relative rounded-xl overflow-hidden border border-slate-800 shadow-sm">
+                        <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                           <ComplaintImage
                             src={resolutionPhotoPreview}
                             alt="Resolution proof"
@@ -1001,14 +1001,14 @@ export const AdminDashboard: React.FC = () => {
 
                         {/* Groq AI Vision Resolution Audit Feedback */}
                         {analyzingResolutionAi && (
-                          <div className="bg-purple-950/40 border border-purple-500/30 rounded-xl p-3 flex items-center gap-2.5 text-xs text-purple-200 shadow-inner animate-pulse">
-                            <Loader2 className="w-4 h-4 animate-spin text-purple-400 shrink-0" />
+                          <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 flex items-center gap-2.5 text-xs text-purple-900 animate-pulse">
+                            <Loader2 className="w-4 h-4 animate-spin text-purple-600 shrink-0" />
                             <div className="flex-1">
-                              <div className="font-bold flex items-center gap-1.5 text-purple-300">
-                                <Bot className="w-4 h-4 text-purple-400" />
+                              <div className="font-bold flex items-center gap-1.5 text-purple-800">
+                                <Bot className="w-4 h-4 text-purple-600" />
                                 <span>Groq AI Vision is auditing resolution proof...</span>
                               </div>
-                              <p className="text-[10px] text-purple-400/80 font-normal">
+                              <p className="text-[10px] text-purple-700 font-normal">
                                 Analyzing image to verify work completion against "{selectedComplaint.title}"
                               </p>
                             </div>
@@ -1017,31 +1017,31 @@ export const AdminDashboard: React.FC = () => {
 
                         {!analyzingResolutionAi && aiResolutionResult && (
                           <div
-                            className={`p-3.5 rounded-xl border space-y-1.5 shadow-inner ${
+                            className={`p-3.5 rounded-xl border space-y-1.5 shadow-xs ${
                               aiResolutionResult.isResolvedCorrectly
-                                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-200'
-                                : 'bg-rose-950/40 border-rose-500/30 text-rose-200'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                : 'bg-rose-50 border-rose-200 text-rose-900'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1.5 font-bold text-xs">
                                 {aiResolutionResult.isResolvedCorrectly ? (
                                   <>
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                                    <span className="text-emerald-300">Groq AI Verified: {aiResolutionResult.resolutionStatus || 'Resolution Confirmed'}</span>
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                    <span className="text-emerald-800">Groq AI Verified: {aiResolutionResult.resolutionStatus || 'Resolution Confirmed'}</span>
                                   </>
                                 ) : (
                                   <>
-                                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                                    <span className="text-rose-300">Groq AI Rejected: {aiResolutionResult.resolutionStatus || 'Work Incomplete / Invalid'}</span>
+                                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                                    <span className="text-rose-800">Groq AI Rejected: {aiResolutionResult.resolutionStatus || 'Work Incomplete / Invalid'}</span>
                                   </>
                                 )}
                               </div>
                               <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                   aiResolutionResult.isResolvedCorrectly
-                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : 'bg-rose-100 text-rose-800 border border-rose-200'
                                 }`}
                               >
                                 Confidence: {aiResolutionResult.confidence || 'High'}
@@ -1049,13 +1049,13 @@ export const AdminDashboard: React.FC = () => {
                             </div>
 
                             {aiResolutionResult.analysis && (
-                              <p className="text-[11px] leading-relaxed text-slate-300">
+                              <p className="text-[11px] leading-relaxed text-slate-700">
                                 {aiResolutionResult.analysis}
                               </p>
                             )}
 
                             {!aiResolutionResult.isResolvedCorrectly && aiResolutionResult.rejectionReason && (
-                              <p className="text-[11px] font-bold text-rose-300 bg-rose-950/60 p-2 rounded-lg border border-rose-500/30">
+                              <p className="text-[11px] font-bold text-rose-800 bg-rose-100 p-2 rounded-lg border border-rose-200">
                                 ⚠️ {aiResolutionResult.rejectionReason}
                               </p>
                             )}
@@ -1068,9 +1068,9 @@ export const AdminDashboard: React.FC = () => {
                                     analyzeResolutionWithAi(resolutionPhotoFile, resolutionPhotoPreview);
                                   }
                                 }}
-                                className="text-[10px] font-bold text-purple-400 hover:text-purple-300 underline flex items-center gap-1"
+                                className="text-[10px] font-bold text-purple-700 hover:text-purple-800 underline flex items-center gap-1"
                               >
-                                <Sparkles className="w-3 h-3 text-purple-400" />
+                                <Sparkles className="w-3 h-3 text-purple-600" />
                                 <span>Re-run Groq AI Audit</span>
                               </button>
                             </div>
@@ -1078,8 +1078,8 @@ export const AdminDashboard: React.FC = () => {
                         )}
 
                         {!analyzingResolutionAi && aiResolutionError && (
-                          <div className="p-2.5 bg-amber-950/30 border border-amber-500/30 rounded-xl text-[11px] text-amber-300 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                             <span>{aiResolutionError}</span>
                           </div>
                         )}
@@ -1089,33 +1089,33 @@ export const AdminDashboard: React.FC = () => {
 
                   {/* Requirement Helper Banner for Resolved */}
                   {!locationVerified ? (
-                    <div className="p-3 bg-rose-950/30 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2 font-medium">
-                      <Lock className="w-4 h-4 text-rose-400 shrink-0" />
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2 font-medium">
+                      <Lock className="w-4 h-4 text-rose-600 shrink-0" />
                       <span>GPS verification required: Verify your location in Step 1 within 500m of the issue to unlock notes &amp; photo capture.</span>
                     </div>
                   ) : !resolutionNotes.trim() ? (
-                    <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2 font-medium">
-                      <PenSquare className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
+                      <PenSquare className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>Resolution notes required: Please describe the repair work done in Step 2.</span>
                     </div>
                   ) : !resolutionPhotoPreview ? (
-                    <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2 font-medium">
-                      <Camera className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
+                      <Camera className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>Resolution photo required: Take a live photo in Step 3 to mark this issue as Resolved.</span>
                     </div>
                   ) : analyzingResolutionAi ? (
-                    <div className="p-3 bg-purple-950/30 border border-purple-500/30 rounded-xl text-xs text-purple-300 flex items-center gap-2 font-medium">
-                      <Loader2 className="w-4 h-4 text-purple-400 animate-spin shrink-0" />
+                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800 flex items-center gap-2 font-medium">
+                      <Loader2 className="w-4 h-4 text-purple-600 animate-spin shrink-0" />
                       <span>AI Verification in progress: Auditing resolution photo...</span>
                     </div>
                   ) : aiResolutionResult?.isResolvedCorrectly === false ? (
-                    <div className="p-3 bg-rose-950/30 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2 font-semibold">
-                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2 font-semibold">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                       <span>Resolution photo rejected by Groq AI. Submission is disabled until a valid photo of completed work is provided.</span>
                     </div>
                   ) : (
-                    <div className="p-2.5 bg-emerald-950/30 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 flex items-center gap-2 font-semibold">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2 font-semibold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>GPS &amp; Groq AI Verified! Ready to publish resolved update.</span>
                     </div>
                   )}
@@ -1127,7 +1127,7 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={resetModal}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition"
                 >
                   Cancel
                 </button>
@@ -1152,7 +1152,7 @@ export const AdminDashboard: React.FC = () => {
                       analyzingResolutionAi ||
                       aiResolutionResult?.isResolvedCorrectly === false
                     ))
-                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none border border-slate-700'
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none border border-slate-300'
                       : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white cursor-pointer shadow-sky-500/20'
                   }`}
                 >

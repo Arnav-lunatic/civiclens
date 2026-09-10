@@ -109,19 +109,19 @@ export const CameraModal: React.FC<CameraModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl text-white">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl text-slate-800">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Camera className="w-4 h-4 text-sky-400" />
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Camera className="w-4 h-4 text-sky-600" />
             <span>Live Geotag Camera</span>
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition border border-slate-200">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3 flex items-center justify-center shadow-inner border border-slate-800">
+        <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3 flex items-center justify-center shadow-inner border border-slate-200">
           <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
 
           <div className="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-md text-white p-2.5 rounded-xl text-[10px] font-mono leading-tight space-y-0.5 border border-white/10">
@@ -138,12 +138,12 @@ export const CameraModal: React.FC<CameraModalProps> = ({
           <button
             type="button"
             onClick={handleCapture}
-            className="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 text-white text-2xl flex items-center justify-center shadow-lg shadow-sky-500/30 transition transform active:scale-95 border-4 border-slate-800"
+            className="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 text-white text-2xl flex items-center justify-center shadow-lg shadow-sky-500/30 transition transform active:scale-95 border-4 border-slate-100"
           >
             <Camera className="w-6 h-6" />
           </button>
         </div>
-        <p className="text-center text-[10px] text-slate-400 font-mono">
+        <p className="text-center text-[10px] text-slate-500 font-mono">
           Click to snapshot verified sensor GPS &amp; watermark photo
         </p>
       </div>

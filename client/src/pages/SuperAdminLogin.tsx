@@ -35,25 +35,25 @@ export const SuperAdminLogin: React.FC = () => {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-gradient-to-tr from-purple-600/15 to-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute -bottom-10 right-10 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      <div className="max-w-md w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 sm:p-10 border border-slate-200/80 dark:border-slate-800 shadow-2xl shadow-purple-500/5 space-y-6 relative">
+      <div className="max-w-md w-full bg-white backdrop-blur-xl rounded-3xl p-8 sm:p-10 border border-slate-200/90 shadow-2xl shadow-purple-500/5 space-y-6 relative">
         <div className="text-center space-y-2">
           <div className="relative inline-block mx-auto">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 p-0.5 shadow-lg shadow-purple-500/20">
-              <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[14px] flex items-center justify-center text-purple-500">
+              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-purple-600">
                 <ShieldCheck className="w-6 h-6" />
               </div>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white animate-pulse" />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[10px] font-bold">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
             <span>State Governance Console</span>
           </div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Master Console</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Central state administrative oversight & officer provisioning</p>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">Master Console</h2>
+          <p className="text-xs text-slate-500">Central state administrative oversight & officer provisioning</p>
         </div>
 
         {error && (
-          <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-600 dark:text-rose-400 font-medium flex items-center gap-2">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-700 font-medium flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -61,7 +61,7 @@ export const SuperAdminLogin: React.FC = () => {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Super Admin Email</label>
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Super Admin Email</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
@@ -69,13 +69,13 @@ export const SuperAdminLogin: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 focus:outline-none transition"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 focus:outline-none transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Master Key Password</label>
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Master Key Password</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
@@ -84,7 +84,7 @@ export const SuperAdminLogin: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="SuperAdmin@2026"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 focus:outline-none transition"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 focus:outline-none transition"
               />
             </div>
           </div>

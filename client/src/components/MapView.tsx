@@ -73,7 +73,7 @@ export const MapView: React.FC<MapViewProps> = ({ lat, lng, accuracy = 10 }) => 
   }, [lat, lng, accuracy]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-inner h-56 w-full z-10">
+    <div className="relative rounded-2xl overflow-hidden border border-slate-200/90 shadow-inner h-56 w-full z-10">
       <div ref={mapContainerRef} className="w-full h-full" />
       
       {/* Live HUD Floating Tag */}
