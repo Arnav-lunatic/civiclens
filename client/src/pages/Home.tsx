@@ -29,7 +29,7 @@ export const Home: React.FC = () => {
       dept: 'Public Works Dept (PWD)',
       desc: 'Craters, asphalt cracks, cave-ins, and uneven surfaces.',
       icon: '🛣️',
-      color: 'from-amber-500/10 to-orange-500/10 border-amber-200 text-amber-900',
+      color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 text-amber-400',
       badge: 'High Priority SLA'
     },
     {
@@ -37,7 +37,7 @@ export const Home: React.FC = () => {
       dept: 'Municipal Waste Board',
       desc: 'Illegal dump yards, overflowing bins, and bio-waste.',
       icon: '🗑️',
-      color: 'from-emerald-500/10 to-teal-500/10 border-emerald-200 text-emerald-900',
+      color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20 text-emerald-400',
       badge: '24h Rapid Clearance'
     },
     {
@@ -45,7 +45,7 @@ export const Home: React.FC = () => {
       dept: 'Jal Board & Drainage Cell',
       desc: 'Burst pipelines, contaminated water, and open drain overflow.',
       icon: '🚰',
-      color: 'from-sky-500/10 to-blue-500/10 border-sky-200 text-sky-900',
+      color: 'from-sky-500/10 to-blue-500/10 border-sky-500/20 text-sky-400',
       badge: 'Urgent Sanitation'
     },
     {
@@ -53,7 +53,7 @@ export const Home: React.FC = () => {
       dept: 'Power Distribution Corp',
       desc: 'Snapped power cables, dark corridors, and broken sodium lamps.',
       icon: '💡',
-      color: 'from-yellow-500/10 to-amber-500/10 border-yellow-200 text-yellow-900',
+      color: 'from-yellow-500/10 to-amber-500/10 border-yellow-500/20 text-yellow-400',
       badge: 'Public Safety Hazard'
     },
     {
@@ -61,7 +61,7 @@ export const Home: React.FC = () => {
       dept: 'Urban Development Authority',
       desc: 'Damaged sidewalks, broken safety railings, and bridge cracks.',
       icon: '🏛️',
-      color: 'from-purple-500/10 to-indigo-500/10 border-purple-200 text-purple-900',
+      color: 'from-purple-500/10 to-indigo-500/10 border-purple-500/20 text-purple-400',
       badge: 'Structural Audit'
     },
     {
@@ -69,25 +69,25 @@ export const Home: React.FC = () => {
       dept: 'Traffic & Enforcement Wing',
       desc: 'Footpath blockages, hazardous construction debris on roads.',
       icon: '🚧',
-      color: 'from-rose-500/10 to-red-500/10 border-rose-200 text-rose-900',
+      color: 'from-rose-500/10 to-red-500/10 border-rose-500/20 text-rose-400',
       badge: 'Enforcement Action'
     }
   ];
 
   return (
-    <div className="space-y-20 py-8 px-4 sm:px-6 max-w-7xl mx-auto overflow-hidden">
+    <div className="space-y-20 py-8 px-4 sm:px-6 max-w-7xl mx-auto overflow-hidden text-slate-100">
       {/* ─── 1. HERO SECTION WITH AMBIENT GLOW & CYBER-CIVIC HUD ─── */}
       <section className="relative pt-4 pb-8">
         {/* Background Ambient Glowing Orbs */}
-        <div className="absolute top-10 left-1/3 w-80 h-80 bg-sky-400/15 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-slow"></div>
+        <div className="absolute top-10 left-1/3 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-slow"></div>
         <div className="absolute top-40 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
-        <div className="absolute -top-10 -left-10 w-72 h-72 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+        <div className="absolute -top-10 -left-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left Column: Headline, Subtitle, & CTA Actions */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             {/* Live Telemetry Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-sky-700 text-xs font-bold border border-sky-200/80 shadow-xs hover:border-sky-300 transition cursor-default">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md text-sky-400 text-xs font-bold border border-slate-800 shadow-sm hover:border-slate-700 transition cursor-default">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
@@ -96,22 +96,22 @@ export const Home: React.FC = () => {
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1]">
               Fix Broken Cities in{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-400 to-indigo-400">
                 30 Seconds
               </span>
             </h1>
 
-            <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+            <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
               Potholes, broken streetlights, sewage leaks, or illegal garbage dumps? CivicLens uses verified real-time GPS & live camera photos to route grievances directly to your designated district officer.
             </p>
 
             {/* Mobile-Only Hero Showcase Image */}
             <div className="block lg:hidden my-6">
               <div className="relative mx-auto max-w-md">
-                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-500 rounded-3xl blur-md opacity-40"></div>
-                <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200 bg-slate-950 shadow-2xl">
+                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-500 rounded-3xl blur-md opacity-30"></div>
+                <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
                   <img
                     src="/images/s.jpeg"
                     alt="CivicLens in Action: Citizens identifying broken streetlights, potholes, and garbage on city streets with AI"
@@ -150,32 +150,32 @@ export const Home: React.FC = () => {
 
               <Link
                 to="/explore"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 font-bold text-sm shadow-xs hover:shadow transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 font-bold text-sm shadow-sm transition flex items-center justify-center gap-2"
               >
-                <Globe className="w-4 h-4 text-sky-600" />
+                <Globe className="w-4 h-4 text-sky-400" />
                 <span>Explore Public Feed</span>
               </Link>
 
               <Link
                 to="/dashboard"
-                className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold text-sm transition flex items-center justify-center gap-1.5 border border-slate-800"
               >
                 <span>Track Status</span>
               </Link>
             </div>
 
             {/* High-Tech Trust Badges */}
-            <div className="pt-3 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-slate-600 font-semibold">
-              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-200/80">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <div className="pt-3 flex flex-wrap items-center justify-center lg:justify-start gap-3 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>AI Vision Categorization</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-sky-50 text-sky-800 px-3 py-1.5 rounded-xl border border-sky-200/80">
-                <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+              <div className="flex items-center gap-1.5 bg-sky-500/10 text-sky-400 px-3 py-1.5 rounded-xl border border-sky-500/20">
+                <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                 <span>Strict Hardware GPS</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-blue-50 text-blue-800 px-3 py-1.5 rounded-xl border border-blue-200/80">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-xl border border-blue-500/20">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                 <span>500m Anti-Tamper Geofence</span>
               </div>
             </div>
@@ -185,10 +185,10 @@ export const Home: React.FC = () => {
           <div className="hidden lg:block lg:col-span-5 relative">
             <div className="relative mx-auto max-w-lg lg:max-w-none">
               {/* Background ambient glow */}
-              <div className="absolute -inset-2 bg-gradient-to-r from-sky-400/30 via-blue-500/20 to-indigo-500/30 rounded-3xl blur-2xl opacity-75"></div>
+              <div className="absolute -inset-2 bg-gradient-to-r from-sky-400/20 via-blue-500/15 to-indigo-500/20 rounded-3xl blur-2xl opacity-60"></div>
 
               {/* Main Image Frame with Futuristic Overlays */}
-              <div className="relative rounded-3xl overflow-hidden border border-slate-200/80 bg-slate-950 shadow-2xl group">
+              <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl group">
                 <img
                   src="/images/s.jpeg"
                   alt="CivicLens in Action: Citizens identifying broken streetlights, potholes, and garbage on city streets with AI"
@@ -232,57 +232,57 @@ export const Home: React.FC = () => {
       {/* ─── 2. THREE-STEP WORKFLOW PIPELINE ─── */}
       <section className="space-y-8">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200">
-            <Zap className="w-3.5 h-3.5 text-sky-600" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 text-xs font-bold border border-sky-500/20">
+            <Zap className="w-3.5 h-3.5 text-sky-400" />
             <span>Automated Citizen Redressal Protocol</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             How CivicLens Solves Civic Hazards
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-400">
             From physical GPS locking to on-site municipal field verification in 3 seamless steps.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Step 1 */}
-          <div className="relative group bg-white p-8 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-sky-300 transition-all duration-300 space-y-4">
+          <div className="relative group bg-slate-900/80 backdrop-blur-md p-8 rounded-3xl border border-slate-800 shadow-lg hover:border-slate-700 transition-all duration-300 space-y-4">
             <div className="flex justify-between items-center">
-              <div className="w-13 h-13 w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-50 to-sky-100 text-sky-600 flex items-center justify-center font-black text-lg border border-sky-200/60 shadow-2xs group-hover:scale-110 transition">
-                <MapPin className="w-6 h-6 text-sky-600" />
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/15 text-sky-400 flex items-center justify-center font-black text-lg border border-sky-500/30 shadow-inner group-hover:scale-110 transition">
+                <MapPin className="w-6 h-6 text-sky-400" />
               </div>
-              <span className="text-3xl font-black font-mono text-slate-200 group-hover:text-sky-500 transition">01</span>
+              <span className="text-3xl font-black font-mono text-slate-700 group-hover:text-sky-400 transition">01</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">1. Real-Time GPS Pin</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-normal">
+            <h3 className="text-base sm:text-lg font-bold text-white">1. Real-Time GPS Pin</h3>
+            <p className="text-xs text-slate-400 leading-relaxed font-normal">
               Your physical smartphone GPS hardware sensor locks the exact geographic coordinates without manual spoofing or address confusion.
             </p>
           </div>
 
           {/* Step 2 */}
-          <div className="relative group bg-white p-8 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 space-y-4">
+          <div className="relative group bg-slate-900/80 backdrop-blur-md p-8 rounded-3xl border border-slate-800 shadow-lg hover:border-slate-700 transition-all duration-300 space-y-4">
             <div className="flex justify-between items-center">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-50 to-blue-100 text-blue-600 flex items-center justify-center font-black text-lg border border-blue-200/60 shadow-2xs group-hover:scale-110 transition">
-                <Camera className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center font-black text-lg border border-blue-500/30 shadow-inner group-hover:scale-110 transition">
+                <Camera className="w-6 h-6 text-blue-400" />
               </div>
-              <span className="text-3xl font-black font-mono text-slate-200 group-hover:text-blue-500 transition">02</span>
+              <span className="text-3xl font-black font-mono text-slate-700 group-hover:text-blue-400 transition">02</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">2. Live Watermarked Camera</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-normal">
+            <h3 className="text-base sm:text-lg font-bold text-white">2. Live Watermarked Camera</h3>
+            <p className="text-xs text-slate-400 leading-relaxed font-normal">
               Capture on-site photos with verified GPS coordinates and timestamp watermarks permanently burned onto the canvas bytes with Groq AI analysis.
             </p>
           </div>
 
           {/* Step 3 */}
-          <div className="relative group bg-white p-8 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 space-y-4">
+          <div className="relative group bg-slate-900/80 backdrop-blur-md p-8 rounded-3xl border border-slate-800 shadow-lg hover:border-slate-700 transition-all duration-300 space-y-4">
             <div className="flex justify-between items-center">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-50 to-emerald-100 text-emerald-600 flex items-center justify-center font-black text-lg border border-emerald-200/60 shadow-2xs group-hover:scale-110 transition">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-black text-lg border border-emerald-500/30 shadow-inner group-hover:scale-110 transition">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
               </div>
-              <span className="text-3xl font-black font-mono text-slate-200 group-hover:text-emerald-500 transition">03</span>
+              <span className="text-3xl font-black font-mono text-slate-700 group-hover:text-emerald-400 transition">03</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">3. Direct Municipal Routing</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-normal">
+            <h3 className="text-base sm:text-lg font-bold text-white">3. Direct Municipal Routing</h3>
+            <p className="text-xs text-slate-400 leading-relaxed font-normal">
               Auto-assigned to the local District Sub-Admin mapped to your postal PIN code, enforced by 500m on-site physical geofencing for resolution.
             </p>
           </div>
@@ -290,40 +290,40 @@ export const Home: React.FC = () => {
       </section>
 
       {/* ─── 3. VERIFIED GROUND IMPACT: BEFORE & AFTER RESOLUTION SHOWCASE ─── */}
-      <section className="relative bg-gradient-to-br from-white via-slate-50 to-sky-50/50 border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-lg overflow-hidden">
+      <section className="relative bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left Text & Metrics */}
           <div className="lg:col-span-6 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span>Proven Municipal Transformation</span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               From Citizen Complaint to Smooth Asphalt
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Every complaint filed with CivicLens is backed by verifiable on-site evidence. When waterlogged craters and severe potholes were reported on this transit corridor, the local municipal engineering division mobilized heavy paving crews to completely reconstruct the roadway.
             </p>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+              <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 shadow-inner">
                 <div className="text-[10px] uppercase font-bold text-slate-400">Resolution SLA</div>
-                <div className="text-xl font-black text-emerald-600 mt-0.5">48 Hours</div>
-                <div className="text-[11px] text-slate-500">From Report to Completion</div>
+                <div className="text-xl font-black text-emerald-400 mt-0.5">48 Hours</div>
+                <div className="text-[11px] text-slate-400">From Report to Completion</div>
               </div>
-              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+              <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 shadow-inner">
                 <div className="text-[10px] uppercase font-bold text-slate-400">On-Site Verification</div>
-                <div className="text-xl font-black text-sky-600 mt-0.5">100% Geotagged</div>
-                <div className="text-[11px] text-slate-500">Live GPS Verified</div>
+                <div className="text-xl font-black text-sky-400 mt-0.5">100% Geotagged</div>
+                <div className="text-[11px] text-slate-400">Live GPS Verified</div>
               </div>
             </div>
 
             <div className="pt-2">
               <Link
                 to="/explore"
-                className="inline-flex items-center gap-2 text-xs font-bold text-sky-600 hover:text-sky-700 hover:underline group"
+                className="inline-flex items-center gap-2 text-xs font-bold text-sky-400 hover:text-sky-300 hover:underline group"
               >
                 <span>View more resolved community grievances</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
@@ -333,7 +333,7 @@ export const Home: React.FC = () => {
 
           {/* Right Image Display with Interactive Badges */}
           <div className="lg:col-span-6">
-            <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-slate-950 group">
+            <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-xl bg-slate-950 group">
               <img
                 src="/images/before_after3.jpeg"
                 alt="Before and After: Muddy cratered road paved into brand new smooth asphalt"
@@ -405,17 +405,17 @@ export const Home: React.FC = () => {
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-3">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200">
-              <Layers className="w-3.5 h-3.5 text-sky-600" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 text-xs font-bold border border-sky-500/20">
+              <Layers className="w-3.5 h-3.5 text-sky-400" />
               <span>Comprehensive Municipal Scope</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Grievance Categories Handled
             </h2>
           </div>
           <Link
             to="/report"
-            className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 self-start sm:self-auto"
+            className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 self-start sm:self-auto"
           >
             <span>File an issue in any category</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -426,26 +426,26 @@ export const Home: React.FC = () => {
           {CIVIC_CATEGORIES.map((cat, idx) => (
             <div
               key={idx}
-              className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-sky-300 shadow-sm hover:shadow-md transition-all duration-200 space-y-3 flex flex-col justify-between"
+              className="bg-slate-900/80 backdrop-blur-md p-6 rounded-3xl border border-slate-800 hover:border-slate-700 shadow-md transition-all duration-200 space-y-3 flex flex-col justify-between"
             >
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                     {cat.badge}
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900">{cat.title}</h3>
-                <div className="text-[11px] font-semibold text-sky-600">{cat.dept}</div>
-                <p className="text-xs text-slate-500 leading-relaxed font-normal">{cat.desc}</p>
+                <h3 className="text-base font-bold text-white">{cat.title}</h3>
+                <div className="text-[11px] font-semibold text-sky-400">{cat.dept}</div>
+                <p className="text-xs text-slate-400 leading-relaxed font-normal">{cat.desc}</p>
               </div>
 
               <Link
                 to={`/explore`}
-                className="pt-2 text-xs font-bold text-slate-700 hover:text-sky-600 flex items-center justify-between border-t border-slate-100"
+                className="pt-2 text-xs font-bold text-slate-300 hover:text-sky-400 flex items-center justify-between border-t border-slate-800"
               >
                 <span>View reported cases</span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
               </Link>
             </div>
           ))}
@@ -453,29 +453,29 @@ export const Home: React.FC = () => {
       </section>
 
       {/* ─── 6. OPEN COMMUNITY TRANSPARENCY CALLOUT ─── */}
-      <section className="relative bg-gradient-to-br from-sky-600 via-blue-600 to-indigo-700 text-white rounded-3xl p-8 sm:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-slate-900 via-slate-950 to-sky-950/70 text-white rounded-3xl p-8 sm:p-12 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden border border-slate-800">
         {/* Background glow circle */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative space-y-3 max-w-xl text-center md:text-left z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold border border-white/30 backdrop-blur-md">
-            <Globe className="w-3.5 h-3.5 text-sky-200" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/15 text-sky-300 text-xs font-bold border border-sky-500/30 backdrop-blur-md">
+            <Globe className="w-3.5 h-3.5 text-sky-400" />
             <span>Open Public Transparency</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-white">
             Explore Grievances Across All States
           </h2>
-          <p className="text-xs sm:text-sm text-sky-100 leading-relaxed font-normal">
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
             No login required. Explore active & resolved issues reported by citizens nationwide, sorted automatically to show the civic complaints nearest to your current location first.
           </p>
         </div>
 
         <Link
           to="/explore"
-          className="relative z-10 px-7 py-4 bg-white hover:bg-slate-50 text-slate-900 font-bold text-xs rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center gap-2.5 shrink-0 group"
+          className="relative z-10 px-7 py-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition-all duration-200 flex items-center gap-2.5 shrink-0 group"
         >
           <span>View Nearest Grievances</span>
-          <ArrowRight className="w-4 h-4 text-sky-600 group-hover:translate-x-1 transition" />
+          <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition" />
         </Link>
       </section>
     </div>

@@ -297,57 +297,57 @@ export const ReportIssue: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 text-slate-100">
       {/* ─── Step Indicator Progress Bar ─── */}
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/80 shadow-xs">
+      <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-800 shadow-md">
         <div className="grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="flex items-center justify-center gap-2 p-2 rounded-xl bg-sky-50 text-sky-700 font-bold border border-sky-200/60">
+          <div className="flex items-center justify-center gap-2 p-2 rounded-xl bg-sky-500/15 text-sky-300 font-bold border border-sky-500/30">
             <span className="w-5 h-5 rounded-full bg-sky-600 text-white text-[10px] flex items-center justify-center font-mono">1</span>
             <span className="hidden sm:inline">Hardware </span>GPS Lock
           </div>
           <div className={`flex items-center justify-center gap-2 p-2 rounded-xl font-bold transition ${
             photos.length > 0
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-              : 'bg-slate-100 text-slate-500'
+              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+              : 'bg-slate-950/60 text-slate-500 border border-slate-800/60'
           }`}>
             <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-mono ${
-              photos.length > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-400 text-white'
+              photos.length > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'
             }`}>2</span>
             <span>Camera Proof</span>
           </div>
           <div className={`flex items-center justify-center gap-2 p-2 rounded-xl font-bold transition ${
             title && description && isValidCivicIssue
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-              : 'bg-slate-100 text-slate-500'
+              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+              : 'bg-slate-950/60 text-slate-500 border border-slate-800/60'
           }`}>
             <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-mono ${
-              title && description && isValidCivicIssue ? 'bg-emerald-600 text-white' : 'bg-slate-400 text-white'
+              title && description && isValidCivicIssue ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'
             }`}>3</span>
             <span>Redressal</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200/80 space-y-8">
+      <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl p-6 sm:p-10 shadow-2xl border border-slate-800 space-y-8">
         {/* Header */}
-        <div className="border-b border-slate-100 pb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+        <div className="border-b border-slate-800 pb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold mb-2 border border-emerald-500/30">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               <span>Strict Hardware Sensor GPS &bull; Live Dynamic Stream</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Report a Civic Hazard</h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Report a Civic Hazard</h1>
+            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
               Coordinates and time are burned into photo canvas bytes via physical device sensors.
             </p>
           </div>
         </div>
 
         {/* Critical Civic Hazard Protocol Banner (img1.jpeg) */}
-        <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-rose-50/80 border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+        <div className="bg-gradient-to-r from-amber-950/40 via-orange-950/30 to-rose-950/40 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-inner">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
             {/* Image Preview */}
-            <div className="md:col-span-4 rounded-xl overflow-hidden border border-amber-300/60 shadow-sm">
+            <div className="md:col-span-4 rounded-xl overflow-hidden border border-amber-500/30 shadow-sm">
               <ComplaintImage
                 src="/images/img1.jpeg"
                 alt="Critical civic emergency: massive fallen tree blocking roadway and powerlines"
@@ -371,12 +371,12 @@ export const ReportIssue: React.FC = () => {
             {/* Explanatory Guidance */}
             <div className="md:col-span-8 space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-extrabold text-amber-900 uppercase tracking-wide">
+                <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wide">
                   Critical Emergency Protocol &bull; 2-Hour SLA
                 </span>
               </div>
-              <p className="text-xs text-amber-950/80 leading-relaxed">
-                Reporting severe civic blockages like fallen trees, open manholes, or live snapped cables? Select <strong className="font-semibold text-rose-700">"High" Priority</strong> below. Your live hardware GPS coordinates instantly alert the municipal emergency disaster cell for rapid road clearance.
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Reporting severe civic blockages like fallen trees, open manholes, or live snapped cables? Select <strong className="font-semibold text-rose-400">"High" Priority</strong> below. Your live hardware GPS coordinates instantly alert the municipal emergency disaster cell for rapid road clearance.
               </p>
             </div>
           </div>
@@ -384,15 +384,15 @@ export const ReportIssue: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Citizen Details Card */}
-          <div className="p-5 bg-slate-50/90 rounded-2xl border border-slate-200 space-y-3">
+          <div className="p-5 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Citizen Details</span>
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Citizen Details</span>
               {user ? (
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified Citizen
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Verified Citizen
                 </span>
               ) : (
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
                   Guest (Email OTP verification on submit)
                 </span>
               )}
@@ -400,18 +400,18 @@ export const ReportIssue: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name *</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Full Name *</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Aarav Sharma"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-2xs"
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-inner"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address *</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Email Address *</label>
                 <input
                   type="email"
                   required
@@ -419,8 +419,8 @@ export const ReportIssue: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="aarav@gmail.com"
-                  className={`w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-2xs ${
-                    user ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'
+                  className={`w-full px-3.5 py-2.5 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-inner ${
+                    user ? 'bg-slate-950/40 text-slate-400 cursor-not-allowed' : 'bg-slate-950/80 focus:bg-slate-950'
                   }`}
                 />
               </div>
@@ -428,7 +428,7 @@ export const ReportIssue: React.FC = () => {
           </div>
 
           {/* ─── LIVE GPS TELEMETRY HUD ─── */}
-          <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-4">
+          <div className="bg-slate-950 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -451,7 +451,7 @@ export const ReportIssue: React.FC = () => {
                 <button
                   type="button"
                   onClick={startGpsTracking}
-                  className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
+                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-sky-400 ${gpsLoading ? 'animate-spin' : ''}`} />
                   <span>Sync / Refresh GPS</span>
@@ -564,8 +564,8 @@ export const ReportIssue: React.FC = () => {
             {liveLat && liveLng ? (
               <MapView lat={liveLat} lng={liveLng} accuracy={accuracy} />
             ) : (
-              <div className="h-44 rounded-2xl border border-dashed border-slate-700 bg-slate-950/50 flex flex-col items-center justify-center text-slate-500 text-xs space-y-2">
-                <MapPin className="w-6 h-6 text-sky-500 animate-bounce" />
+              <div className="h-44 rounded-2xl border border-dashed border-slate-800 bg-slate-950/50 flex flex-col items-center justify-center text-slate-500 text-xs space-y-2">
+                <MapPin className="w-6 h-6 text-sky-400 animate-bounce" />
                 <span>Map will render strictly when hardware sensor GPS connects</span>
               </div>
             )}
@@ -575,14 +575,14 @@ export const ReportIssue: React.FC = () => {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase">
+                <label className="block text-xs font-bold text-white uppercase">
                   Step 2: Live Camera Proof &amp; AI Analysis *
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-400">
                   Captures on-site photo with hardware watermark and runs real-time Groq AI vision inspection.
                 </p>
               </div>
-              <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-200">
+              <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
                 {photos.length} / 5 Photos Taken
               </span>
             </div>
@@ -603,7 +603,7 @@ export const ReportIssue: React.FC = () => {
             {photos.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
                 {photos.map((p, idx) => (
-                  <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-200 group">
+                  <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-800 group">
                     <ComplaintImage
                       src={p.dataUrl}
                       alt={`Captured civic hazard proof ${idx + 1}`}
@@ -622,7 +622,7 @@ export const ReportIssue: React.FC = () => {
                             e.stopPropagation();
                             handleRemovePhoto(idx);
                           }}
-                          className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow transition pointer-events-auto"
+                          className="w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow transition pointer-events-auto"
                           title="Remove photo"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -642,37 +642,37 @@ export const ReportIssue: React.FC = () => {
 
           {/* Groq AI Vision Analysis Status Card */}
           {analyzingAi && (
-            <div className="p-4 bg-sky-50 border border-sky-200 rounded-2xl flex items-center gap-3 text-sky-800 text-xs font-bold animate-pulse">
-              <Loader2 className="w-5 h-5 animate-spin text-sky-600 flex-shrink-0" />
+            <div className="p-4 bg-sky-500/10 border border-sky-500/20 rounded-2xl flex items-center gap-3 text-sky-300 text-xs font-bold animate-pulse">
+              <Loader2 className="w-5 h-5 animate-spin text-sky-400 flex-shrink-0" />
               <span>🤖 Groq AI Vision is analyzing photo for category, title & severity...</span>
             </div>
           )}
 
           {isValidCivicIssue === false && !analyzingAi && (
-            <div className="p-5 bg-rose-50 border-2 border-rose-400 rounded-2xl space-y-3 shadow-md">
+            <div className="p-5 bg-rose-950/40 border border-rose-500/30 rounded-2xl space-y-3 shadow-inner">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 border border-rose-500/30">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-black text-sm text-rose-900 uppercase tracking-wide flex items-center gap-1.5">
+                    <h4 className="font-black text-sm text-rose-300 uppercase tracking-wide flex items-center gap-1.5">
                       <span>Invalid Image Detected</span>
                     </h4>
-                    <span className="px-2.5 py-0.5 bg-rose-200 text-rose-900 text-[10px] font-black rounded-md uppercase border border-rose-300">
+                    <span className="px-2.5 py-0.5 bg-rose-500/20 text-rose-300 text-[10px] font-black rounded-md uppercase border border-rose-500/30">
                       Rejected by AI
                     </span>
                   </div>
-                  <p className="text-xs text-rose-800 font-semibold mt-1.5 leading-relaxed">
+                  <p className="text-xs text-rose-300 font-semibold mt-1.5 leading-relaxed">
                     {aiError || 'Groq AI Vision system detected that this photo does not depict a public civic infrastructure problem.'}
                   </p>
-                  <p className="text-[11px] text-rose-700 mt-1 font-medium">
+                  <p className="text-[11px] text-rose-400/90 mt-1 font-medium">
                     ⚠️ <strong>Step 3 (Grievance Details)</strong> and submission are completely locked. Please retake or upload a photo of a valid civic issue to continue.
                   </p>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-rose-200/80 flex flex-wrap items-center gap-2">
+              <div className="pt-2 border-t border-rose-500/20 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCameraOpen(true)}
@@ -685,7 +685,7 @@ export const ReportIssue: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleRemovePhoto(photos.length - 1)}
-                    className="px-4 py-2 bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5"
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-rose-300 border border-rose-500/30 text-xs font-bold rounded-xl transition flex items-center gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Discard Rejected Photo</span>
@@ -696,8 +696,8 @@ export const ReportIssue: React.FC = () => {
           )}
 
           {aiSuccessBadge && isValidCivicIssue === true && !analyzingAi && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-xs font-bold shadow-2xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-2.5 text-emerald-300 text-xs font-bold shadow-inner">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>{aiSuccessBadge}</span>
             </div>
           )}
@@ -712,14 +712,14 @@ export const ReportIssue: React.FC = () => {
             }`}
           >
             {photos.length === 0 && (
-              <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2.5 text-sky-800 text-xs font-bold">
-                <Info className="w-4 h-4 text-sky-600 flex-shrink-0" />
+              <div className="p-3.5 bg-sky-500/10 border border-sky-500/20 rounded-xl flex items-center gap-2.5 text-sky-300 text-xs font-bold">
+                <Info className="w-4 h-4 text-sky-400 flex-shrink-0" />
                 <span>Step 3 Locked: Please capture a live photo of the civic issue in Step 2 above to unlock grievance details and trigger AI analysis.</span>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Step 3: Issue Title *</label>
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">Step 3: Issue Title *</label>
               <input
                 type="text"
                 required
@@ -727,18 +727,18 @@ export const ReportIssue: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Hazardous open manhole & broken road"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs"
+                className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-950/40 disabled:text-slate-600 disabled:cursor-not-allowed shadow-inner"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Category *</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">Category *</label>
                 <select
                   disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs font-medium"
+                  className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-950/40 disabled:text-slate-600 disabled:cursor-not-allowed shadow-inner font-medium"
                 >
                   <option value="Roads & Potholes">Roads & Potholes (PWD)</option>
                   <option value="Garbage & Sanitation">Garbage & Sanitation (Waste Board)</option>
@@ -751,12 +751,12 @@ export const ReportIssue: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Severity / Priority</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">Severity / Priority</label>
                 <select
                   disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs font-medium"
+                  className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-950/40 disabled:text-slate-600 disabled:cursor-not-allowed shadow-inner font-medium"
                 >
                   <option value="Medium">Medium (Standard SLA)</option>
                   <option value="High">High (Urgent Redressal)</option>
@@ -767,7 +767,7 @@ export const ReportIssue: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Description *</label>
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">Description *</label>
               <textarea
                 rows={3}
                 required
@@ -775,7 +775,7 @@ export const ReportIssue: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the civic hazard and exact landmark..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs resize-none"
+                className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:bg-slate-950 focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-950/40 disabled:text-slate-600 disabled:cursor-not-allowed shadow-inner resize-none"
               />
             </div>
           </fieldset>
@@ -787,7 +787,7 @@ export const ReportIssue: React.FC = () => {
               isValidCivicIssue === false
                 ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-90'
                 : photos.length === 0
-                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                 : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-500/25 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
           >
