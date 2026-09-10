@@ -60,7 +60,7 @@ export interface IComplaint extends Document {
   imageUrl: string;
   images: IComplaintImage[];
   resolvedImageUrl?: string;
-  resolvedImages?: { url: string; timestamp: Date }[];
+  resolvedImages?: { url: string; latitude?: number; longitude?: number; timestamp: Date }[];
   location: {
     type: 'Point';
     coordinates: [number, number]; // [lng, lat]

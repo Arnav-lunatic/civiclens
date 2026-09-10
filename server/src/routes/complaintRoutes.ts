@@ -8,6 +8,7 @@ import {
   getSuperAdminComplaints,
   updateComplaintStatus,
   analyzeComplaintImage,
+  analyzeResolutionImage,
 } from '../controllers/complaintController';
 import { protect, authorize } from '../middleware/authMiddleware';
 import upload from '../middleware/uploadMiddleware';
@@ -19,6 +20,9 @@ router.get('/public', getPublicComplaints);
 
 // Groq AI Vision Image Analysis Route (Public for seamless pre-submission check)
 router.post('/analyze-image', upload.single('image'), analyzeComplaintImage);
+
+// Groq AI Vision Resolution Image Verification Route
+router.post('/analyze-resolution', upload.single('image'), analyzeResolutionImage);
 
 // Public / Guest Submit with Email OTP & Geotagged Photos
 router.post('/submit-with-otp', upload.array('images', 5), submitComplaintWithOTP);

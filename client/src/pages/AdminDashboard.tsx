@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink, Camera, Loader2, AlertTriangle, X } from 'lucide-react';
+import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink, Camera, Loader2, AlertTriangle, X, Bot, Sparkles } from 'lucide-react';
 import { API } from '../services/api';
 import { Complaint, User } from '../types';
 import { ResolutionCameraModal } from '../components/ResolutionCameraModal';
@@ -45,6 +45,19 @@ export const AdminDashboard: React.FC = () => {
   const [resolutionPhotoPreview, setResolutionPhotoPreview] = useState('');
   const [resolutionPhotoLat, setResolutionPhotoLat] = useState<number | null>(null);
   const [resolutionPhotoLng, setResolutionPhotoLng] = useState<number | null>(null);
+
+  // Groq AI resolution verification state
+  const [analyzingResolutionAi, setAnalyzingResolutionAi] = useState(false);
+  const [aiResolutionResult, setAiResolutionResult] = useState<{
+    isResolvedCorrectly: boolean | null;
+    confidence?: string;
+    resolutionStatus?: string;
+    analysis?: string;
+    rejectionReason?: string;
+    isFallback?: boolean;
+    missingApiKey?: boolean;
+  } | null>(null);
+  const [aiResolutionError, setAiResolutionError] = useState('');
 
   const [currentUser, setCurrentUser] = useState<User | null>(user);
 
@@ -183,18 +196,76 @@ export const AdminDashboard: React.FC = () => {
     );
   };
 
+  const analyzeResolutionWithAi = async (file: File, dataUrl: string) => {
+    if (!selectedComplaint) return;
+    setAnalyzingResolutionAi(true);
+    setAiResolutionError('');
+    setAiResolutionResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('imageBase64', dataUrl);
+      formData.append('complaintId', selectedComplaint._id);
+      formData.append('category', selectedComplaint.category);
+      formData.append('title', selectedComplaint.title);
+      formData.append('description', selectedComplaint.description);
+
+      const res = await API.request('/complaints/analyze-resolution', 'POST', formData, true);
+      if (res) {
+        setAiResolutionResult({
+          isResolvedCorrectly: res.isResolvedCorrectly,
+          confidence: res.confidence || 'High',
+          resolutionStatus: res.resolutionStatus || (res.isResolvedCorrectly ? 'Resolution Verified' : 'Issue Still Unresolved'),
+          analysis: res.analysis || '',
+          rejectionReason: res.rejectionReason || '',
+          isFallback: res.isFallback,
+          missingApiKey: res.missingApiKey,
+        });
+      }
+    } catch (err: any) {
+      console.warn('Groq AI Resolution Analysis Error:', err);
+      setAiResolutionError(err.message || 'AI resolution verification check could not be completed.');
+    } finally {
+      setAnalyzingResolutionAi(false);
+    }
+  };
+
   const handleUpdateStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedComplaint) return;
+
+    // 1. Strict GPS location matching requirement
+    if (!locationVerified || subadminLat === null || subadminLng === null) {
+      alert('⚠️ Strict on-site GPS verification is required. You must verify your location within 500m of the reported issue before saving and publishing updates.');
+      return;
+    }
+
+    // 2. Strict Resolution proof photo requirement if resolving
+    if (newStatus === 'Resolved') {
+      if (!resolutionPhotoFile && !resolutionPhotoPreview) {
+        alert('⚠️ A live on-site resolution proof photo is required to mark this grievance as Resolved.');
+        return;
+      }
+
+      if (aiResolutionResult && aiResolutionResult.isResolvedCorrectly === false) {
+        alert(`❌ Resolution proof was rejected by Groq AI:\n\n${aiResolutionResult.rejectionReason || 'The photo does not verify that the issue has been resolved.'}\n\nPlease take a valid photo of the completed repair work before saving.`);
+        return;
+      }
+    }
+
     setUpdating(true);
 
     const formData = new FormData();
     formData.append('status', newStatus);
     formData.append('resolutionNotes', resolutionNotes);
+    formData.append('adminLat', subadminLat.toString());
+    formData.append('adminLng', subadminLng.toString());
+
     if (resolutionPhotoFile) {
       formData.append('resolvedImage', resolutionPhotoFile);
-      if (resolutionPhotoLat !== null) formData.append('resolutionLat', resolutionPhotoLat.toString());
-      if (resolutionPhotoLng !== null) formData.append('resolutionLng', resolutionPhotoLng.toString());
+      formData.append('resolutionLat', (resolutionPhotoLat ?? subadminLat).toString());
+      formData.append('resolutionLng', (resolutionPhotoLng ?? subadminLng).toString());
     }
 
     try {
@@ -222,6 +293,9 @@ export const AdminDashboard: React.FC = () => {
     setResolutionPhotoPreview('');
     setResolutionPhotoLat(null);
     setResolutionPhotoLng(null);
+    setAnalyzingResolutionAi(false);
+    setAiResolutionResult(null);
+    setAiResolutionError('');
   };
 
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
@@ -703,10 +777,12 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               {/* ─── Step 2: Take Resolution Photo ─── */}
-              <div className={`space-y-2.5 border rounded-2xl p-4 ${locationVerified ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/30 opacity-60'}`}>
+              <div className={`space-y-3 border rounded-2xl p-4 ${locationVerified ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/30 opacity-60'}`}>
                 <div className="flex items-center gap-2">
                   <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-500'}`}>2</span>
-                  <span className="text-xs font-bold text-slate-700 uppercase">Take Resolution Photo</span>
+                  <span className="text-xs font-bold text-slate-700 uppercase">
+                    Take Resolution Photo {newStatus === 'Resolved' && <span className="text-red-500">* (Mandatory for Resolution)</span>}
+                  </span>
                   {!locationVerified && (
                     <span className="text-[10px] text-slate-400 font-semibold ml-auto">🔒 Verify location first</span>
                   )}
@@ -727,42 +803,154 @@ export const AdminDashboard: React.FC = () => {
                 </button>
 
                 {resolutionPhotoPreview && (
-                  <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                    <ComplaintImage
-                      src={resolutionPhotoPreview}
-                      alt="Resolution proof"
-                      heightClass="h-48"
-                      onClick={() =>
-                        setPreviewImage({
-                          url: resolutionPhotoPreview,
-                          title: 'Resolution Proof Captured',
-                          subtitle: `GPS: ${resolutionPhotoLat?.toFixed(5)}, ${resolutionPhotoLng?.toFixed(5)} | ${new Date().toLocaleString('en-IN')}`,
-                        })
-                      }
-                      bottomOverlay={
-                        <div className="bg-black/75 backdrop-blur-sm p-1.5 rounded text-[10px] text-white font-mono flex justify-between items-center">
-                          <span>GPS: {resolutionPhotoLat?.toFixed(5)}, {resolutionPhotoLng?.toFixed(5)}</span>
-                          <span>{new Date().toLocaleTimeString('en-IN')}</span>
+                  <div className="space-y-2.5 pt-1">
+                    <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                      <ComplaintImage
+                        src={resolutionPhotoPreview}
+                        alt="Resolution proof"
+                        heightClass="h-48"
+                        onClick={() =>
+                          setPreviewImage({
+                            url: resolutionPhotoPreview,
+                            title: 'Resolution Proof Captured',
+                            subtitle: `GPS: ${resolutionPhotoLat?.toFixed(5)}, ${resolutionPhotoLng?.toFixed(5)} | ${new Date().toLocaleString('en-IN')}`,
+                          })
+                        }
+                        bottomOverlay={
+                          <div className="bg-black/75 backdrop-blur-sm p-1.5 rounded text-[10px] text-white font-mono flex justify-between items-center">
+                            <span>GPS: {resolutionPhotoLat?.toFixed(5)}, {resolutionPhotoLng?.toFixed(5)}</span>
+                            <span>{new Date().toLocaleTimeString('en-IN')}</span>
+                          </div>
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResolutionPhotoFile(null);
+                          setResolutionPhotoPreview('');
+                          setResolutionPhotoLat(null);
+                          setResolutionPhotoLng(null);
+                          setAiResolutionResult(null);
+                          setAiResolutionError('');
+                        }}
+                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-30"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Groq AI Vision Resolution Audit Feedback */}
+                    {analyzingResolutionAi && (
+                      <div className="bg-gradient-to-r from-purple-50 via-sky-50 to-indigo-50 border border-purple-200 rounded-xl p-3 flex items-center gap-2.5 text-xs text-purple-900 shadow-xs animate-pulse">
+                        <Loader2 className="w-4 h-4 animate-spin text-purple-600 shrink-0" />
+                        <div className="flex-1">
+                          <div className="font-bold flex items-center gap-1.5 text-purple-800">
+                            <Bot className="w-4 h-4 text-purple-600" />
+                            <span>Groq AI Vision is auditing resolution proof...</span>
+                          </div>
+                          <p className="text-[10px] text-purple-600 font-normal">
+                            Analyzing image to verify work completion against "{selectedComplaint.title}"
+                          </p>
                         </div>
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setResolutionPhotoFile(null);
-                        setResolutionPhotoPreview('');
-                        setResolutionPhotoLat(null);
-                        setResolutionPhotoLng(null);
-                      }}
-                      className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-30"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                      </div>
+                    )}
+
+                    {!analyzingResolutionAi && aiResolutionResult && (
+                      <div
+                        className={`p-3.5 rounded-xl border space-y-1.5 shadow-2xs ${
+                          aiResolutionResult.isResolvedCorrectly
+                            ? 'bg-emerald-50/90 border-emerald-300 text-emerald-900'
+                            : 'bg-red-50 border-red-300 text-red-900'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 font-bold text-xs">
+                            {aiResolutionResult.isResolvedCorrectly ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <span className="text-emerald-800">Groq AI Verified: {aiResolutionResult.resolutionStatus || 'Resolution Confirmed'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                                <span className="text-red-800">Groq AI Rejected: {aiResolutionResult.resolutionStatus || 'Work Incomplete / Invalid'}</span>
+                              </>
+                            )}
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              aiResolutionResult.isResolvedCorrectly
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            Confidence: {aiResolutionResult.confidence || 'High'}
+                          </span>
+                        </div>
+
+                        {aiResolutionResult.analysis && (
+                          <p className="text-[11px] leading-relaxed">
+                            {aiResolutionResult.analysis}
+                          </p>
+                        )}
+
+                        {!aiResolutionResult.isResolvedCorrectly && aiResolutionResult.rejectionReason && (
+                          <p className="text-[11px] font-bold text-red-700 bg-red-100/70 p-2 rounded-lg border border-red-200">
+                            ⚠️ {aiResolutionResult.rejectionReason}
+                          </p>
+                        )}
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (resolutionPhotoFile && resolutionPhotoPreview) {
+                                analyzeResolutionWithAi(resolutionPhotoFile, resolutionPhotoPreview);
+                              }
+                            }}
+                            className="text-[10px] font-bold text-slate-600 hover:text-slate-900 underline flex items-center gap-1"
+                          >
+                            <Sparkles className="w-3 h-3 text-purple-500" />
+                            <span>Re-run Groq AI Audit</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!analyzingResolutionAi && aiResolutionError && (
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>{aiResolutionError}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-3">
+              {/* Requirement Helper Banner */}
+              {!locationVerified ? (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>GPS verification required: Verify your location (Step 1) within 500m of the issue to save and publish update.</span>
+                </div>
+              ) : newStatus === 'Resolved' && !resolutionPhotoPreview ? (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
+                  <Camera className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Resolution photo required: Take a live photo (Step 2) to mark this issue as Resolved.</span>
+                </div>
+              ) : newStatus === 'Resolved' && aiResolutionResult?.isResolvedCorrectly === false ? (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>Resolution proof rejected by AI. Please retake a photo showing the completed repair work.</span>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>On-site GPS matched ({locationDistance}m). Ready to save and publish update.</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={resetModal}
@@ -772,10 +960,29 @@ export const AdminDashboard: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={updating}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow transition"
+                  disabled={
+                    updating ||
+                    !locationVerified ||
+                    analyzingResolutionAi ||
+                    (newStatus === 'Resolved' && (!resolutionPhotoPreview || aiResolutionResult?.isResolvedCorrectly === false))
+                  }
+                  className={`px-6 py-2.5 font-bold text-xs rounded-xl shadow transition flex items-center gap-2 ${
+                    !locationVerified ||
+                    updating ||
+                    analyzingResolutionAi ||
+                    (newStatus === 'Resolved' && (!resolutionPhotoPreview || aiResolutionResult?.isResolvedCorrectly === false))
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                  }`}
                 >
-                  {updating ? 'Saving...' : 'Save & Publish Update'}
+                  {updating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving Update...</span>
+                    </>
+                  ) : (
+                    <span>Save &amp; Publish Update</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -793,6 +1000,7 @@ export const AdminDashboard: React.FC = () => {
             setResolutionPhotoPreview(dataUrl);
             setResolutionPhotoLat(lat);
             setResolutionPhotoLng(lng);
+            analyzeResolutionWithAi(file, dataUrl);
           }}
           currentLat={subadminLat}
           currentLng={subadminLng}

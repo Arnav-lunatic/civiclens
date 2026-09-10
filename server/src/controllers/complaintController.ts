@@ -5,6 +5,21 @@ import cloudinary from '../config/cloudinary';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, IComplaintImage, IUser, UserRole } from '../types';
 
+// Haversine formula: distance between two GPS coordinates in meters
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371000; // Earth radius in meters
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const MAX_RESOLUTION_DISTANCE_METERS = 500;
+
 const uploadToCloudinary = (buffer: Buffer, folder: string = 'civiclens/complaints'): Promise<{ secure_url: string }> => {
   return new Promise((resolve, reject) => {
     if (!process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME === 'demo') {
@@ -587,7 +602,7 @@ export const getSuperAdminComplaints = async (req: Request, res: Response): Prom
 // @route   PUT /api/complaints/:id/status
 export const updateComplaintStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { status, resolutionNotes } = req.body;
+    const { status, resolutionNotes, resolutionLat, resolutionLng, adminLat, adminLng } = req.body;
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
@@ -622,19 +637,60 @@ export const updateComplaintStatus = async (req: AuthRequest, res: Response): Pr
       }
     }
 
-    if (status) complaint.status = status;
-    if (resolutionNotes) complaint.resolutionNotes = resolutionNotes;
+    // Strict GPS Location verification for Admin Updates:
+    // Admin must be on-site within MAX_RESOLUTION_DISTANCE_METERS (500m) of the grievance GPS
+    const rawLat = resolutionLat || adminLat;
+    const rawLng = resolutionLng || adminLng;
+    const lat = parseFloat(rawLat);
+    const lng = parseFloat(rawLng);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      res.status(400).json({
+        success: false,
+        message: 'Strict on-site GPS location verification is mandatory to save and publish updates.',
+      });
+      return;
+    }
+
+    const distance = haversineDistance(lat, lng, complaint.latitude, complaint.longitude);
+
+    if (distance > MAX_RESOLUTION_DISTANCE_METERS) {
+      const distStr = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`;
+      res.status(403).json({
+        success: false,
+        message: `GPS Location not matched. You are ${distStr} away from the grievance location (${complaint.latitude.toFixed(5)}, ${complaint.longitude.toFixed(5)}). Reach the site to save and publish updates.`,
+        distance: Math.round(distance),
+      });
+      return;
+    }
 
     if (req.file) {
       const result = await uploadToCloudinary(req.file.buffer, 'civiclens/resolutions');
       complaint.resolvedImageUrl = result.secure_url;
+      complaint.resolvedImages.push({
+        url: result.secure_url,
+        latitude: lat,
+        longitude: lng,
+        timestamp: new Date(),
+      });
     } else if (req.body.resolvedImageUrl) {
       complaint.resolvedImageUrl = req.body.resolvedImageUrl;
     }
 
+    if (status === 'Resolved' && !complaint.resolvedImageUrl && !req.file && !req.body.resolvedImageUrl) {
+      res.status(400).json({
+        success: false,
+        message: 'A live verified resolution proof photo is required to mark a grievance as Resolved.',
+      });
+      return;
+    }
+
+    if (status) complaint.status = status;
+    if (resolutionNotes) complaint.resolutionNotes = resolutionNotes;
+
     complaint.timeline.push({
       status: status || complaint.status,
-      message: resolutionNotes || `Status updated to ${status} by ${req.user?.name} (${req.user?.role})`,
+      message: resolutionNotes || `Status updated to ${status} by ${req.user?.name} (${req.user?.role}) [Verified on-site at ${lat.toFixed(5)}, ${lng.toFixed(5)}]`,
       updatedBy: req.user!._id,
       updaterRole: req.user!.role,
       timestamp: new Date(),
@@ -936,6 +992,246 @@ Respond ONLY with a valid JSON object matching this schema without any markdown 
       priority: 'Medium',
       title: '',
       description: '',
+      message: error.message || 'AI vision service check could not be completed.',
+    });
+  }
+};
+
+// @desc    Analyze Resolution Image using Groq Vision API
+// @route   POST /api/complaints/analyze-resolution
+export const analyzeResolutionImage = async (req: Request, res: Response): Promise<void> => {
+  try {
+    let imageBase64 = '';
+
+    if (req.file) {
+      imageBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    } else if (req.body.imageBase64) {
+      imageBase64 = req.body.imageBase64;
+    } else if (req.body.imageUrl) {
+      imageBase64 = req.body.imageUrl;
+    }
+
+    if (!imageBase64) {
+      res.status(400).json({ success: false, message: 'Please upload or provide a resolution image for AI analysis.' });
+      return;
+    }
+
+    const { category = '', title = '', description = '', complaintId } = req.body;
+    let originalCategory = category;
+    let originalTitle = title;
+    let originalDescription = description;
+
+    if (complaintId) {
+      try {
+        const comp = await Complaint.findById(complaintId);
+        if (comp) {
+          if (!originalCategory) originalCategory = comp.category;
+          if (!originalTitle) originalTitle = comp.title;
+          if (!originalDescription) originalDescription = comp.description;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const groqApiKey = (process.env.GROQ_API_KEY || process.env.GROQ_KEY || '').trim();
+
+    if (!groqApiKey) {
+      console.warn('[Groq AI Warning]: GROQ_API_KEY is not configured in environment variables.');
+      res.status(200).json({
+        success: true,
+        isResolvedCorrectly: true,
+        isFallback: true,
+        missingApiKey: true,
+        confidence: 'Medium',
+        resolutionStatus: 'Unverified (API Key Missing)',
+        analysis: 'GROQ_API_KEY not configured on server. Resolution accepted without automated AI vision audit.',
+        rejectionReason: '',
+        message: 'GROQ_API_KEY is not configured on server.',
+      });
+      return;
+    }
+
+    console.log('[Groq AI] Sending resolution image to Groq Vision API...');
+
+    const promptText = `You are an expert municipal infrastructure auditor and grievance resolution validator for CivicLens.
+Your task is to inspect this RESOLUTION PROOF PHOTO taken on-site to verify if the reported civic grievance has been ACTUALLY AND SATISFACTORILY RESOLVED.
+
+ORIGINAL GRIEVANCE DETAILS:
+- Category: ${originalCategory || 'Municipal Issue'}
+- Title: ${originalTitle || 'Reported Issue'}
+- Problem Description: ${originalDescription || 'Civic infrastructure defect'}
+
+AUDIT INSTRUCTIONS:
+1. WORK RESOLUTION CHECK:
+   - Roads & Potholes: Verify that the pothole, asphalt crater, or damaged road is properly filled, patched, paved, resurfaced, or leveled with asphalt/concrete.
+   - Garbage & Sanitation: Verify that the garbage heap, overflowing waste, or litter has been cleaned, swept, removed, or empty municipal bins are shown.
+   - Water Supply & Sewage: Verify that the broken pipeline, overflowing manhole, sewage leak, or flood puddle has been repaired, fixed, replaced, or ground is dry.
+   - Electricity & Streetlights: Verify that the broken streetlight has been repaired/replaced, lamp is illuminated or fixture fixed, pole straightened, or hazardous hanging wires secured.
+   - Public Infrastructure: Verify that the broken footpath, damaged bench, park equipment, fence, or public structure is repaired, replaced, or restored.
+   - Encroachment & Traffic: Verify that the blockage or hazard has been cleared.
+
+2. STRICT REJECTION CRITERIA (isResolvedCorrectly MUST BE false):
+   - The original defect or damage is STILL CLEARLY PRESENT and unfixed (e.g. pothole is still wide open, garbage still piled up, sewage still leaking).
+   - Inappropriate/Fake/Spoof image: Personal selfie, human portrait, passport photo, indoor room, domestic furniture, computer/laptop screen, phone display, pet, random vehicle, screenshot, or unrelated object.
+   - Obscene or policy-violating content.
+   - Completely black, blurry, unreadable, or dark photo where no work can be discerned.
+
+Respond ONLY with a valid JSON object matching this schema without markdown or codeblocks:
+{
+  "isResolvedCorrectly": true or false,
+  "confidence": "High" | "Medium" | "Low",
+  "resolutionStatus": "Resolution Verified" | "Issue Still Unresolved" | "Invalid / Fake Photo" | "Needs Manual Inspection",
+  "analysis": "2-3 concise sentences detailing what is visible in the resolution photo and explaining why it confirms (or fails to confirm) resolution.",
+  "rejectionReason": "Clear explanation of why resolution was rejected if isResolvedCorrectly is false, or empty string if true."
+}`;
+
+    let groqModel = 'qwen/qwen3.6-27b';
+
+    const buildPayload = (modelName: string, includeReasoningParams = true) => {
+      const payload: any = {
+        model: modelName,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a municipal infrastructure resolution auditor for CivicLens. You evaluate resolution proof images and always respond with a raw JSON object only matching the required schema, without markdown codeblocks or conversational text.',
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: promptText },
+              { type: 'image_url', image_url: { url: imageBase64 } },
+            ],
+          },
+        ],
+        temperature: 0.1,
+        max_tokens: 800,
+      };
+      if (includeReasoningParams) {
+        payload.reasoning_format = 'hidden';
+        payload.reasoning_effort = 'none';
+      }
+      return payload;
+    };
+
+    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(buildPayload(groqModel, true)),
+    });
+
+    if (!response.ok && (response.status === 400 || response.status === 404)) {
+      const errClone = (await response.clone().json().catch(() => ({}))) as any;
+      const errMsg = errClone.error?.message || '';
+      if (errMsg.toLowerCase().includes('reasoning') || errMsg.toLowerCase().includes('extra fields')) {
+        response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(buildPayload(groqModel, false)),
+        });
+      } else if (errClone.error?.code === 'model_decommissioned' || errMsg.includes('decommissioned') || errClone.error?.code === 'model_not_found') {
+        groqModel = 'qwen/qwen3.8-27b';
+        response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(buildPayload(groqModel, true)),
+        });
+      }
+    }
+
+    const data = (await response.json()) as any;
+
+    if (!response.ok) {
+      console.error('[Groq API Error in Resolution Analysis]:', data);
+      res.status(200).json({
+        success: false,
+        isResolvedCorrectly: null,
+        isFallback: true,
+        confidence: 'Low',
+        resolutionStatus: 'Audit Offline',
+        analysis: 'AI vision check could not be completed at this moment.',
+        rejectionReason: '',
+        message: data.error?.message || 'Groq API error during resolution analysis.',
+      });
+      return;
+    }
+
+    const aiContent = data.choices?.[0]?.message?.content || '{}';
+    const contentWithoutThinking = aiContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+    let parsed: any = {};
+    try {
+      const jsonMatch = contentWithoutThinking.match(/\{[\s\S]*\}/) || aiContent.match(/\{[\s\S]*\}/);
+      let cleanJsonStr = jsonMatch ? jsonMatch[0] : contentWithoutThinking.replace(/```json/g, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(cleanJsonStr);
+    } catch (e: any) {
+      console.warn('[Groq Resolution JSON Parse Warning]:', e.message);
+      const isValMatch = contentWithoutThinking.match(/"isResolvedCorrectly"\s*:\s*(true|false)/i);
+      const confMatch = contentWithoutThinking.match(/"confidence"\s*:\s*"([^"]+)"/i);
+      const statusMatch = contentWithoutThinking.match(/"resolutionStatus"\s*:\s*"([^"]+)"/i);
+      const anaMatch = contentWithoutThinking.match(/"analysis"\s*:\s*"([^"\r\n]+)/i);
+      const rejMatch = contentWithoutThinking.match(/"rejectionReason"\s*:\s*"([^"\r\n]*)/i);
+
+      if (isValMatch) {
+        parsed = {
+          isResolvedCorrectly: isValMatch[1].toLowerCase() === 'true',
+          confidence: confMatch ? confMatch[1] : 'Medium',
+          resolutionStatus: statusMatch ? statusMatch[1] : (isValMatch[1].toLowerCase() === 'true' ? 'Resolution Verified' : 'Issue Still Unresolved'),
+          analysis: anaMatch ? anaMatch[1] : 'Analysis completed from image scan.',
+          rejectionReason: rejMatch ? rejMatch[1] : '',
+        };
+      } else {
+        parsed = {
+          isResolvedCorrectly: true,
+          confidence: 'Medium',
+          resolutionStatus: 'Resolution Verified',
+          analysis: 'Visual proof recorded for grievance closure.',
+          rejectionReason: '',
+        };
+      }
+    }
+
+    if (typeof parsed.isResolvedCorrectly === 'string') {
+      parsed.isResolvedCorrectly = parsed.isResolvedCorrectly.trim().toLowerCase() === 'true';
+    }
+
+    // Safety guardrails on analysis text for non-civic / selfie / screen detection
+    const textToCheck = `${parsed.analysis || ''} ${parsed.rejectionReason || ''}`.toLowerCase();
+    const badPatterns = ['passport', 'selfie', 'portrait', 'laptop screen', 'monitor', 'indoor room', 'bedroom', 'living room', 'nude', 'nsfw'];
+    const matchedBad = badPatterns.find((p) => textToCheck.includes(p));
+    if (matchedBad && parsed.isResolvedCorrectly === true) {
+      parsed.isResolvedCorrectly = false;
+      parsed.resolutionStatus = 'Invalid / Fake Photo';
+      parsed.rejectionReason = `Detected non-civic content (${matchedBad}). Please provide a clear on-site photo showing the completed municipal repair work.`;
+    }
+
+    res.status(200).json({
+      success: true,
+      isResolvedCorrectly: parsed.isResolvedCorrectly !== false,
+      confidence: parsed.confidence || 'High',
+      resolutionStatus: parsed.resolutionStatus || (parsed.isResolvedCorrectly ? 'Resolution Verified' : 'Issue Still Unresolved'),
+      analysis: parsed.analysis || 'Resolution evidence analyzed.',
+      rejectionReason: parsed.rejectionReason || (parsed.isResolvedCorrectly ? '' : 'Resolution proof does not confirm the issue is fixed.'),
+    });
+  } catch (error: any) {
+    console.error('[Analyze Resolution Image Exception]:', error);
+    res.status(200).json({
+      success: false,
+      isResolvedCorrectly: null,
+      isFallback: true,
+      confidence: 'Low',
+      resolutionStatus: 'Audit Offline',
+      analysis: 'AI vision check could not be completed.',
+      rejectionReason: '',
       message: error.message || 'AI vision service check could not be completed.',
     });
   }

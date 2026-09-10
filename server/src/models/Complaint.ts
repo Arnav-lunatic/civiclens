@@ -45,6 +45,8 @@ const ComplaintSchema = new Schema<IComplaint>(
     resolvedImages: [
       {
         url: String,
+        latitude: Number,
+        longitude: Number,
         timestamp: { type: Date, default: Date.now },
       },
     ],

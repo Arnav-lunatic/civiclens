@@ -9,6 +9,7 @@ const {
   getSuperAdminComplaints,
   updateComplaintStatus,
   analyzeComplaintImage,
+  analyzeResolutionImage,
 } = require('../controllers/complaintController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -16,8 +17,11 @@ const upload = require('../middleware/uploadMiddleware');
 // Public live feed
 router.get('/public', getPublicComplaints);
 
-// Groq AI Vision Image Analysis Route
+// Groq AI Vision Image Analysis Route (Public for seamless pre-submission check)
 router.post('/analyze-image', upload.single('image'), analyzeComplaintImage);
+
+// Groq AI Vision Resolution Image Verification Route
+router.post('/analyze-resolution', upload.single('image'), analyzeResolutionImage);
 
 // Public / Guest Submit with Email OTP & Geotagged Photos
 router.post('/submit-with-otp', upload.array('images', 5), submitComplaintWithOTP);

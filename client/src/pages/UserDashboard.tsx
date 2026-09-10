@@ -167,6 +167,13 @@ export const UserDashboard: React.FC = () => {
                           {item.status}
                         </span>
                       }
+                      topLeftBadge={
+                        item.resolvedImageUrl ? (
+                          <span className="px-2 py-0.5 rounded bg-rose-600/90 text-white text-[9px] font-bold shadow backdrop-blur-xs">
+                            BEFORE: Reported Issue
+                          </span>
+                        ) : undefined
+                      }
                       bottomOverlay={
                         <div className="flex gap-1.5 items-center">
                           <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-mono font-bold">
@@ -223,40 +230,61 @@ export const UserDashboard: React.FC = () => {
                       </span>
                     </div>
 
-                    {item.resolvedImageUrl && (
-                      <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
-                        <div className="text-[10px] font-bold text-emerald-800 uppercase flex items-center justify-between">
-                          <span>Official Resolution Proof:</span>
-                          <span className="text-[9px] text-emerald-700 font-normal">Click to enlarge</span>
+                    {item.resolvedImageUrl ? (
+                      <div className="p-3.5 bg-emerald-50/80 rounded-2xl border border-emerald-300 space-y-2.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Official Resolution Proof</span>
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded">
+                            Work Completed
+                          </span>
                         </div>
-                        <div className="rounded-lg overflow-hidden border border-emerald-300 shadow-2xs">
+
+                        <div className="rounded-xl overflow-hidden border border-emerald-300 shadow-sm">
                           <ComplaintImage
                             src={item.resolvedImageUrl}
-                            alt="Resolved"
-                            heightClass="h-40 sm:h-44"
+                            alt={`Resolution Proof for ${item.title}`}
+                            heightClass="h-44 sm:h-48"
                             onClick={() =>
                               setPreviewImage({
                                 url: item.resolvedImageUrl!,
                                 title: `Official Resolution Proof: ${item.title}`,
-                                subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'District Officer'}`,
+                                subtitle: `Grievance Resolved | Category: ${item.category} | PIN: ${item.pincode}`,
                               })
                             }
+                            topLeftBadge={
+                              <span className="px-2 py-0.5 rounded bg-emerald-700/90 text-white text-[9px] font-bold shadow">
+                                AFTER: Work Done
+                              </span>
+                            }
                             bottomOverlay={
-                              <div className="flex justify-end">
-                                <span className="px-2 py-0.5 bg-emerald-900/85 text-emerald-100 text-[9px] font-bold rounded">
-                                  Work Completed
+                              <div className="flex justify-between items-center text-[10px] font-mono text-white">
+                                <span className="bg-emerald-950/80 px-2 py-0.5 rounded backdrop-blur-xs">
+                                  Verified On-Site
+                                </span>
+                                <span className="text-emerald-200 text-[9px] font-sans font-bold">
+                                  Click to enlarge
                                 </span>
                               </div>
                             }
                           />
                         </div>
+
                         {item.resolutionNotes && (
-                          <p className="text-[11px] text-emerald-900 mt-1.5 italic font-medium">
-                            "{item.resolutionNotes}"
-                          </p>
+                          <div className="p-2.5 bg-white rounded-xl border border-emerald-200 text-xs text-emerald-950">
+                            <span className="font-bold text-emerald-800 text-[10px] uppercase block mb-0.5">Officer Resolution Note:</span>
+                            <p className="italic leading-relaxed text-[11px]">"{item.resolutionNotes}"</p>
+                          </div>
                         )}
                       </div>
-                    )}
+                    ) : item.status === 'Resolved' ? (
+                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="font-semibold">Issue marked as Resolved by municipal authorities.</span>
+                      </div>
+                    ) : null}
 
                     <div className="text-[10px] text-slate-400 text-right">
                       Reported on {new Date(item.createdAt).toLocaleDateString()}
