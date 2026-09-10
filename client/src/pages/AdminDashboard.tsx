@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink, Camera, Loader2, AlertTriangle, X, Bot, Sparkles } from 'lucide-react';
+import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink, Camera, Loader2, AlertTriangle, X, Bot, Sparkles, Lock, Unlock, Navigation } from 'lucide-react';
 import { API } from '../services/api';
 import { Complaint, User } from '../types';
 import { ResolutionCameraModal } from '../components/ResolutionCameraModal';
-import { fetchFallbackLocation } from '../services/geo';
 import { ComplaintImage } from '../components/ComplaintImage';
 import { ImageModal } from '../components/ImageModal';
+import { AdminResolutionMap } from '../components/AdminResolutionMap';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -117,8 +117,9 @@ export const AdminDashboard: React.FC = () => {
 
   const MAX_DISTANCE = 500; // meters
 
-  const handleVerifyLocation = () => {
-    if (!selectedComplaint) return;
+  const handleVerifyLocation = (targetComplaint?: Complaint) => {
+    const comp = targetComplaint || selectedComplaint;
+    if (!comp) return;
     setLocationCheckLoading(true);
     setLocationError('');
     setLocationVerified(false);
@@ -128,71 +129,59 @@ export const AdminDashboard: React.FC = () => {
       setSubadminLat(lat);
       setSubadminLng(lng);
 
-      const distance = haversineDistance(lat, lng, selectedComplaint.latitude, selectedComplaint.longitude);
-      setLocationDistance(Math.round(distance));
+      const distance = haversineDistance(lat, lng, comp.latitude, comp.longitude);
+      const distMeters = Math.round(distance);
+      setLocationDistance(distMeters);
 
-      if (distance <= MAX_DISTANCE) {
+      if (distMeters <= MAX_DISTANCE) {
         setLocationVerified(true);
         setLocationError('');
       } else {
         setLocationVerified(false);
-        const distStr = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`;
-        setLocationError(`Location not matched. You are ${distStr} away. Reach the location to take photo.`);
+        const distStr = distMeters >= 1000 ? `${(distMeters / 1000).toFixed(2)} km` : `${distMeters}m`;
+        setLocationError(`GPS Mismatch: You are ${distStr} away from the grievance location (${comp.latitude.toFixed(5)}, ${comp.longitude.toFixed(5)}). All actions are locked until you are within 500m.`);
       }
       setLocationCheckLoading(false);
     };
 
-    const tryStandardAccuracy = () => {
-      if (!navigator.geolocation) {
-        tryIpFallback();
-        return;
+    const onLocationFailure = (err: any) => {
+      console.warn('[Admin GPS Sensor Error]:', err);
+      let msg = 'Unable to acquire accurate GPS fix.';
+      if (err?.code === 1) {
+        msg = 'Location permission denied. Please enable location access in your browser and Mac/device settings (System Settings -> Privacy & Security -> Location Services).';
+      } else if (err?.code === 2) {
+        msg = 'GPS signal unavailable. Please ensure your device Location Services or Wi-Fi are active.';
+      } else if (err?.code === 3) {
+        msg = 'GPS request timed out. Click "Verify My GPS" to try again.';
       }
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          onLocationSuccess(position.coords.latitude, position.coords.longitude);
-        },
-        (error2) => {
-          console.warn('Standard location query failed on laptop, attempting IP fallback:', error2);
-          tryIpFallback(error2);
-        },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-      );
-    };
-
-    const tryIpFallback = async (originalErr?: any) => {
-      try {
-        const fallback = await fetchFallbackLocation();
-        if (fallback) {
-          onLocationSuccess(fallback.lat, fallback.lng);
-          return;
-        }
-      } catch (e) {
-        console.warn('IP fallback error:', e);
-      }
-
-      if (originalErr && originalErr.code === 1) {
-        setLocationError('Location permission denied. Please allow location access in your browser / Mac settings.');
-      } else {
-        setLocationError('Unable to get your location. Please ensure Wi-Fi or Location Services are enabled on your device.');
-      }
+      setLocationError(msg);
       setLocationCheckLoading(false);
     };
 
     if (!navigator.geolocation) {
-      tryIpFallback();
+      setLocationError('Geolocation is not supported by your browser.');
+      setLocationCheckLoading(false);
       return;
     }
 
-    // 1. Try High-Accuracy GPS (ideal for smartphones with GPS hardware)
+    // Hardware GPS & Wi-Fi Triangulation (no IP fallback to prevent wrong city spoofing)
     navigator.geolocation.getCurrentPosition(
       (position) => {
         onLocationSuccess(position.coords.latitude, position.coords.longitude);
       },
-      (error) => {
-        console.warn('High-accuracy GPS query unavailable (common on laptops without GPS hardware). Falling back to network/Wi-Fi positioning:', error);
-        tryStandardAccuracy();
+      (err1) => {
+        console.warn('[High-accuracy GPS query timed out, trying standard sensor]:', err1);
+        navigator.geolocation.getCurrentPosition(
+          (position2) => {
+            onLocationSuccess(position2.coords.latitude, position2.coords.longitude);
+          },
+          (err2) => {
+            onLocationFailure(err2 || err1);
+          },
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
+        );
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -630,6 +619,10 @@ export const AdminDashboard: React.FC = () => {
                         setResolutionPhotoPreview('');
                         setResolutionPhotoLat(null);
                         setResolutionPhotoLng(null);
+                        setAnalyzingResolutionAi(false);
+                        setAiResolutionResult(null);
+                        setAiResolutionError('');
+                        handleVerifyLocation(item);
                       }}
                       className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
                     >
@@ -647,8 +640,20 @@ export const AdminDashboard: React.FC = () => {
       {/* Update Modal */}
       {selectedComplaint && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900">Update Grievance Status</h3>
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <PenSquare className="w-5 h-5 text-blue-600" />
+                <span>Update Grievance Status</span>
+              </h3>
+              <button
+                type="button"
+                onClick={resetModal}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
             {/* Real Issue Image & Grievance Context */}
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
@@ -685,13 +690,131 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* ─── Step 1: On-Site GPS & Map Verification ─── */}
+            <div className="space-y-3 border border-slate-200 rounded-2xl p-4 bg-slate-50/70">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+                    1
+                  </span>
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    Live On-Site GPS Verification &amp; Map
+                  </span>
+                </div>
+                {locationVerified ? (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1 border border-emerald-300">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>Unlocked (On-Site)</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold flex items-center gap-1 border border-rose-300">
+                    <Lock className="w-3 h-3 text-rose-600" />
+                    <span>Locked (Verify Location)</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Live Interactive Map with Dual Locations */}
+              <div className="space-y-1.5">
+                <AdminResolutionMap
+                  issueLat={selectedComplaint.latitude}
+                  issueLng={selectedComplaint.longitude}
+                  issueTitle={selectedComplaint.title}
+                  adminLat={subadminLat}
+                  adminLng={subadminLng}
+                  distance={locationDistance}
+                  isMatched={locationVerified}
+                />
+                <p className="text-[10px] text-slate-400 text-center">
+                  Red Pin = Reported Grievance Location &bull; 500m allowable boundary circle &bull; Green/Blue Pin = Your Live Detected GPS
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleVerifyLocation()}
+                disabled={locationCheckLoading}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
+                  locationVerified
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                {locationCheckLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Acquiring Hardware GPS Location...</span>
+                  </>
+                ) : locationVerified ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>✅ Location Verified! ({locationDistance}m away) — Click to Re-check GPS</span>
+                  </>
+                ) : (
+                  <>
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>📍 Verify / Refresh My Live GPS Location</span>
+                  </>
+                )}
+              </button>
+
+              {locationError && (
+                <div className="space-y-1.5 bg-red-50 border border-red-300 rounded-xl p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <span className="text-[11px] text-red-800 font-semibold">{locationError}</span>
+                  </div>
+                  {subadminLat !== null && subadminLng !== null && (
+                    <div className="text-[10px] text-red-700 pl-6 space-y-0.5 font-mono">
+                      <div>Your Detected GPS: {subadminLat.toFixed(5)}, {subadminLng.toFixed(5)}</div>
+                      <div>Complaint Issue GPS: {selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {locationVerified && (
+                <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-300 rounded-xl p-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-emerald-800">
+                    <span className="font-bold">Location Matched!</span> You are <strong>{locationDistance}m</strong> from the issue site (within the 500m geofence). Resolution tools below are now <strong>unlocked</strong>.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Lock Notice if Location is not matched */}
+            {!locationVerified && (
+              <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-black text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>All Resolution Actions Locked</span>
+                  </div>
+                  <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
+                    CivicLens strictly requires physical presence on-site. Because your detected location does not match the issue location (within 500m), modifying status, writing notes, capturing resolution proof, and publishing updates are completely disabled until you are on-site.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleUpdateStatus} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">New Status</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
+                  <span>New Status</span>
+                  {!locationVerified && <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>}
+                </label>
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  disabled={!locationVerified}
+                  className={`w-full px-4 py-2.5 border rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
+                    locationVerified
+                      ? 'bg-slate-50 border-slate-200 focus:bg-white text-slate-900'
+                      : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
                 >
                   <option value="Under Review">Under Review</option>
                   <option value="In Progress">In Progress (Field Team Dispatched)</option>
@@ -701,90 +824,42 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Resolution Notes</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
+                  <span>Resolution Notes</span>
+                  {!locationVerified && <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>}
+                </label>
                 <textarea
                   rows={3}
                   required
                   value={resolutionNotes}
                   onChange={(e) => setResolutionNotes(e.target.value)}
-                  placeholder="Describe action taken, contractor assigned, or completion details..."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  disabled={!locationVerified}
+                  placeholder={
+                    locationVerified
+                      ? 'Describe action taken, contractor assigned, or completion details...'
+                      : '🔒 Locked: Verify location in Step 1 to enter resolution notes...'
+                  }
+                  className={`w-full px-4 py-2.5 border rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
+                    locationVerified
+                      ? 'bg-slate-50 border-slate-200 focus:bg-white text-slate-900'
+                      : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
                 />
               </div>
 
-              {/* ─── Step 1: Verify Location ─── */}
-              <div className="space-y-2.5 border border-slate-200 rounded-2xl p-4 bg-slate-50/50">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">1</span>
-                  <span className="text-xs font-bold text-slate-700 uppercase">Verify Your Location</span>
-                </div>
-
-                <p className="text-[11px] text-slate-500">
-                  Issue Location: <strong className="text-slate-700">{selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</strong>
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handleVerifyLocation}
-                  disabled={locationCheckLoading}
-                  className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
-                    locationVerified
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {locationCheckLoading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Acquiring GPS Location...</span>
-                    </>
-                  ) : locationVerified ? (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Location Verified! ({locationDistance}m away) — Re-verify</span>
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>📍 Verify My Location</span>
-                    </>
-                  )}
-                </button>
-
-                {locationError && (
-                  <div className="space-y-1.5 bg-red-50 border border-red-200 rounded-xl p-3">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-[11px] text-red-700 font-semibold">{locationError}</span>
-                    </div>
-                    {subadminLat !== null && subadminLng !== null && (
-                      <div className="text-[10px] text-red-600 pl-6 space-y-0.5 font-mono">
-                        <div>Your Detected GPS: {subadminLat.toFixed(5)}, {subadminLng.toFixed(5)}</div>
-                        <div>Complaint Issue GPS: {selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {locationVerified && (
-                  <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-[11px] text-emerald-700">
-                      <span className="font-bold">Location verified!</span> You are <strong>{locationDistance}m</strong> from the issue location. You can now take the resolution photo.
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* ─── Step 2: Take Resolution Photo ─── */}
-              <div className={`space-y-3 border rounded-2xl p-4 ${locationVerified ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/30 opacity-60'}`}>
+              <div className={`space-y-3 border rounded-2xl p-4 transition ${locationVerified ? 'border-slate-200 bg-white' : 'border-slate-200 bg-slate-50/50 opacity-60'}`}>
                 <div className="flex items-center gap-2">
-                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-500'}`}>2</span>
+                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-500'}`}>
+                    2
+                  </span>
                   <span className="text-xs font-bold text-slate-700 uppercase">
                     Take Resolution Photo {newStatus === 'Resolved' && <span className="text-red-500">* (Mandatory for Resolution)</span>}
                   </span>
                   {!locationVerified && (
-                    <span className="text-[10px] text-slate-400 font-semibold ml-auto">🔒 Verify location first</span>
+                    <span className="text-[10px] text-rose-500 font-semibold ml-auto flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Locked (Verify location first)
+                    </span>
                   )}
                 </div>
 
@@ -929,9 +1004,9 @@ export const AdminDashboard: React.FC = () => {
 
               {/* Requirement Helper Banner */}
               {!locationVerified ? (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>GPS verification required: Verify your location (Step 1) within 500m of the issue to save and publish update.</span>
+                <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800 flex items-center gap-2 font-medium">
+                  <Lock className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>GPS verification required: Verify your location in Step 1 within 500m of the issue to unlock updating &amp; saving.</span>
                 </div>
               ) : newStatus === 'Resolved' && !resolutionPhotoPreview ? (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
@@ -979,6 +1054,11 @@ export const AdminDashboard: React.FC = () => {
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Saving Update...</span>
+                    </>
+                  ) : !locationVerified ? (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Locked (Out of Range)</span>
                     </>
                   ) : (
                     <span>Save &amp; Publish Update</span>
