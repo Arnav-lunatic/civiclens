@@ -224,19 +224,26 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     if (!selectedComplaint) return;
 
-    // 1. Strict GPS location matching requirement
-    if (!locationVerified || subadminLat === null || subadminLng === null) {
-      alert('⚠️ Strict on-site GPS verification is required. You must verify your location within 500m of the reported issue before saving and publishing updates.');
-      return;
-    }
-
-    // 2. Strict Resolution proof photo requirement if resolving
     if (newStatus === 'Resolved') {
+      // 1. Strict GPS location matching requirement
+      if (!locationVerified || subadminLat === null || subadminLng === null) {
+        alert('⚠️ Strict on-site GPS verification is required. You must verify your location within 500m of the reported issue before marking as Resolved.');
+        return;
+      }
+
+      // 2. Strict Resolution notes requirement
+      if (!resolutionNotes.trim()) {
+        alert('⚠️ Please enter resolution notes describing the completed work before marking as Resolved.');
+        return;
+      }
+
+      // 3. Strict Resolution proof photo requirement
       if (!resolutionPhotoFile && !resolutionPhotoPreview) {
         alert('⚠️ A live on-site resolution proof photo is required to mark this grievance as Resolved.');
         return;
       }
 
+      // 4. Strict Groq AI resolution verification
       if (aiResolutionResult && aiResolutionResult.isResolvedCorrectly === false) {
         alert(`❌ Resolution proof was rejected by Groq AI:\n\n${aiResolutionResult.rejectionReason || 'The photo does not verify that the issue has been resolved.'}\n\nPlease take a valid photo of the completed repair work before saving.`);
         return;
@@ -247,19 +254,26 @@ export const AdminDashboard: React.FC = () => {
 
     const formData = new FormData();
     formData.append('status', newStatus);
-    formData.append('resolutionNotes', resolutionNotes);
-    formData.append('adminLat', subadminLat.toString());
-    formData.append('adminLng', subadminLng.toString());
 
-    if (resolutionPhotoFile) {
-      formData.append('resolvedImage', resolutionPhotoFile);
-      formData.append('resolutionLat', (resolutionPhotoLat ?? subadminLat).toString());
-      formData.append('resolutionLng', (resolutionPhotoLng ?? subadminLng).toString());
+    if (newStatus === 'Resolved') {
+      formData.append('resolutionNotes', resolutionNotes);
+      formData.append('adminLat', subadminLat!.toString());
+      formData.append('adminLng', subadminLng!.toString());
+
+      if (resolutionPhotoFile) {
+        formData.append('resolvedImage', resolutionPhotoFile);
+        formData.append('resolutionLat', (resolutionPhotoLat ?? subadminLat!).toString());
+        formData.append('resolutionLng', (resolutionPhotoLng ?? subadminLng!).toString());
+      }
+    } else {
+      if (resolutionNotes) {
+        formData.append('resolutionNotes', resolutionNotes);
+      }
     }
 
     try {
       await API.request(`/complaints/${selectedComplaint._id}/status`, 'PUT', formData, true);
-      alert('Grievance status updated successfully!');
+      alert(`Grievance status updated to "${newStatus}" successfully!`);
       resetModal();
       loadComplaints();
     } catch (err: any) {
@@ -607,7 +621,8 @@ export const AdminDashboard: React.FC = () => {
                     <button
                       onClick={() => {
                         setSelectedComplaint(item);
-                        setNewStatus(item.status);
+                        const initialStatus = item.status || 'In Progress';
+                        setNewStatus(initialStatus);
                         setResolutionNotes(item.resolutionNotes || '');
                         setLocationVerified(false);
                         setLocationCheckLoading(false);
@@ -622,12 +637,14 @@ export const AdminDashboard: React.FC = () => {
                         setAnalyzingResolutionAi(false);
                         setAiResolutionResult(null);
                         setAiResolutionError('');
-                        handleVerifyLocation(item);
+                        if (initialStatus === 'Resolved') {
+                          handleVerifyLocation(item);
+                        }
                       }}
                       className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
                     >
                       <PenSquare className="w-3.5 h-3.5" />
-                      <span>Update Status & Resolution Proof</span>
+                      <span>Update Grievance Status</span>
                     </button>
                   </div>
                 </div>
@@ -690,341 +707,420 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* ─── Step 1: On-Site GPS & Map Verification ─── */}
-            <div className="space-y-3 border border-slate-200 rounded-2xl p-4 bg-slate-50/70">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
-                    1
-                  </span>
-                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                    Live On-Site GPS Verification &amp; Map
-                  </span>
-                </div>
-                {locationVerified ? (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1 border border-emerald-300">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                    <span>Unlocked (On-Site)</span>
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold flex items-center gap-1 border border-rose-300">
-                    <Lock className="w-3 h-3 text-rose-600" />
-                    <span>Locked (Verify Location)</span>
-                  </span>
-                )}
-              </div>
-
-              {/* Live Interactive Map with Dual Locations */}
-              <div className="space-y-1.5">
-                <AdminResolutionMap
-                  issueLat={selectedComplaint.latitude}
-                  issueLng={selectedComplaint.longitude}
-                  issueTitle={selectedComplaint.title}
-                  adminLat={subadminLat}
-                  adminLng={subadminLng}
-                  distance={locationDistance}
-                  isMatched={locationVerified}
-                />
-                <p className="text-[10px] text-slate-400 text-center">
-                  Red Pin = Reported Grievance Location &bull; 500m allowable boundary circle &bull; Green/Blue Pin = Your Live Detected GPS
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleVerifyLocation()}
-                disabled={locationCheckLoading}
-                className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
-                  locationVerified
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-              >
-                {locationCheckLoading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Acquiring Hardware GPS Location...</span>
-                  </>
-                ) : locationVerified ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>✅ Location Verified! ({locationDistance}m away) — Click to Re-check GPS</span>
-                  </>
-                ) : (
-                  <>
-                    <Navigation className="w-3.5 h-3.5" />
-                    <span>📍 Verify / Refresh My Live GPS Location</span>
-                  </>
-                )}
-              </button>
-
-              {locationError && (
-                <div className="space-y-1.5 bg-red-50 border border-red-300 rounded-xl p-3">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                    <span className="text-[11px] text-red-800 font-semibold">{locationError}</span>
-                  </div>
-                  {subadminLat !== null && subadminLng !== null && (
-                    <div className="text-[10px] text-red-700 pl-6 space-y-0.5 font-mono">
-                      <div>Your Detected GPS: {subadminLat.toFixed(5)}, {subadminLng.toFixed(5)}</div>
-                      <div>Complaint Issue GPS: {selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {locationVerified && (
-                <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-300 rounded-xl p-3">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <div className="text-[11px] text-emerald-800">
-                    <span className="font-bold">Location Matched!</span> You are <strong>{locationDistance}m</strong> from the issue site (within the 500m geofence). Resolution tools below are now <strong>unlocked</strong>.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Lock Notice if Location is not matched */}
-            {!locationVerified && (
-              <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
-                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-black text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>All Resolution Actions Locked</span>
-                  </div>
-                  <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                    CivicLens strictly requires physical presence on-site. Because your detected location does not match the issue location (within 500m), modifying status, writing notes, capturing resolution proof, and publishing updates are completely disabled until you are on-site.
-                  </p>
-                </div>
-              </div>
-            )}
-
             <form onSubmit={handleUpdateStatus} className="space-y-4">
+              {/* Status Selector (Always Accessible) */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
-                  <span>New Status</span>
-                  {!locationVerified && <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>}
+                  <span>Select Target Status</span>
+                  {newStatus === 'Resolved' ? (
+                    <span className="text-[10px] text-amber-600 font-bold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> On-Site GPS &amp; AI Verification Required
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-blue-600 font-bold bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> Instant Status Update
+                    </span>
+                  )}
                 </label>
                 <select
                   value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  disabled={!locationVerified}
-                  className={`w-full px-4 py-2.5 border rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
-                    locationVerified
-                      ? 'bg-slate-50 border-slate-200 focus:bg-white text-slate-900'
-                      : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewStatus(val);
+                    if (val === 'Resolved' && !locationVerified && !locationCheckLoading) {
+                      handleVerifyLocation(selectedComplaint);
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-slate-900 font-medium"
                 >
                   <option value="Under Review">Under Review</option>
                   <option value="In Progress">In Progress (Field Team Dispatched)</option>
-                  <option value="Resolved">Resolved (Work Completed)</option>
+                  <option value="Resolved">Resolved (Work Completed - On-Site Verification Required)</option>
                   <option value="Rejected">Rejected</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
-                  <span>Resolution Notes</span>
-                  {!locationVerified && <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>}
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={resolutionNotes}
-                  onChange={(e) => setResolutionNotes(e.target.value)}
-                  disabled={!locationVerified}
-                  placeholder={
-                    locationVerified
-                      ? 'Describe action taken, contractor assigned, or completion details...'
-                      : '🔒 Locked: Verify location in Step 1 to enter resolution notes...'
-                  }
-                  className={`w-full px-4 py-2.5 border rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
-                    locationVerified
-                      ? 'bg-slate-50 border-slate-200 focus:bg-white text-slate-900'
-                      : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
-                />
-              </div>
-
-              {/* ─── Step 2: Take Resolution Photo ─── */}
-              <div className={`space-y-3 border rounded-2xl p-4 transition ${locationVerified ? 'border-slate-200 bg-white' : 'border-slate-200 bg-slate-50/50 opacity-60'}`}>
-                <div className="flex items-center gap-2">
-                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-500'}`}>
-                    2
-                  </span>
-                  <span className="text-xs font-bold text-slate-700 uppercase">
-                    Take Resolution Photo {newStatus === 'Resolved' && <span className="text-red-500">* (Mandatory for Resolution)</span>}
-                  </span>
-                  {!locationVerified && (
-                    <span className="text-[10px] text-rose-500 font-semibold ml-auto flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Locked (Verify location first)
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowResolutionCamera(true)}
-                  disabled={!locationVerified}
-                  className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
-                    locationVerified
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>{resolutionPhotoFile ? '📸 Retake Live Photo' : '📸 Take Live Photo'}</span>
-                </button>
-
-                {resolutionPhotoPreview && (
-                  <div className="space-y-2.5 pt-1">
-                    <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                      <ComplaintImage
-                        src={resolutionPhotoPreview}
-                        alt="Resolution proof"
-                        heightClass="h-48"
-                        onClick={() =>
-                          setPreviewImage({
-                            url: resolutionPhotoPreview,
-                            title: 'Resolution Proof Captured',
-                            subtitle: `GPS: ${resolutionPhotoLat?.toFixed(5)}, ${resolutionPhotoLng?.toFixed(5)} | ${new Date().toLocaleString('en-IN')}`,
-                          })
-                        }
-                        bottomOverlay={
-                          <div className="bg-black/75 backdrop-blur-sm p-1.5 rounded text-[10px] text-white font-mono flex justify-between items-center">
-                            <span>GPS: {resolutionPhotoLat?.toFixed(5)}, {resolutionPhotoLng?.toFixed(5)}</span>
-                            <span>{new Date().toLocaleTimeString('en-IN')}</span>
-                          </div>
-                        }
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setResolutionPhotoFile(null);
-                          setResolutionPhotoPreview('');
-                          setResolutionPhotoLat(null);
-                          setResolutionPhotoLng(null);
-                          setAiResolutionResult(null);
-                          setAiResolutionError('');
-                        }}
-                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-30"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+              {/* ───────────── NON-RESOLVED STATUS FLOW (Under Review / In Progress / Rejected) ───────────── */}
+              {newStatus !== 'Resolved' && (
+                <div className="space-y-3">
+                  <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 flex items-start gap-3 shadow-2xs">
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-4 h-4" />
                     </div>
-
-                    {/* Groq AI Vision Resolution Audit Feedback */}
-                    {analyzingResolutionAi && (
-                      <div className="bg-gradient-to-r from-purple-50 via-sky-50 to-indigo-50 border border-purple-200 rounded-xl p-3 flex items-center gap-2.5 text-xs text-purple-900 shadow-xs animate-pulse">
-                        <Loader2 className="w-4 h-4 animate-spin text-purple-600 shrink-0" />
-                        <div className="flex-1">
-                          <div className="font-bold flex items-center gap-1.5 text-purple-800">
-                            <Bot className="w-4 h-4 text-purple-600" />
-                            <span>Groq AI Vision is auditing resolution proof...</span>
-                          </div>
-                          <p className="text-[10px] text-purple-600 font-normal">
-                            Analyzing image to verify work completion against "{selectedComplaint.title}"
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {!analyzingResolutionAi && aiResolutionResult && (
-                      <div
-                        className={`p-3.5 rounded-xl border space-y-1.5 shadow-2xs ${
-                          aiResolutionResult.isResolvedCorrectly
-                            ? 'bg-emerald-50/90 border-emerald-300 text-emerald-900'
-                            : 'bg-red-50 border-red-300 text-red-900'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 font-bold text-xs">
-                            {aiResolutionResult.isResolvedCorrectly ? (
-                              <>
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                <span className="text-emerald-800">Groq AI Verified: {aiResolutionResult.resolutionStatus || 'Resolution Confirmed'}</span>
-                              </>
-                            ) : (
-                              <>
-                                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                                <span className="text-red-800">Groq AI Rejected: {aiResolutionResult.resolutionStatus || 'Work Incomplete / Invalid'}</span>
-                              </>
-                            )}
-                          </div>
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              aiResolutionResult.isResolvedCorrectly
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            Confidence: {aiResolutionResult.confidence || 'High'}
-                          </span>
-                        </div>
-
-                        {aiResolutionResult.analysis && (
-                          <p className="text-[11px] leading-relaxed">
-                            {aiResolutionResult.analysis}
-                          </p>
-                        )}
-
-                        {!aiResolutionResult.isResolvedCorrectly && aiResolutionResult.rejectionReason && (
-                          <p className="text-[11px] font-bold text-red-700 bg-red-100/70 p-2 rounded-lg border border-red-200">
-                            ⚠️ {aiResolutionResult.rejectionReason}
-                          </p>
-                        )}
-
-                        <div className="flex justify-end pt-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (resolutionPhotoFile && resolutionPhotoPreview) {
-                                analyzeResolutionWithAi(resolutionPhotoFile, resolutionPhotoPreview);
-                              }
-                            }}
-                            className="text-[10px] font-bold text-slate-600 hover:text-slate-900 underline flex items-center gap-1"
-                          >
-                            <Sparkles className="w-3 h-3 text-purple-500" />
-                            <span>Re-run Groq AI Audit</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {!analyzingResolutionAi && aiResolutionError && (
-                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>{aiResolutionError}</span>
-                      </div>
-                    )}
+                    <div className="space-y-0.5 text-xs text-blue-950">
+                      <div className="font-bold">Fast Status Update Mode</div>
+                      <p className="text-[11px] text-blue-700 leading-relaxed font-medium">
+                        Updating status to <strong>"{newStatus}"</strong> does not require GPS location or resolution photos. Click <strong>Save Status Update</strong> below to update everywhere.
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Requirement Helper Banner */}
-              {!locationVerified ? (
-                <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800 flex items-center gap-2 font-medium">
-                  <Lock className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>GPS verification required: Verify your location in Step 1 within 500m of the issue to unlock updating &amp; saving.</span>
-                </div>
-              ) : newStatus === 'Resolved' && !resolutionPhotoPreview ? (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
-                  <Camera className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Resolution photo required: Take a live photo (Step 2) to mark this issue as Resolved.</span>
-                </div>
-              ) : newStatus === 'Resolved' && aiResolutionResult?.isResolvedCorrectly === false ? (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-center gap-2 font-semibold">
-                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                  <span>Resolution proof rejected by AI. Please retake a photo showing the completed repair work.</span>
-                </div>
-              ) : (
-                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2 font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>On-site GPS matched ({locationDistance}m). Ready to save and publish update.</span>
+                  {/* Resolution Notes (Disabled for non-resolved) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                      <span>Resolution Notes</span>
+                      <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Disabled (Only for Resolved status)
+                      </span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      disabled
+                      value=""
+                      placeholder="Resolution notes are disabled for this status. They are only required when marking as Resolved."
+                      className="w-full px-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-100 text-slate-400 cursor-not-allowed resize-none"
+                    />
+                  </div>
+
+                  {/* Photo Upload (Disabled for non-resolved) */}
+                  <div className="border border-slate-200 rounded-2xl p-3 bg-slate-50 opacity-60">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span className="flex items-center gap-2">
+                        <Camera className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Resolution Photo Upload</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Disabled (Only for Resolved status)
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
 
+              {/* ───────────── RESOLVED STATUS FLOW (Strict GPS + Notes + Photo + Groq AI) ───────────── */}
+              {newStatus === 'Resolved' && (
+                <div className="space-y-4">
+                  {/* Step 1: Live On-Site GPS & Map Verification */}
+                  <div className="space-y-3 border border-slate-200 rounded-2xl p-4 bg-slate-50/70">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+                          1
+                        </span>
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                          Step 1: Live On-Site GPS Verification &amp; Map
+                        </span>
+                      </div>
+                      {locationVerified ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1 border border-emerald-300">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Unlocked (On-Site)</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold flex items-center gap-1 border border-rose-300">
+                          <Lock className="w-3 h-3 text-rose-600" />
+                          <span>Locked (Verify Location)</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Live Interactive Map with Dual Locations */}
+                    <div className="space-y-1.5">
+                      <AdminResolutionMap
+                        issueLat={selectedComplaint.latitude}
+                        issueLng={selectedComplaint.longitude}
+                        issueTitle={selectedComplaint.title}
+                        adminLat={subadminLat}
+                        adminLng={subadminLng}
+                        distance={locationDistance}
+                        isMatched={locationVerified}
+                      />
+                      <p className="text-[10px] text-slate-400 text-center">
+                        Red Pin = Reported Grievance Location &bull; 500m allowable boundary circle &bull; Green/Blue Pin = Your Live Detected GPS
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleVerifyLocation()}
+                      disabled={locationCheckLoading}
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
+                        locationVerified
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      {locationCheckLoading ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Acquiring Hardware GPS Location...</span>
+                        </>
+                      ) : locationVerified ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>✅ Location Verified! ({locationDistance}m away) — Click to Re-check GPS</span>
+                        </>
+                      ) : (
+                        <>
+                          <Navigation className="w-3.5 h-3.5" />
+                          <span>📍 Verify / Refresh My Live GPS Location</span>
+                        </>
+                      )}
+                    </button>
+
+                    {locationError && (
+                      <div className="space-y-1.5 bg-red-50 border border-red-300 rounded-xl p-3">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                          <span className="text-[11px] text-red-800 font-semibold">{locationError}</span>
+                        </div>
+                        {subadminLat !== null && subadminLng !== null && (
+                          <div className="text-[10px] text-red-700 pl-6 space-y-0.5 font-mono">
+                            <div>Your Detected GPS: {subadminLat.toFixed(5)}, {subadminLng.toFixed(5)}</div>
+                            <div>Complaint Issue GPS: {selectedComplaint.latitude.toFixed(5)}, {selectedComplaint.longitude.toFixed(5)}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {locationVerified && (
+                      <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-300 rounded-xl p-3">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <div className="text-[11px] text-emerald-800">
+                          <span className="font-bold">Location Matched!</span> You are <strong>{locationDistance}m</strong> from the issue site (within 500m geofence). Resolution tools below are now <strong>unlocked</strong>.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lock Notice if Location is not matched */}
+                  {!locationVerified && (
+                    <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+                      <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs font-black text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>Resolution Actions Locked</span>
+                        </div>
+                        <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
+                          CivicLens strictly requires physical presence on-site. Because your detected location does not match the issue location (within 500m), resolution notes, camera photo capture, and publishing as Resolved are locked until you reach the site.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Resolution Notes (Enabled only when GPS matches) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-500'}`}>
+                          2
+                        </span>
+                        <span>Resolution Notes <span className="text-red-500">*</span></span>
+                      </span>
+                      {!locationVerified && <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>}
+                    </label>
+                    <textarea
+                      rows={3}
+                      required={newStatus === 'Resolved'}
+                      value={resolutionNotes}
+                      onChange={(e) => setResolutionNotes(e.target.value)}
+                      disabled={!locationVerified}
+                      placeholder={
+                        locationVerified
+                          ? 'Describe action taken, contractor assigned, materials used, and completion details...'
+                          : '🔒 Locked: Verify location in Step 1 to enter resolution notes...'
+                      }
+                      className={`w-full px-4 py-2.5 border rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
+                        locationVerified
+                          ? 'bg-slate-50 border-slate-200 focus:bg-white text-slate-900'
+                          : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Step 3: Take Resolution Photo & Groq AI Verification */}
+                  <div className={`space-y-3 border rounded-2xl p-4 transition ${locationVerified ? 'border-slate-200 bg-white' : 'border-slate-200 bg-slate-50/50 opacity-60'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${locationVerified ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-500'}`}>
+                        3
+                      </span>
+                      <span className="text-xs font-bold text-slate-700 uppercase">
+                        Take On-Site Resolution Photo <span className="text-red-500">*</span>
+                      </span>
+                      {!locationVerified && (
+                        <span className="text-[10px] text-rose-500 font-semibold ml-auto flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Locked (Verify location first)
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowResolutionCamera(true)}
+                      disabled={!locationVerified}
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm ${
+                        locationVerified
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{resolutionPhotoFile ? '📸 Retake Live On-Site Photo' : '📸 Take Live On-Site Photo'}</span>
+                    </button>
+
+                    {resolutionPhotoPreview && (
+                      <div className="space-y-2.5 pt-1">
+                        <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                          <ComplaintImage
+                            src={resolutionPhotoPreview}
+                            alt="Resolution proof"
+                            heightClass="h-48"
+                            onClick={() =>
+                              setPreviewImage({
+                                url: resolutionPhotoPreview,
+                                title: 'Resolution Proof Captured',
+                                subtitle: `GPS: ${resolutionPhotoLat?.toFixed(5)}, ${resolutionPhotoLng?.toFixed(5)} | ${new Date().toLocaleString('en-IN')}`,
+                              })
+                            }
+                            bottomOverlay={
+                              <div className="bg-black/75 backdrop-blur-sm p-1.5 rounded text-[10px] text-white font-mono flex justify-between items-center">
+                                <span>GPS: {resolutionPhotoLat?.toFixed(5)}, {resolutionPhotoLng?.toFixed(5)}</span>
+                                <span>{new Date().toLocaleTimeString('en-IN')}</span>
+                              </div>
+                            }
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setResolutionPhotoFile(null);
+                              setResolutionPhotoPreview('');
+                              setResolutionPhotoLat(null);
+                              setResolutionPhotoLng(null);
+                              setAiResolutionResult(null);
+                              setAiResolutionError('');
+                            }}
+                            className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-30"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Groq AI Vision Resolution Audit Feedback */}
+                        {analyzingResolutionAi && (
+                          <div className="bg-gradient-to-r from-purple-50 via-sky-50 to-indigo-50 border border-purple-200 rounded-xl p-3 flex items-center gap-2.5 text-xs text-purple-900 shadow-xs animate-pulse">
+                            <Loader2 className="w-4 h-4 animate-spin text-purple-600 shrink-0" />
+                            <div className="flex-1">
+                              <div className="font-bold flex items-center gap-1.5 text-purple-800">
+                                <Bot className="w-4 h-4 text-purple-600" />
+                                <span>Groq AI Vision is auditing resolution proof...</span>
+                              </div>
+                              <p className="text-[10px] text-purple-600 font-normal">
+                                Analyzing image to verify work completion against "{selectedComplaint.title}"
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {!analyzingResolutionAi && aiResolutionResult && (
+                          <div
+                            className={`p-3.5 rounded-xl border space-y-1.5 shadow-2xs ${
+                              aiResolutionResult.isResolvedCorrectly
+                                ? 'bg-emerald-50/90 border-emerald-300 text-emerald-900'
+                                : 'bg-red-50 border-red-300 text-red-900'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 font-bold text-xs">
+                                {aiResolutionResult.isResolvedCorrectly ? (
+                                  <>
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                    <span className="text-emerald-800">Groq AI Verified: {aiResolutionResult.resolutionStatus || 'Resolution Confirmed'}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                                    <span className="text-red-800">Groq AI Rejected: {aiResolutionResult.resolutionStatus || 'Work Incomplete / Invalid'}</span>
+                                  </>
+                                )}
+                              </div>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  aiResolutionResult.isResolvedCorrectly
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                Confidence: {aiResolutionResult.confidence || 'High'}
+                              </span>
+                            </div>
+
+                            {aiResolutionResult.analysis && (
+                              <p className="text-[11px] leading-relaxed">
+                                {aiResolutionResult.analysis}
+                              </p>
+                            )}
+
+                            {!aiResolutionResult.isResolvedCorrectly && aiResolutionResult.rejectionReason && (
+                              <p className="text-[11px] font-bold text-red-700 bg-red-100/70 p-2 rounded-lg border border-red-200">
+                                ⚠️ {aiResolutionResult.rejectionReason}
+                              </p>
+                            )}
+
+                            <div className="flex justify-end pt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (resolutionPhotoFile && resolutionPhotoPreview) {
+                                    analyzeResolutionWithAi(resolutionPhotoFile, resolutionPhotoPreview);
+                                  }
+                                }}
+                                className="text-[10px] font-bold text-slate-600 hover:text-slate-900 underline flex items-center gap-1"
+                              >
+                                <Sparkles className="w-3 h-3 text-purple-500" />
+                                <span>Re-run Groq AI Audit</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {!analyzingResolutionAi && aiResolutionError && (
+                          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>{aiResolutionError}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Requirement Helper Banner for Resolved */}
+                  {!locationVerified ? (
+                    <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800 flex items-center gap-2 font-medium">
+                      <Lock className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>GPS verification required: Verify your location in Step 1 within 500m of the issue to unlock notes &amp; photo capture.</span>
+                    </div>
+                  ) : !resolutionNotes.trim() ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
+                      <PenSquare className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Resolution notes required: Please describe the repair work done in Step 2.</span>
+                    </div>
+                  ) : !resolutionPhotoPreview ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
+                      <Camera className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Resolution photo required: Take a live photo in Step 3 to mark this issue as Resolved.</span>
+                    </div>
+                  ) : analyzingResolutionAi ? (
+                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800 flex items-center gap-2 font-medium">
+                      <Loader2 className="w-4 h-4 text-purple-600 animate-spin shrink-0" />
+                      <span>AI Verification in progress: Auditing resolution photo...</span>
+                    </div>
+                  ) : aiResolutionResult?.isResolvedCorrectly === false ? (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-center gap-2 font-semibold">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>Resolution photo rejected by Groq AI. Submission is disabled until a valid photo of completed work is provided.</span>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2 font-semibold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>GPS &amp; Groq AI Verified! Ready to publish resolved update.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -1037,15 +1133,23 @@ export const AdminDashboard: React.FC = () => {
                   type="submit"
                   disabled={
                     updating ||
-                    !locationVerified ||
-                    analyzingResolutionAi ||
-                    (newStatus === 'Resolved' && (!resolutionPhotoPreview || aiResolutionResult?.isResolvedCorrectly === false))
+                    (newStatus === 'Resolved' && (
+                      !locationVerified ||
+                      !resolutionNotes.trim() ||
+                      !resolutionPhotoPreview ||
+                      analyzingResolutionAi ||
+                      aiResolutionResult?.isResolvedCorrectly === false
+                    ))
                   }
                   className={`px-6 py-2.5 font-bold text-xs rounded-xl shadow transition flex items-center gap-2 ${
-                    !locationVerified ||
                     updating ||
-                    analyzingResolutionAi ||
-                    (newStatus === 'Resolved' && (!resolutionPhotoPreview || aiResolutionResult?.isResolvedCorrectly === false))
+                    (newStatus === 'Resolved' && (
+                      !locationVerified ||
+                      !resolutionNotes.trim() ||
+                      !resolutionPhotoPreview ||
+                      analyzingResolutionAi ||
+                      aiResolutionResult?.isResolvedCorrectly === false
+                    ))
                       ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
                       : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
                   }`}
@@ -1055,13 +1159,35 @@ export const AdminDashboard: React.FC = () => {
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Saving Update...</span>
                     </>
+                  ) : newStatus !== 'Resolved' ? (
+                    <span>Save Status Update ({newStatus})</span>
                   ) : !locationVerified ? (
                     <>
                       <Lock className="w-3.5 h-3.5" />
-                      <span>Locked (Out of Range)</span>
+                      <span>Locked (GPS Out of Range)</span>
+                    </>
+                  ) : !resolutionNotes.trim() ? (
+                    <span>Enter Notes to Save</span>
+                  ) : !resolutionPhotoPreview ? (
+                    <>
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Take Photo to Save</span>
+                    </>
+                  ) : analyzingResolutionAi ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>AI Auditing Proof...</span>
+                    </>
+                  ) : aiResolutionResult?.isResolvedCorrectly === false ? (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Disabled (Invalid Photo)</span>
                     </>
                   ) : (
-                    <span>Save &amp; Publish Update</span>
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Save &amp; Publish Resolved Grievance</span>
+                    </>
                   )}
                 </button>
               </div>

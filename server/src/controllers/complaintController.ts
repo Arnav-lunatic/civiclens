@@ -637,64 +637,87 @@ export const updateComplaintStatus = async (req: AuthRequest, res: Response): Pr
       }
     }
 
-    // Strict GPS Location verification for Admin Updates:
-    // Admin must be on-site within MAX_RESOLUTION_DISTANCE_METERS (500m) of the grievance GPS
-    const rawLat = resolutionLat || adminLat;
-    const rawLng = resolutionLng || adminLng;
-    const lat = parseFloat(rawLat);
-    const lng = parseFloat(rawLng);
+    if (status === 'Resolved') {
+      // Strict GPS Location verification is mandatory for Resolved status:
+      // Admin must be on-site within MAX_RESOLUTION_DISTANCE_METERS (500m) of the grievance GPS
+      const rawLat = resolutionLat || adminLat;
+      const rawLng = resolutionLng || adminLng;
+      const lat = parseFloat(rawLat);
+      const lng = parseFloat(rawLng);
 
-    if (isNaN(lat) || isNaN(lng)) {
-      res.status(400).json({
-        success: false,
-        message: 'Strict on-site GPS location verification is mandatory to save and publish updates.',
-      });
-      return;
-    }
+      if (isNaN(lat) || isNaN(lng)) {
+        res.status(400).json({
+          success: false,
+          message: 'Strict on-site GPS location verification is mandatory to mark a grievance as Resolved.',
+        });
+        return;
+      }
 
-    const distance = haversineDistance(lat, lng, complaint.latitude, complaint.longitude);
+      const distance = haversineDistance(lat, lng, complaint.latitude, complaint.longitude);
 
-    if (distance > MAX_RESOLUTION_DISTANCE_METERS) {
-      const distStr = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`;
-      res.status(403).json({
-        success: false,
-        message: `GPS Location not matched. You are ${distStr} away from the grievance location (${complaint.latitude.toFixed(5)}, ${complaint.longitude.toFixed(5)}). Reach the site to save and publish updates.`,
-        distance: Math.round(distance),
-      });
-      return;
-    }
+      if (distance > MAX_RESOLUTION_DISTANCE_METERS) {
+        const distStr = distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`;
+        res.status(403).json({
+          success: false,
+          message: `GPS Location not matched. You are ${distStr} away from the grievance location (${complaint.latitude.toFixed(5)}, ${complaint.longitude.toFixed(5)}). Reach the site to mark as Resolved.`,
+          distance: Math.round(distance),
+        });
+        return;
+      }
 
-    if (req.file) {
-      const result = await uploadToCloudinary(req.file.buffer, 'civiclens/resolutions');
-      complaint.resolvedImageUrl = result.secure_url;
-      complaint.resolvedImages.push({
-        url: result.secure_url,
-        latitude: lat,
-        longitude: lng,
+      if (req.file) {
+        const result = await uploadToCloudinary(req.file.buffer, 'civiclens/resolutions');
+        complaint.resolvedImageUrl = result.secure_url;
+        complaint.resolvedImages.push({
+          url: result.secure_url,
+          latitude: lat,
+          longitude: lng,
+          timestamp: new Date(),
+        });
+      } else if (req.body.resolvedImageUrl) {
+        complaint.resolvedImageUrl = req.body.resolvedImageUrl;
+      }
+
+      if (!complaint.resolvedImageUrl && !req.file && !req.body.resolvedImageUrl) {
+        res.status(400).json({
+          success: false,
+          message: 'A live verified resolution proof photo is required to mark a grievance as Resolved.',
+        });
+        return;
+      }
+
+      complaint.status = 'Resolved';
+      if (resolutionNotes) complaint.resolutionNotes = resolutionNotes;
+
+      complaint.timeline.push({
+        status: 'Resolved',
+        message: resolutionNotes || `Grievance resolved and verified on-site by ${req.user?.name} (${req.user?.role}) [GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}]`,
+        updatedBy: req.user!._id,
+        updaterRole: req.user!.role,
         timestamp: new Date(),
       });
-    } else if (req.body.resolvedImageUrl) {
-      complaint.resolvedImageUrl = req.body.resolvedImageUrl;
-    }
+    } else {
+      // Non-Resolved updates (Under Review, In Progress, Rejected, etc.) - No GPS or photo required
+      if (status) complaint.status = status;
+      if (resolutionNotes) complaint.resolutionNotes = resolutionNotes;
 
-    if (status === 'Resolved' && !complaint.resolvedImageUrl && !req.file && !req.body.resolvedImageUrl) {
-      res.status(400).json({
-        success: false,
-        message: 'A live verified resolution proof photo is required to mark a grievance as Resolved.',
+      let defaultMsg = `Status updated to ${status} by ${req.user?.name} (${req.user?.role})`;
+      if (status === 'In Progress') {
+        defaultMsg = `Field team dispatched & grievance marked In Progress by ${req.user?.name}`;
+      } else if (status === 'Under Review') {
+        defaultMsg = `Grievance placed Under Review by ${req.user?.name}`;
+      } else if (status === 'Rejected') {
+        defaultMsg = `Grievance marked as Rejected by ${req.user?.name}`;
+      }
+
+      complaint.timeline.push({
+        status: status || complaint.status,
+        message: resolutionNotes || defaultMsg,
+        updatedBy: req.user!._id,
+        updaterRole: req.user!.role,
+        timestamp: new Date(),
       });
-      return;
     }
-
-    if (status) complaint.status = status;
-    if (resolutionNotes) complaint.resolutionNotes = resolutionNotes;
-
-    complaint.timeline.push({
-      status: status || complaint.status,
-      message: resolutionNotes || `Status updated to ${status} by ${req.user?.name} (${req.user?.role}) [Verified on-site at ${lat.toFixed(5)}, ${lng.toFixed(5)}]`,
-      updatedBy: req.user!._id,
-      updaterRole: req.user!.role,
-      timestamp: new Date(),
-    });
 
     await complaint.save();
 
