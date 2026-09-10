@@ -132,12 +132,12 @@ export const AdminResolutionMap: React.FC<AdminResolutionMapProps> = ({
   }, [issueLat, issueLng, issueTitle, adminLat, adminLng, distance, isMatched]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-slate-300 shadow-sm h-64 sm:h-72 w-full z-10 bg-slate-100">
+    <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-sm h-64 sm:h-72 w-full z-10 bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Top Floating Telemetry Status Banner */}
       <div className="absolute top-2.5 left-2.5 right-2.5 z-[400] pointer-events-none flex flex-wrap gap-2 justify-between items-center">
-        <div className="bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-[10px] font-mono shadow-md border border-slate-700/80 flex items-center gap-2">
+        <div className="bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-[10px] font-mono shadow-md border border-slate-750 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-rose-500"></span>
           <span>Issue GPS: {issueLat.toFixed(5)}, {issueLng.toFixed(5)}</span>
         </div>
@@ -169,13 +169,13 @@ export const AdminResolutionMap: React.FC<AdminResolutionMapProps> = ({
 
       {/* Bottom Map Legend */}
       <div className="absolute bottom-2 left-2.5 right-2.5 z-[400] pointer-events-none flex justify-between items-end text-[10px]">
-        <div className="bg-white/95 backdrop-blur-md text-slate-800 px-3 py-1.5 rounded-xl shadow-md border border-slate-200 space-y-0.5">
+        <div className="bg-slate-950/90 backdrop-blur-md text-slate-200 px-3 py-1.5 rounded-xl shadow-md border border-white/10 space-y-0.5">
           <div className="flex items-center gap-2 font-semibold">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
             <span>Red Marker: Grievance Location (500m Geofence)</span>
           </div>
           <div className="flex items-center gap-2 font-semibold">
-            <span className={`w-2.5 h-2.5 rounded-full inline-block ${isMatched ? 'bg-emerald-500' : 'bg-red-600 animate-pulse'}`}></span>
+            <span className={`w-2.5 h-2.5 rounded-full inline-block ${isMatched ? 'bg-emerald-400' : 'bg-red-500 animate-pulse'}`}></span>
             <span>{isMatched ? 'Green Marker: Your Verified Location' : 'Detected Marker: Your Current Location'}</span>
           </div>
         </div>

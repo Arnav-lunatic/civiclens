@@ -67,6 +67,7 @@ export interface Complaint {
     department?: string;
   };
   resolutionNotes?: string;
+  resolvedAt?: string;
   timeline: TimelineEvent[];
   createdAt: string;
   updatedAt: string;

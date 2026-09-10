@@ -4,110 +4,114 @@ import { FileText, AlertTriangle, ShieldCheck, Scale, CheckCircle2, ArrowLeft, B
 
 export const TermsOfService: React.FC = () => {
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#090d16] text-slate-200 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      <div className="max-w-4xl mx-auto space-y-8 relative">
         {/* Navigation Breadcrumb */}
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-sky-600 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-sky-400 transition"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
         </Link>
 
         {/* Hero Header */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-sm space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center">
+        <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 sm:p-10 border border-slate-800 shadow-2xl space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center">
             <Scale className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Terms of Service &amp; Code of Conduct
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
               Effective Date: September 2026 &bull; CivicLens Municipal Infrastructure Platform
             </p>
           </div>
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-sm text-slate-300 leading-relaxed">
             Welcome to CivicLens. By accessing our platform, reporting public grievances, or reviewing municipal resolution records, you agree to comply with these Terms of Service. Please review these terms carefully before submitting any geotagged grievances.
           </p>
         </div>
 
         {/* Policy Sections */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-sm space-y-8 text-sm text-slate-700 leading-relaxed">
+        <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 sm:p-10 border border-slate-800 shadow-2xl space-y-8 text-sm text-slate-300 leading-relaxed">
           {/* Section 1: Non-Emergency Notice */}
-          <section className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2">
-            <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
-              <Flame className="w-4 h-4 text-amber-600 shrink-0" />
+          <section className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-2">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+              <Flame className="w-4 h-4 text-amber-400 shrink-0" />
               <span>CRITICAL: Not an Emergency Response Service</span>
             </div>
-            <p className="text-xs text-amber-800 leading-relaxed">
-              CivicLens is dedicated strictly to non-emergency municipal infrastructure maintenance (potholes, garbage accumulation, sewage leaks, broken streetlights). For immediate life-safety emergencies, crimes in progress, fires, or medical crises, please dial your official emergency helpline directly (<strong>112</strong> for Police/Disaster, <strong>101</strong> for Fire, <strong>108</strong> for Ambulance).
+            <p className="text-xs text-amber-200/80 leading-relaxed">
+              CivicLens is dedicated strictly to non-emergency municipal infrastructure maintenance (potholes, garbage accumulation, sewage leaks, broken streetlights). For immediate life-safety emergencies, crimes in progress, fires, or medical crises, please dial your official emergency helpline directly (<strong className="text-amber-300">112</strong> for Police/Disaster, <strong className="text-amber-300">101</strong> for Fire, <strong className="text-amber-300">108</strong> for Ambulance).
             </p>
           </section>
 
           {/* Section 2 */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base">
-              <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0" />
+            <div className="flex items-center gap-2.5 text-white font-bold text-base">
+              <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0" />
               <h2>1. Scope of Acceptable Grievance Reporting</h2>
             </div>
             <p>
               CivicLens is designed solely for reporting observable, outdoor public municipal infrastructure hazards:
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-slate-600 text-xs sm:text-sm">
-              <li><strong>Roads &amp; Potholes:</strong> Surface craters, collapsed asphalt, missing paving slabs, broken sidewalks.</li>
-              <li><strong>Garbage &amp; Sanitation:</strong> Overflowing community bins, unauthorized roadside dumps, unsanitary waste heaps.</li>
-              <li><strong>Water Supply &amp; Sewage:</strong> Broken public municipal pipelines, overflowing manholes, open stormwater drains.</li>
-              <li><strong>Electricity &amp; Streetlights:</strong> Non-functional municipal streetlights, damaged electric poles, hazardous dangling live wires outdoors.</li>
-              <li><strong>Public Infrastructure:</strong> Damaged public bus shelters, broken park equipment, municipal barrier damages.</li>
+            <ul className="list-disc pl-5 space-y-1.5 text-slate-400 text-xs sm:text-sm">
+              <li><strong className="text-slate-200">Roads &amp; Potholes:</strong> Surface craters, collapsed asphalt, missing paving slabs, broken sidewalks.</li>
+              <li><strong className="text-slate-200">Garbage &amp; Sanitation:</strong> Overflowing community bins, unauthorized roadside dumps, unsanitary waste heaps.</li>
+              <li><strong className="text-slate-200">Water Supply &amp; Sewage:</strong> Broken public municipal pipelines, overflowing manholes, open stormwater drains.</li>
+              <li><strong className="text-slate-200">Electricity &amp; Streetlights:</strong> Non-functional municipal streetlights, damaged electric poles, hazardous dangling live wires outdoors.</li>
+              <li><strong className="text-slate-200">Public Infrastructure:</strong> Damaged public bus shelters, broken park equipment, municipal barrier damages.</li>
             </ul>
           </section>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-800" />
 
           {/* Section 3 */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base">
-              <Ban className="w-5 h-5 text-rose-600 shrink-0" />
+            <div className="flex items-center gap-2.5 text-white font-bold text-base">
+              <Ban className="w-5 h-5 text-rose-400 shrink-0" />
               <h2>2. Strictly Prohibited Content &amp; Actions</h2>
             </div>
             <p>
               CivicLens operates automated Computer Vision AI filters and manual audit procedures. Submitting any of the following will result in instant rejection and permanent account revocation:
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-slate-600 text-xs sm:text-sm">
-              <li><strong>Personal Portraits &amp; Selfies:</strong> Studio photos, passport photos, individual portraits, or human face pictures. Municipal authorities do not process personal portraits.</li>
-              <li><strong>Personal Electronics &amp; Domestic Interiors:</strong> Photos of laptops, computer monitors, phone screens, bedroom furniture, or private domestic interiors.</li>
-              <li><strong>Obscene, NSFW &amp; Vulgar Imagery:</strong> Any sexually explicit, obscene, offensive, or defamatory content is strictly forbidden and subject to legal referral.</li>
-              <li><strong>GPS Mocking &amp; False Telemetry:</strong> Using mock location emulators, fake coordinate injection, or tampered hardware GPS signals.</li>
-              <li><strong>Frivolous or Malicious Reports:</strong> Filing repeated duplicate or fictitious complaints intended to harass municipal staff or waste public resources.</li>
+            <ul className="list-disc pl-5 space-y-1.5 text-slate-400 text-xs sm:text-sm">
+              <li><strong className="text-slate-200">Personal Portraits &amp; Selfies:</strong> Studio photos, passport photos, individual portraits, or human face pictures. Municipal authorities do not process personal portraits.</li>
+              <li><strong className="text-slate-200">Personal Electronics &amp; Domestic Interiors:</strong> Photos of laptops, computer monitors, phone screens, bedroom furniture, or private domestic interiors.</li>
+              <li><strong className="text-slate-200">Obscene, NSFW &amp; Vulgar Imagery:</strong> Any sexually explicit, obscene, offensive, or defamatory content is strictly forbidden and subject to legal referral.</li>
+              <li><strong className="text-slate-200">GPS Mocking &amp; False Telemetry:</strong> Using mock location emulators, fake coordinate injection, or tampered hardware GPS signals.</li>
+              <li><strong className="text-slate-200">Frivolous or Malicious Reports:</strong> Filing repeated duplicate or fictitious complaints intended to harass municipal staff or waste public resources.</li>
             </ul>
           </section>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-800" />
 
           {/* Section 4 */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base">
-              <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+            <div className="flex items-center gap-2.5 text-white font-bold text-base">
+              <FileText className="w-5 h-5 text-blue-400 shrink-0" />
               <h2>3. Live Camera Sensor &amp; Verification Protocol</h2>
             </div>
             <p>
               To protect the integrity of public municipal grievance records:
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-slate-600 text-xs sm:text-sm">
+            <ul className="list-disc pl-5 space-y-1.5 text-slate-400 text-xs sm:text-sm">
               <li>Citizens agree to capture real-time photographs on-site using the platform's live camera interface.</li>
               <li>Citizens consent to embedding unalterable GPS coordinates, accuracy margins, and timestamps onto the captured image canvas.</li>
               <li>District Sub-Admins agree to be physically present within 100 meters of the recorded grievance coordinates to submit live photographic resolution proof before tickets can be marked as Resolved.</li>
             </ul>
           </section>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-800" />
 
           {/* Section 5 */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base">
-              <Scale className="w-5 h-5 text-blue-600 shrink-0" />
+            <div className="flex items-center gap-2.5 text-white font-bold text-base">
+              <Scale className="w-5 h-5 text-blue-400 shrink-0" />
               <h2>4. Public Domain License for Civic Imagery</h2>
             </div>
             <p>
@@ -115,29 +119,29 @@ export const TermsOfService: React.FC = () => {
             </p>
           </section>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-800" />
 
           {/* Section 6 */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base">
-              <AlertTriangle className="w-5 h-5 text-slate-600 shrink-0" />
+            <div className="flex items-center gap-2.5 text-white font-bold text-base">
+              <AlertTriangle className="w-5 h-5 text-slate-400 shrink-0" />
               <h2>5. Limitation of Liability &amp; Repair Disclaimers</h2>
             </div>
             <p>
               CivicLens is a civic-technology bridge facilitating direct geotagged communication between citizens and authorized local government bodies. While the platform routes and tracks all grievances with high transparency:
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-slate-600 text-xs sm:text-sm">
+            <ul className="list-disc pl-5 space-y-1.5 text-slate-400 text-xs sm:text-sm">
               <li>Physical execution of road paving, pipeline maintenance, electrical repairs, and waste collection remains the operational responsibility of local municipal corporations and contracted agencies.</li>
               <li>CivicLens does not assume liability for physical injuries, vehicular damage, or property losses arising from municipal road or electrical hazards prior to government repair.</li>
             </ul>
           </section>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-800" />
 
           {/* Section 7 */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-2.5 text-white font-bold text-base">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
               <h2>6. Modifications to Terms</h2>
             </div>
             <p>

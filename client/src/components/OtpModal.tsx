@@ -45,27 +45,27 @@ export const OtpModal: React.FC<OtpModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl">
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-900/95 border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl shadow-sky-500/10 text-slate-100">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl mx-auto">
+          <div className="w-12 h-12 rounded-2xl bg-sky-500/15 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xl mx-auto">
             <MailCheck className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Verify Email & Submit Issue</h3>
-          <p className="text-xs text-slate-500">
-            A 6-digit verification code was sent to <strong className="text-slate-800">{email}</strong>. Please check your inbox & spam folder.
+          <h3 className="text-lg font-bold text-white">Verify Email & Submit Issue</h3>
+          <p className="text-xs text-slate-400">
+            A 6-digit verification code was sent to <strong className="text-sky-300 font-medium">{email}</strong>. Please check your inbox & spam folder.
           </p>
         </div>
 
         {devOtp && (
-          <div className="p-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs text-center font-medium">
-            Dev Mode OTP: <strong className="font-mono text-sm">{devOtp}</strong>
+          <div className="p-3 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-2xl text-xs text-center font-medium">
+            Development Preview OTP: <strong className="font-mono text-sm tracking-widest text-emerald-400">{devOtp}</strong>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 text-center">
+            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2 text-center">
               Enter 6-Digit Email OTP
             </label>
             <input
@@ -75,14 +75,14 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
               placeholder="849201"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-mono text-center tracking-widest text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition"
+              className="w-full px-4 py-3 bg-slate-800/80 border border-slate-700/80 rounded-2xl text-lg font-mono text-center tracking-[0.4em] text-white focus:bg-slate-900 focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading || otp.length < 6}
-            className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-500/20 transition disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 text-white font-bold text-xs shadow-lg shadow-sky-500/25 transition disabled:opacity-50 active:scale-[0.98]"
           >
             {loading ? 'Verifying...' : 'Confirm OTP & Lodge Grievance'}
           </button>
@@ -92,11 +92,11 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               type="button"
               onClick={handleResend}
               disabled={resending}
-              className="text-sky-600 font-bold hover:underline"
+              className="text-sky-400 font-bold hover:underline"
             >
               {resending ? 'Sending...' : 'Resend OTP'}
             </button>
-            <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700">
+            <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-200">
               Cancel
             </button>
           </div>

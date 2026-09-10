@@ -43,7 +43,7 @@ export const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
+      <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col justify-between selection:bg-sky-500 selection:text-white">
         <Navbar />
         <main className="flex-grow">
           <Routes>

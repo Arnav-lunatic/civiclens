@@ -110,21 +110,21 @@ export const CameraModal: React.FC<CameraModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+      <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl text-white">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Camera className="w-4 h-4 text-sky-600" />
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Camera className="w-4 h-4 text-sky-400" />
             <span>Live Geotag Camera</span>
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-800">
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3 flex items-center justify-center shadow-inner">
+        <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3 flex items-center justify-center shadow-inner border border-slate-800">
           <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
 
-          <div className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-md text-white p-2.5 rounded-xl text-[10px] font-mono leading-tight space-y-0.5">
+          <div className="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-md text-white p-2.5 rounded-xl text-[10px] font-mono leading-tight space-y-0.5 border border-white/10">
             <div className="text-emerald-400 font-bold flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               <span>GENUINE SENSOR TRACKING</span>
@@ -138,13 +138,13 @@ export const CameraModal: React.FC<CameraModalProps> = ({
           <button
             type="button"
             onClick={handleCapture}
-            className="w-16 h-16 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-2xl flex items-center justify-center shadow-lg shadow-sky-600/30 transition transform active:scale-95 border-4 border-white"
+            className="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 text-white text-2xl flex items-center justify-center shadow-lg shadow-sky-500/30 transition transform active:scale-95 border-4 border-slate-800"
           >
             <Camera className="w-6 h-6" />
           </button>
         </div>
-        <p className="text-center text-[10px] text-slate-400">
-          Click to snapshot verified sensor GPS & watermark photo
+        <p className="text-center text-[10px] text-slate-400 font-mono">
+          Click to snapshot verified sensor GPS &amp; watermark photo
         </p>
       </div>
     </div>

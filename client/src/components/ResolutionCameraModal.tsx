@@ -122,21 +122,21 @@ export const ResolutionCameraModal: React.FC<ResolutionCameraModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+      <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl text-white">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Camera className="w-4 h-4 text-emerald-600" />
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Camera className="w-4 h-4 text-emerald-400" />
             <span>Resolution Proof — Live Camera</span>
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-800">
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3 flex items-center justify-center shadow-inner">
+        <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3 flex items-center justify-center shadow-inner border border-slate-800">
           <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
 
-          <div className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-md text-white p-2.5 rounded-xl text-[10px] font-mono leading-tight space-y-0.5">
+          <div className="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-md text-white p-2.5 rounded-xl text-[10px] font-mono leading-tight space-y-0.5 border border-white/10">
             <div className="text-emerald-400 font-bold flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               <span>LOCATION VERIFIED — ON-SITE CAPTURE</span>
@@ -150,12 +150,12 @@ export const ResolutionCameraModal: React.FC<ResolutionCameraModalProps> = ({
           <button
             type="button"
             onClick={handleCapture}
-            className="w-16 h-16 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/30 transition transform active:scale-95 border-4 border-white"
+            className="w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/30 transition transform active:scale-95 border-4 border-slate-800"
           >
             <Camera className="w-6 h-6" />
           </button>
         </div>
-        <p className="text-center text-[10px] text-slate-400">
+        <p className="text-center text-[10px] text-slate-400 font-mono">
           Capture resolution proof photo with verified GPS watermark
         </p>
       </div>

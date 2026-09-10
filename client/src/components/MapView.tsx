@@ -73,18 +73,18 @@ export const MapView: React.FC<MapViewProps> = ({ lat, lng, accuracy = 10 }) => 
   }, [lat, lng, accuracy]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-inner h-56 w-full z-10">
+    <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-inner h-56 w-full z-10">
       <div ref={mapContainerRef} className="w-full h-full" />
       
       {/* Live HUD Floating Tag */}
-      <div className="absolute top-2.5 right-2.5 z-20 bg-slate-950/85 backdrop-blur-md text-white text-[10px] font-mono px-3 py-1.5 rounded-xl border border-slate-700 shadow-lg flex items-center gap-2">
+      <div className="absolute top-2.5 right-2.5 z-20 bg-slate-950/85 backdrop-blur-md text-white text-[10px] font-mono px-3 py-1.5 rounded-xl border border-white/10 shadow-lg flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
         <span className="font-bold text-emerald-400">LIVE SENSOR TRACKING</span>
         <span className="text-slate-400">&bull;</span>
         <span>Radius: &plusmn;{Math.round(accuracy)}m</span>
       </div>
 
-      <div className="absolute bottom-2 left-2.5 z-20 bg-white/90 backdrop-blur-md text-slate-800 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">
+      <div className="absolute bottom-2 left-2.5 z-20 bg-slate-950/90 backdrop-blur-md text-sky-300 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-white/10 shadow-md">
         {lat.toFixed(6)}, {lng.toFixed(6)}
       </div>
     </div>
