@@ -202,10 +202,8 @@ export const UserLogin: React.FC = () => {
       <div className="max-w-md w-full bg-white backdrop-blur-xl rounded-3xl p-8 sm:p-10 border border-slate-200/90 shadow-2xl shadow-sky-500/5 space-y-6 relative">
         <div className="text-center space-y-2">
           <div className="relative inline-block mx-auto">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 p-0.5 shadow-lg shadow-sky-500/20">
-              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-sky-600">
-                <Camera className="w-6 h-6" />
-              </div>
+            <div className="w-14 h-14 rounded-2xl bg-white p-1 shadow-lg shadow-sky-500/20 border border-slate-200 overflow-hidden flex items-center justify-center">
+              <img src="/images/logo.png" alt="CivicLens Logo" className="w-full h-full object-contain rounded-xl" />
             </div>
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
           </div>

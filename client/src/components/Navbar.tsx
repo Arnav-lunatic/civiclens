@@ -33,8 +33,8 @@ export const Navbar: React.FC = () => {
         {/* Brand Logo */}
         <Link to="/" className="flex items-center space-x-2.5 shrink-0 group">
           <div className="relative">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-sky-500 via-blue-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:shadow-lg group-hover:shadow-sky-500/30 group-hover:scale-105 transition-all duration-300">
-              <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center p-1 border border-slate-200 shadow-md shadow-sky-500/10 group-hover:shadow-lg group-hover:shadow-sky-500/20 group-hover:scale-105 transition-all duration-300 overflow-hidden">
+              <img src="/images/logo.png" alt="CivicLens Logo" className="w-full h-full object-contain rounded-xl" />
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"></span>
           </div>
