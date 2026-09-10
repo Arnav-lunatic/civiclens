@@ -58,75 +58,85 @@ export const UserDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      {/* User Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl font-black">
+      {/* Citizen Command Header */}
+      <div className="relative bg-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-5 overflow-hidden">
+        <div className="absolute top-0 right-1/3 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative flex items-center space-x-4 z-10">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-sky-500/25">
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-900">Welcome, {user?.name}</h1>
-            <p className="text-xs text-slate-500 mt-0.5">{user?.email}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-white">{user?.name}</h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                Verified Citizen
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5 font-mono">{user?.email}</p>
           </div>
         </div>
 
         <Link
           to="/report"
-          className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-2"
+          className="relative z-10 px-5 py-3 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition flex items-center gap-2 self-start sm:self-auto"
         >
           <Camera className="w-4 h-4" />
           <span>File Geotagged Grievance</span>
         </Link>
       </div>
 
-      {/* Stats Cards */}
+      {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-slate-500 uppercase">Total Reported</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">{total}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Reported</div>
+          <div className="text-3xl font-black font-mono text-slate-900">{total}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-amber-600 uppercase">Pending Review</div>
-          <div className="text-3xl font-black text-amber-600 mt-1">{pending}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-amber-600 uppercase tracking-wider">Under Triage</div>
+          <div className="text-3xl font-black font-mono text-amber-600">{pending}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-blue-600 uppercase">In Progress</div>
-          <div className="text-3xl font-black text-blue-600 mt-1">{inProgress}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-blue-600 uppercase tracking-wider">In Progress</div>
+          <div className="text-3xl font-black font-mono text-blue-600">{inProgress}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-emerald-600 uppercase">Resolved</div>
-          <div className="text-3xl font-black text-emerald-600 mt-1">{resolved}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Resolved</div>
+          <div className="text-3xl font-black font-mono text-emerald-600">{resolved}</div>
         </div>
       </div>
 
       {/* Grievance Feed */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-slate-900">My Reported Issues</h2>
+          <div>
+            <h2 className="text-xl font-black text-slate-900">My Reported Issues</h2>
+            <p className="text-xs text-slate-500">Track real-time resolution progress and officer status</p>
+          </div>
           <button
             onClick={() => loadComplaints(true)}
-            className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 transition"
+            className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1.5 transition bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200/80"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <span>Sync</span>
           </button>
         </div>
 
         {loading ? (
           <div className="py-16 text-center text-slate-400 space-y-2">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto text-sky-500" />
-            <p className="text-xs">Fetching your reported grievances from database...</p>
+            <p className="text-xs">Fetching your reported grievances from municipal database...</p>
           </div>
         ) : complaints.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
-            <CheckCircle2 className="w-12 h-12 text-sky-600 mx-auto mb-3" />
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm space-y-3">
+            <CheckCircle2 className="w-12 h-12 text-sky-600 mx-auto" />
             <h3 className="text-lg font-bold text-slate-900">No Complaints Lodged Yet</h3>
-            <p className="text-xs text-slate-500 mt-1">Spotted an issue? Report it with live geotagged proof in seconds.</p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">Spotted a civic hazard? Report it with live geotagged proof in seconds.</p>
             <Link
               to="/report"
-              className="inline-block mt-4 px-6 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold shadow hover:bg-sky-700 transition"
+              className="inline-block mt-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 text-white text-xs font-bold shadow-md shadow-sky-500/20 hover:shadow-lg transition"
             >
-              Report Issue Now
+              Report Hazard Now
             </Link>
           </div>
         ) : (

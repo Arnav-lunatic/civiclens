@@ -297,23 +297,54 @@ export const ReportIssue: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200/80 space-y-8">
-        
-        {/* Header */}
-        <div className="border-b border-slate-100 pb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span>Strict Hardware Sensor GPS &bull; Live Dynamic Stream</span>
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      {/* ─── Step Indicator Progress Bar ─── */}
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/80 shadow-xs">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+          <div className="flex items-center justify-center gap-2 p-2 rounded-xl bg-sky-50 text-sky-700 font-bold border border-sky-200/60">
+            <span className="w-5 h-5 rounded-full bg-sky-600 text-white text-[10px] flex items-center justify-center font-mono">1</span>
+            <span className="hidden sm:inline">Hardware </span>GPS Lock
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Report a Civic Issue</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Coordinates are pulled strictly from your physical device GPS hardware.
-          </p>
+          <div className={`flex items-center justify-center gap-2 p-2 rounded-xl font-bold transition ${
+            photos.length > 0
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+              : 'bg-slate-100 text-slate-500'
+          }`}>
+            <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-mono ${
+              photos.length > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-400 text-white'
+            }`}>2</span>
+            <span>Camera Proof</span>
+          </div>
+          <div className={`flex items-center justify-center gap-2 p-2 rounded-xl font-bold transition ${
+            title && description && isValidCivicIssue
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+              : 'bg-slate-100 text-slate-500'
+          }`}>
+            <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-mono ${
+              title && description && isValidCivicIssue ? 'bg-emerald-600 text-white' : 'bg-slate-400 text-white'
+            }`}>3</span>
+            <span>Redressal</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200/80 space-y-8">
+        {/* Header */}
+        <div className="border-b border-slate-100 pb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span>Strict Hardware Sensor GPS &bull; Live Dynamic Stream</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Report a Civic Hazard</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Coordinates and time are burned into photo canvas bytes via physical device sensors.
+            </p>
+          </div>
         </div>
 
         {/* Critical Civic Hazard Protocol Banner (img1.jpeg) */}
-        <div className="bg-gradient-to-r from-amber-50 via-orange-50/50 to-rose-50 border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+        <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-rose-50/80 border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
             {/* Image Preview */}
             <div className="md:col-span-4 rounded-xl overflow-hidden border border-amber-300/60 shadow-sm">
@@ -352,8 +383,8 @@ export const ReportIssue: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Citizen Details */}
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+          {/* Citizen Details Card */}
+          <div className="p-5 bg-slate-50/90 rounded-2xl border border-slate-200 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Citizen Details</span>
               {user ? (
@@ -362,7 +393,7 @@ export const ReportIssue: React.FC = () => {
                 </span>
               ) : (
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                  Guest (Email OTP on submit)
+                  Guest (Email OTP verification on submit)
                 </span>
               )}
             </div>
@@ -376,7 +407,7 @@ export const ReportIssue: React.FC = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Aarav Sharma"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-2xs"
                 />
               </div>
               <div>
@@ -388,7 +419,7 @@ export const ReportIssue: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="aarav@gmail.com"
-                  className={`w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none ${
+                  className={`w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-2xs ${
                     user ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'
                   }`}
                 />
@@ -396,20 +427,23 @@ export const ReportIssue: React.FC = () => {
             </div>
           </div>
 
-          {/* LIGHT-THEMED LIVE GPS TELEMETRY HUD */}
-          <div className="bg-slate-50/80 border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+          {/* ─── LIVE GPS TELEMETRY HUD ─── */}
+          <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">
-                    Live Hardware GPS Sensor
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-white">
+                    Step 1: Live Hardware GPS Sensor
                   </h3>
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-400 mt-0.5">
                   {gpsLoading && liveLat === null
-                    ? 'Connecting to hardware sensor...'
-                    : `Live sensor connected • Ping #${updateCount}`}
+                    ? 'Acquiring physical satellite telemetry fix...'
+                    : `Live sensor telemetry connected &bull; Telemetry ping #${updateCount}`}
                 </p>
               </div>
 
@@ -417,9 +451,9 @@ export const ReportIssue: React.FC = () => {
                 <button
                   type="button"
                   onClick={startGpsTracking}
-                  className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-sky-600" />
+                  <RefreshCw className={`w-3.5 h-3.5 text-sky-400 ${gpsLoading ? 'animate-spin' : ''}`} />
                   <span>Sync / Refresh GPS</span>
                 </button>
               </div>
@@ -427,40 +461,42 @@ export const ReportIssue: React.FC = () => {
 
             {/* GPS Error Alert */}
             {errorMessage && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                <div className="flex items-center gap-2.5 text-xs text-amber-800 font-medium">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+              <div className="p-4 bg-rose-950/80 border border-rose-800 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                <div className="flex items-center gap-2.5 text-xs text-rose-200 font-medium">
+                  <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
                 <button
                   type="button"
                   onClick={startGpsTracking}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow transition whitespace-nowrap"
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow transition whitespace-nowrap"
                 >
                   Retry Sensor Connection
                 </button>
               </div>
             )}
 
-            {/* BIG REAL-TIME DIGITS (LIGHT THEME) */}
+            {/* DIGITAL HUD COORDINATE READOUTS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Latitude Card */}
               <div className={`p-4 rounded-2xl border transition-all duration-300 ${
-                isLatPulsing ? 'bg-emerald-50 border-emerald-400 shadow-md scale-[1.01]' : 'bg-white border-slate-200 shadow-xs'
+                isLatPulsing
+                  ? 'bg-slate-800 border-sky-400 shadow-glow-sky'
+                  : 'bg-slate-950/90 border-slate-800'
               }`}>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex justify-between">
                   <span>Current Latitude</span>
-                  <span className="text-emerald-600 font-mono text-[9px] font-bold">
+                  <span className="text-sky-400 font-mono text-[9px] font-bold">
                     {liveLat !== null ? (isLatPulsing ? '↑ UPDATING' : 'LIVE STREAMING') : 'SENSOR WAIT'}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-900 mt-1 flex items-center gap-2">
+                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white mt-1 flex items-center gap-2">
                   {liveLat !== null ? (
                     liveLat.toFixed(6)
                   ) : (
                     <span className="text-sm font-sans text-slate-400 font-medium flex items-center gap-1.5">
-                      <Loader2 className="w-4 h-4 animate-spin text-sky-600" />
-                      <span>Reading Physical Sensor...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-sky-400" />
+                      <span>Reading Sensor...</span>
                     </span>
                   )}
                 </div>
@@ -468,104 +504,82 @@ export const ReportIssue: React.FC = () => {
 
               {/* Longitude Card */}
               <div className={`p-4 rounded-2xl border transition-all duration-300 ${
-                isLngPulsing ? 'bg-emerald-50 border-emerald-400 shadow-md scale-[1.01]' : 'bg-white border-slate-200 shadow-xs'
+                isLngPulsing
+                  ? 'bg-slate-800 border-sky-400 shadow-glow-sky'
+                  : 'bg-slate-950/90 border-slate-800'
               }`}>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex justify-between">
                   <span>Current Longitude</span>
-                  <span className="text-emerald-600 font-mono text-[9px] font-bold">
+                  <span className="text-sky-400 font-mono text-[9px] font-bold">
                     {liveLng !== null ? (isLngPulsing ? '↑ UPDATING' : 'LIVE STREAMING') : 'SENSOR WAIT'}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-900 mt-1 flex items-center gap-2">
+                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white mt-1 flex items-center gap-2">
                   {liveLng !== null ? (
                     liveLng.toFixed(6)
                   ) : (
                     <span className="text-sm font-sans text-slate-400 font-medium flex items-center gap-1.5">
-                      <Loader2 className="w-4 h-4 animate-spin text-sky-600" />
-                      <span>Reading Physical Sensor...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-sky-400" />
+                      <span>Reading Sensor...</span>
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Accuracy Badge */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-sky-600" />
-                <span className="text-xs font-bold text-slate-700">Physical GPS Precision:</span>
-              </div>
-              <div className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                {liveLat !== null ? `±${accuracy} meters (Hardware GPS)` : 'Waiting for hardware sensor...'}
-              </div>
-            </div>
-
-            {/* Read-Only Location Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1 flex justify-between">
-                  <span>Postal PIN Code</span>
-                  <span className="text-emerald-600 font-bold">Sensor Mapped</span>
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  value={pincode}
-                  placeholder="Auto-detected PIN..."
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-emerald-800 cursor-not-allowed"
-                />
+            {/* Precision & Postal Area Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">GPS Precision</span>
+                <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1">
+                  <Activity className="w-3.5 h-3.5" />
+                  <span>{liveLat !== null ? `±${accuracy} meters` : 'Acquiring...'}</span>
+                </span>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1 flex justify-between">
-                  <span>District / City</span>
-                  <span className="text-emerald-600 font-bold">Sensor Mapped</span>
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  value={district}
-                  placeholder="Auto-detected District..."
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 cursor-not-allowed"
-                />
+              <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">PIN Code</span>
+                <span className="text-xs font-mono font-bold text-sky-400">
+                  {pincode || 'Resolving PIN...'}
+                </span>
+              </div>
+
+              <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">District / City</span>
+                <span className="text-xs font-bold text-slate-200 truncate block">
+                  {district || 'Resolving District...'}
+                </span>
               </div>
             </div>
 
             {/* Read-Only Street Address */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1 flex justify-between">
-                <span>Street Address & Landmark</span>
-                <span className="text-emerald-600 font-bold">Verified Sensor GPS</span>
-              </label>
-              <input
-                type="text"
-                readOnly
-                value={address}
-                placeholder="Resolving street location from live GPS..."
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 cursor-not-allowed"
-              />
+            <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1 text-xs">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block">Street Landmark</span>
+              <div className="text-slate-300 font-medium">
+                {address || 'Resolving exact street address from live sensor GPS...'}
+              </div>
             </div>
 
             {/* Live Map with Accuracy Radius */}
             {liveLat && liveLng ? (
               <MapView lat={liveLat} lng={liveLng} accuracy={accuracy} />
             ) : (
-              <div className="h-48 rounded-2xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
-                <MapPin className="w-6 h-6 text-slate-300 animate-bounce" />
+              <div className="h-44 rounded-2xl border border-dashed border-slate-700 bg-slate-950/50 flex flex-col items-center justify-center text-slate-500 text-xs space-y-2">
+                <MapPin className="w-6 h-6 text-sky-500 animate-bounce" />
                 <span>Map will render strictly when hardware sensor GPS connects</span>
               </div>
             )}
           </div>
 
-          {/* Live Camera Section */}
+          {/* ─── LIVE CAMERA & GROQ AI VISION CAPTURE ─── */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <div>
                 <label className="block text-xs font-bold text-slate-900 uppercase">
-                  Step 2: Live Camera Capture *
+                  Step 2: Live Camera Proof &amp; AI Analysis *
                 </label>
                 <p className="text-[11px] text-slate-500">
-                  Each photo snapshots current live coordinates & unlocks tracking for subsequent shots.
+                  Captures on-site photo with hardware watermark and runs real-time Groq AI vision inspection.
                 </p>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-200">
@@ -577,11 +591,11 @@ export const ReportIssue: React.FC = () => {
               type="button"
               disabled={liveLat === null || liveLng === null || photos.length >= 5}
               onClick={() => setIsCameraOpen(true)}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-sky-600 hover:from-emerald-700 hover:to-sky-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-700 hover:to-sky-700 text-white font-bold text-sm shadow-md shadow-emerald-500/20 hover:shadow-lg transition flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Camera className="w-5 h-5" />
               <span>
-                {liveLat === null ? 'GPS Required to Enable Camera' : 'Open Live Camera (Real-Time Watermark)'}
+                {liveLat === null ? 'GPS Sensor Required to Enable Camera' : 'Open Live Camera (Real-Time Watermark)'}
               </span>
             </button>
 
@@ -635,7 +649,7 @@ export const ReportIssue: React.FC = () => {
           )}
 
           {isValidCivicIssue === false && !analyzingAi && (
-            <div className="p-5 bg-rose-50 border-2 border-rose-400 rounded-2xl space-y-3 shadow-md animate-in fade-in duration-200">
+            <div className="p-5 bg-rose-50 border-2 border-rose-400 rounded-2xl space-y-3 shadow-md">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
                   <AlertTriangle className="w-5 h-5" />
@@ -688,7 +702,7 @@ export const ReportIssue: React.FC = () => {
             </div>
           )}
 
-          {/* Issue Details - Disabled and Locked if Image is Invalid or No Photo Taken */}
+          {/* ─── STEP 3: ISSUE DETAILS & REDRESSAL SPECIFICATION ─── */}
           <fieldset
             disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
             className={`space-y-6 transition-all duration-200 ${
@@ -704,20 +718,6 @@ export const ReportIssue: React.FC = () => {
               </div>
             )}
 
-            {analyzingAi && (
-              <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2.5 text-sky-800 text-xs font-bold">
-                <Loader2 className="w-4 h-4 text-sky-600 animate-spin flex-shrink-0" />
-                <span>Groq AI Vision is analyzing your captured photo... Step 3 will unlock upon verification.</span>
-              </div>
-            )}
-
-            {isValidCivicIssue === false && !analyzingAi && (
-              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl flex items-center gap-2.5 text-rose-900 text-xs font-bold">
-                <Lock className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                <span>Step 3 Locked: Form fields are disabled because the captured photo was rejected. Retake a valid civic photo above to unlock.</span>
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Step 3: Issue Title *</label>
               <input
@@ -727,7 +727,7 @@ export const ReportIssue: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Hazardous open manhole & broken road"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs"
               />
             </div>
 
@@ -738,7 +738,7 @@ export const ReportIssue: React.FC = () => {
                   disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs font-medium"
                 >
                   <option value="Roads & Potholes">Roads & Potholes (PWD)</option>
                   <option value="Garbage & Sanitation">Garbage & Sanitation (Waste Board)</option>
@@ -756,10 +756,10 @@ export const ReportIssue: React.FC = () => {
                   disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs font-medium"
                 >
                   <option value="Medium">Medium (Standard SLA)</option>
-                  <option value="High">High (Urgent)</option>
+                  <option value="High">High (Urgent Redressal)</option>
                   <option value="Critical">Critical Emergency</option>
                   <option value="Low">Low</option>
                 </select>
@@ -775,7 +775,7 @@ export const ReportIssue: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the civic hazard and exact landmark..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed shadow-2xs resize-none"
               />
             </div>
           </fieldset>
@@ -783,12 +783,12 @@ export const ReportIssue: React.FC = () => {
           <button
             type="submit"
             disabled={submitting || analyzingAi || photos.length === 0 || isValidCivicIssue === false}
-            className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2 ${
+            className={`w-full py-4 rounded-2xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2 ${
               isValidCivicIssue === false
                 ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-90'
                 : photos.length === 0
-                ? 'bg-slate-400 text-white cursor-not-allowed opacity-80'
-                : 'bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
+                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-500/25 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
           >
             {isValidCivicIssue === false ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}

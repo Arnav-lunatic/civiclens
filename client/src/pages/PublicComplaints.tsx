@@ -220,67 +220,72 @@ export const PublicComplaints: React.FC = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8 overflow-x-hidden">
-      {/* Top Hero Banner */}
-      <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl flex flex-col md:flex-row justify-between md:items-center gap-5 sm:gap-6 overflow-hidden">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-sky-400 text-xs font-bold shadow-xs">
-            <Globe className="w-4 h-4 text-sky-400" />
-            <span>Public Civic Transparency &bull; All States & Districts</span>
+      {/* ─── Top Hero Transparency Banner ─── */}
+      <div className="relative bg-slate-950 text-white rounded-3xl p-6 sm:p-9 shadow-2xl overflow-hidden border border-slate-800">
+        {/* Ambient glow */}
+        <div className="absolute top-0 right-1/4 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative flex flex-col md:flex-row justify-between md:items-center gap-6 z-10">
+          <div className="space-y-2.5">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900 text-sky-400 text-xs font-bold border border-slate-800 shadow-sm">
+              <Globe className="w-4 h-4 text-sky-400" />
+              <span>Nationwide Public Civic Transparency &bull; All States & Districts</span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+              Open Public Grievance Feed
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl font-normal leading-relaxed">
+              Explore geotagged municipal complaints filed by citizens nationwide. Issues nearest to your physical coordinates are prioritized with verifiable Before & After resolution tracking.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Nationwide Public Grievance Feed
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl font-normal leading-relaxed">
-            Browse geotagged civic grievances reported by citizens across India. Issues closest to your location are shown first, with real-time before & after resolution tracking.
-          </p>
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
-          <Link
-            to="/report"
-            className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>File New Issue</span>
-          </Link>
-          <button
-            onClick={() => {
-              loadComplaints(true);
-              detectLocation();
-            }}
-            className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-700"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
-            <span>Refresh Feed</span>
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto shrink-0">
+            <Link
+              to="/report"
+              className="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-2xl shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition flex items-center justify-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>File New Hazard</span>
+            </Link>
+            <button
+              onClick={() => {
+                loadComplaints(true);
+                detectLocation();
+              }}
+              className="w-full sm:w-auto px-4 py-3 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-2xl transition flex items-center justify-center gap-2 border border-slate-800 shadow-sm"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-sky-400 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
+              <span>Sync Feed</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm text-center sm:text-left">
-          <div className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase truncate">Total Issues</div>
-          <div className="text-xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{totalCount}</div>
+      {/* ─── Metrics Summary Cards ─── */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm text-center sm:text-left space-y-1">
+          <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Total Complaints</div>
+          <div className="text-2xl sm:text-4xl font-black font-mono text-slate-900">{totalCount}</div>
         </div>
-        <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm text-center sm:text-left">
-          <div className="text-[10px] sm:text-xs font-bold text-blue-600 uppercase truncate">Active Issues</div>
-          <div className="text-xl sm:text-3xl font-black text-blue-600 mt-0.5 sm:mt-1">{activeCount}</div>
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm text-center sm:text-left space-y-1">
+          <div className="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider truncate">Active Triage</div>
+          <div className="text-2xl sm:text-4xl font-black font-mono text-blue-600">{activeCount}</div>
         </div>
-        <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm text-center sm:text-left">
-          <div className="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase truncate">Resolved</div>
-          <div className="text-xl sm:text-3xl font-black text-emerald-600 mt-0.5 sm:mt-1">{resolvedCount}</div>
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm text-center sm:text-left space-y-1">
+          <div className="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-wider truncate">Resolved &amp; Closed</div>
+          <div className="text-2xl sm:text-4xl font-black font-mono text-emerald-600">{resolvedCount}</div>
         </div>
       </div>
 
-      {/* Verified Municipal Resolutions Spotlight (before_after1.jpeg & before_after2.jpeg) */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+      {/* ─── Verified Municipal Resolutions Spotlight ─── */}
+      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Verified On-Site Redressal Showcase</span>
             </div>
-            <h2 className="text-base sm:text-lg font-black text-slate-900 mt-1">
+            <h2 className="text-base sm:text-xl font-black text-slate-900 mt-1">
               Real Impact: Verified Before &amp; After Resolutions
             </h2>
           </div>
@@ -290,15 +295,15 @@ export const PublicComplaints: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Card 1: Streetlight Resolution (Venduruthy Bridge, Cochin) */}
-          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3 flex flex-col justify-between">
+          {/* Card 1: Streetlight Resolution */}
+          <div className="border border-slate-200 rounded-3xl p-5 bg-slate-50/70 space-y-3.5 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
                   Street Lighting &bull; Kochi, Kerala
                 </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Resolved
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Resolved
                 </span>
               </div>
               <h3 className="text-sm font-bold text-slate-900">
@@ -306,7 +311,7 @@ export const PublicComplaints: React.FC = () => {
               </h3>
             </div>
 
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
               <ComplaintImage
                 src="/images/before_after1.jpeg"
                 alt="Venduruthy Bridge Streetlight Before and After"
@@ -319,7 +324,7 @@ export const PublicComplaints: React.FC = () => {
                   })
                 }
                 topLeftBadge={
-                  <span className="bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs shadow">
+                  <span className="bg-slate-900/85 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs shadow">
                     BEFORE: Dark Bridge
                   </span>
                 }
@@ -343,15 +348,15 @@ export const PublicComplaints: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 2: Electrical Hazard Resolution (Utility Pole Replaced) */}
-          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3 flex flex-col justify-between">
+          {/* Card 2: Electrical Hazard Resolution */}
+          <div className="border border-slate-200 rounded-3xl p-5 bg-slate-50/70 space-y-3.5 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
                   Public Safety &bull; Electrical Utility
                 </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Resolved
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Resolved
                 </span>
               </div>
               <h3 className="text-sm font-bold text-slate-900">
@@ -359,7 +364,7 @@ export const PublicComplaints: React.FC = () => {
               </h3>
             </div>
 
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
               <ComplaintImage
                 src="/images/before_after2.jpeg"
                 alt="Hazardous Leaning Utility Pole Before and After"
@@ -398,46 +403,46 @@ export const PublicComplaints: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3.5 overflow-hidden">
+      {/* ─── Interactive Search & Filter Deck ─── */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm space-y-4 overflow-hidden">
         {/* Row 1: Search Box */}
         <div className="relative w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by title, pincode, district, or landmark..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+            placeholder="Search by title, PIN code, district name, or landmark..."
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-2xs"
           />
         </div>
 
         {/* Row 2: Status Tabs & Sort Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full">
-          {/* Status Segmented Control (full-width on mobile, auto on desktop) */}
-          <div className="grid grid-cols-3 sm:flex gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+          {/* Status Segmented Control */}
+          <div className="grid grid-cols-3 sm:flex gap-1 bg-slate-100 p-1 rounded-2xl w-full sm:w-auto">
             {(['All', 'Active', 'Resolved'] as const).map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
-                className={`py-1.5 px-2 sm:px-3.5 rounded-lg text-xs font-bold transition text-center truncate ${
+                className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition text-center truncate ${
                   statusFilter === st
-                    ? 'bg-white text-slate-900 shadow-xs'
+                    ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {st === 'Active' ? 'Active' : st === 'Resolved' ? 'Resolved' : 'All Issues'}
+                {st === 'Active' ? 'Active Issues' : st === 'Resolved' ? 'Resolved' : 'All Issues'}
               </button>
             ))}
           </div>
 
-          {/* Sort Button (full-width on mobile, auto on desktop) */}
+          {/* Sort Button */}
           <button
             onClick={() => setSortBy(sortBy === 'nearest' ? 'newest' : 'nearest')}
-            className="w-full sm:w-auto px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shrink-0"
+            className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition flex items-center justify-center gap-2 shrink-0"
           >
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
-            <span>Sort: {sortBy === 'nearest' ? 'Nearest First' : 'Newest First'}</span>
+            <span>Sort: {sortBy === 'nearest' ? '📍 Nearest to Me' : '🕒 Newest First'}</span>
           </button>
         </div>
 
@@ -451,9 +456,9 @@ export const PublicComplaints: React.FC = () => {
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition border ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition border ${
                 categoryFilter === cat
-                  ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                  ? 'bg-sky-600 text-white border-sky-600 shadow-sm'
                   : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >

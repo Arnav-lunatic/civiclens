@@ -367,20 +367,24 @@ export const SuperAdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      {/* Top Banner */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row justify-between md:items-center gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-sky-400 text-xs font-bold mb-2">
-            <ShieldCheck className="w-4 h-4" />
+      {/* State Master Command Deck Banner */}
+      <div className="relative bg-slate-950 text-white rounded-3xl p-6 sm:p-9 shadow-2xl border border-slate-800 flex flex-col md:flex-row justify-between md:items-center gap-6 overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative space-y-2.5 z-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900 text-sky-400 text-xs font-bold border border-slate-800 shadow-2xs">
+            <ShieldCheck className="w-4 h-4 text-sky-400" />
             <span>State Governance Master Console</span>
           </div>
-          <h1 className="text-2xl font-black">{user?.name}</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Central state administrative oversight & officer creation</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white">{user?.name || 'State Central Admin'}</h1>
+          <p className="text-xs text-slate-400 font-normal">
+            Statewide municipal oversight, officer provisioning, and cross-district grievance auditing.
+          </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-2"
+          className="relative z-10 px-6 py-3.5 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition flex items-center gap-2 self-start md:self-auto"
         >
           <UserPlus className="w-4 h-4" />
           <span>Register District Sub-Admin</span>
@@ -390,23 +394,23 @@ export const SuperAdminDashboard: React.FC = () => {
       {/* Metrics Grid */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold text-slate-500 uppercase">Statewide Grievances</div>
-            <div className="text-3xl font-black text-slate-900 mt-1">{stats.totalComplaints}</div>
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Statewide Grievances</div>
+            <div className="text-3xl font-black font-mono text-slate-900">{stats.totalComplaints}</div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold text-emerald-600 uppercase">Resolved Rate</div>
-            <div className="text-3xl font-black text-emerald-600 mt-1">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider">State Resolution Rate</div>
+            <div className="text-3xl font-black font-mono text-emerald-600">
               {stats.resolutionRate ? `${stats.resolutionRate.toString().replace(/%/g, '')}%` : '0%'}
             </div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold text-blue-600 uppercase">Active Citizens</div>
-            <div className="text-3xl font-black text-blue-600 mt-1">{stats.totalCitizens}</div>
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-xs font-bold text-blue-600 uppercase tracking-wider">Active Citizens</div>
+            <div className="text-3xl font-black font-mono text-blue-600">{stats.totalCitizens}</div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold text-purple-600 uppercase">District Sub-Admins</div>
-            <div className="text-3xl font-black text-purple-600 mt-1">{stats.totalSubAdmins}</div>
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+            <div className="text-xs font-bold text-purple-600 uppercase tracking-wider">District Sub-Admins</div>
+            <div className="text-3xl font-black font-mono text-purple-600">{stats.totalSubAdmins}</div>
           </div>
         </div>
       )}

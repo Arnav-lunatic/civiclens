@@ -331,37 +331,39 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      {/* Officer Scope Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100 shadow-2xs">
-            <Shield className="w-4 h-4 text-blue-600" />
-            <span>{role === 'superadmin' ? 'State Governance Super Admin' : 'District Admin Console'}</span>
+      {/* Officer Scope Command Header */}
+      <div className="relative bg-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl flex flex-col md:flex-row justify-between md:items-center gap-6 overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative space-y-2.5 z-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900 text-sky-400 text-xs font-bold border border-slate-800 shadow-2xs">
+            <Shield className="w-4 h-4 text-sky-400" />
+            <span>{role === 'superadmin' ? 'State Governance Super Admin' : 'District Administrative Operations'}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-black text-white">
               {role === 'superadmin' ? (currentUser?.name || 'State Central Admin') : (currentUser?.name === 'State Central Admin' ? 'District Admin' : (currentUser?.name || 'District Admin'))}
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px]">
-              {role === 'superadmin' ? 'Super Admin' : 'District Admin'}
+            <span className="px-3 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 font-mono font-bold text-xs">
+              {role === 'superadmin' ? 'Super Admin' : 'District Officer'}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 pt-0.5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 pt-0.5">
             <div className="flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span>District: <strong className="text-slate-900 font-bold">{currentUser?.assignedDistrict || 'Central District'}</strong></span>
+              <Building2 className="w-4 h-4 text-sky-400" />
+              <span>District: <strong className="text-white font-bold">{currentUser?.assignedDistrict || 'Central District'}</strong></span>
             </div>
             <span>&bull;</span>
             <div>
-              <span>Department: <strong className="text-slate-900 font-bold">{currentUser?.department || 'General Administration'}</strong></span>
+              <span>Department: <strong className="text-white font-bold">{currentUser?.department || 'General Administration'}</strong></span>
             </div>
             {currentUser?.officialId && (
               <>
                 <span>&bull;</span>
                 <div>
-                  <span>Official ID: <strong className="text-slate-900 font-mono font-bold">{currentUser.officialId}</strong></span>
+                  <span>Official ID: <strong className="text-white font-mono font-bold">{currentUser.officialId}</strong></span>
                 </div>
               </>
             )}
@@ -369,21 +371,21 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Assigned Pincodes Badge Box */}
-        <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-2 md:min-w-[260px]">
+        <div className="relative z-10 bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-2.5 md:min-w-[260px] shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Assigned Pincodes:</span>
-            <MapPin className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Assigned PIN Codes:</span>
+            <MapPin className="w-3.5 h-3.5 text-sky-400" />
           </div>
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {currentUser?.assignedPincodes && currentUser.assignedPincodes.length > 0 ? (
               currentUser.assignedPincodes.map((p: string) => (
-                <span key={p} className="px-2.5 py-1 bg-white border border-blue-200 rounded-lg text-xs font-mono font-bold text-blue-700 shadow-2xs">
+                <span key={p} className="px-2.5 py-1 bg-slate-950 border border-sky-500/30 rounded-lg text-xs font-mono font-bold text-sky-300 shadow-2xs">
                   PIN {p}
                 </span>
               ))
             ) : (
-              <span className="text-xs font-bold text-blue-700 bg-blue-100/60 px-3 py-1 rounded-lg">
-                Statewide / All Pincodes
+              <span className="text-xs font-bold text-sky-300 bg-sky-950/80 px-3 py-1 rounded-lg border border-sky-500/30">
+                Statewide / All PIN Codes
               </span>
             )}
           </div>
@@ -402,32 +404,32 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-slate-500 uppercase">Assigned In District</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">{total}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assigned In District</div>
+          <div className="text-3xl font-black font-mono text-slate-900">{total}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-amber-600 uppercase">Action Required</div>
-          <div className="text-3xl font-black text-amber-600 mt-1">{pending}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-amber-600 uppercase tracking-wider">Action Required</div>
+          <div className="text-3xl font-black font-mono text-amber-600">{pending}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-blue-600 uppercase">In Progress</div>
-          <div className="text-3xl font-black text-blue-600 mt-1">{inProgress}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-blue-600 uppercase tracking-wider">In Progress</div>
+          <div className="text-3xl font-black font-mono text-blue-600">{inProgress}</div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-emerald-600 uppercase">Resolved & Closed</div>
-          <div className="text-3xl font-black text-emerald-600 mt-1">{resolved}</div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-1">
+          <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Resolved &amp; Closed</div>
+          <div className="text-3xl font-black font-mono text-emerald-600">{resolved}</div>
         </div>
       </div>
 
-      {/* Section-Wise Department Summary Cards (Visible when managing All Departments or as Quick Overview) */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-sm">
+      {/* Section-Wise Department Summary Cards */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 space-y-4 shadow-sm">
         <div className="flex justify-between items-center">
           <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-blue-600" />
+            <Building2 className="w-5 h-5 text-sky-600" />
             <span>Section-Wise Department Breakdown</span>
           </h2>
-          <span className="text-xs text-slate-500">Click any department to filter feed</span>
+          <span className="text-xs text-slate-400">Click any department to filter feed</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -449,18 +451,18 @@ export const AdminDashboard: React.FC = () => {
                 onClick={() => setSelectedDepartment(dept)}
                 className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]'
+                    ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-[1.02]'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                 }`}
               >
-                <span className={`text-[10px] font-bold truncate ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
+                <span className={`text-[10px] font-bold truncate ${isSelected ? 'text-sky-100' : 'text-slate-500'}`}>
                   {dept}
                 </span>
                 <div className="flex items-baseline justify-between mt-2">
                   <span className={`text-xl font-black font-mono ${isSelected ? 'text-white' : 'text-slate-900'}`}>
                     {count}
                   </span>
-                  <span className={`text-[9px] font-bold uppercase ${isSelected ? 'text-blue-200' : 'text-slate-400'}`}>
+                  <span className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-200' : 'text-slate-400'}`}>
                     issues
                   </span>
                 </div>

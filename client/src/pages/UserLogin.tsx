@@ -194,50 +194,64 @@ export const UserLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl space-y-6">
+    <div className="relative min-h-[85vh] flex items-center justify-center px-4 py-16 overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-gradient-to-tr from-sky-500/15 to-teal-400/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute -bottom-10 right-10 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      <div className="max-w-md w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 sm:p-10 border border-slate-200/80 dark:border-slate-800 shadow-2xl shadow-sky-500/5 space-y-6 relative">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto text-xl">
-            <Camera className="w-6 h-6" />
+          <div className="relative inline-block mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 p-0.5 shadow-lg shadow-sky-500/20">
+              <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[14px] flex items-center justify-center text-sky-500">
+                <Camera className="w-6 h-6" />
+              </div>
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
           </div>
-          <h2 className="text-2xl font-black text-slate-900">Citizen Sign In</h2>
-          <p className="text-xs text-slate-500">Log in to track your grievances & redressal updates</p>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Citizen Portal</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Log in to track grievance lifecycle & AI verification updates</p>
         </div>
 
         {/* Tab Selector: Password vs OTP */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl">
+        <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
           <button
             type="button"
             onClick={() => { setLoginMethod('password'); setError(''); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-              loginMethod === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              loginMethod === 'password'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200/50 dark:border-slate-700'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            <KeyRound className="w-3.5 h-3.5 text-sky-600" />
+            <KeyRound className="w-3.5 h-3.5 text-sky-500" />
             <span>Password</span>
           </button>
           <button
             type="button"
             onClick={() => { setLoginMethod('otp'); setError(''); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-              loginMethod === 'otp' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              loginMethod === 'otp'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200/50 dark:border-slate-700'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+            <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
             <span>Login with OTP</span>
           </button>
         </div>
 
         {error && (
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
-            {error}
+          <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-600 dark:text-rose-400 font-medium flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
         {loginMethod === 'password' ? (
           <form onSubmit={handlePasswordLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
@@ -246,13 +260,13 @@ export const UserLogin: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="citizen@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Password</label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
@@ -261,7 +275,7 @@ export const UserLogin: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none transition"
                 />
               </div>
             </div>
@@ -269,16 +283,16 @@ export const UserLogin: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 text-white font-bold text-xs shadow-lg shadow-sky-500/25 active:scale-[0.98] transition flex items-center justify-center gap-2"
             >
-              <span>{loading ? 'Signing In...' : 'Sign In with Password'}</span>
+              <span>{loading ? 'Authenticating...' : 'Sign In with Password'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         ) : (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
@@ -287,18 +301,19 @@ export const UserLogin: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="citizen@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:outline-none transition"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                A 6-digit one-time login code will be sent to this email address.
+              <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                A 6-digit one-time code will be dispatched to your inbox.
               </p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition flex items-center justify-center gap-2"
             >
               <span>{loading ? 'Sending OTP...' : 'Get Login OTP Code'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -306,16 +321,16 @@ export const UserLogin: React.FC = () => {
           </form>
         )}
 
-        <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-slate-200"></div>
-          <span className="flex-shrink mx-4 text-slate-400 text-xs uppercase font-bold">Or</span>
-          <div className="flex-grow border-t border-slate-200"></div>
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+          <span className="flex-shrink mx-4 text-slate-400 text-[10px] uppercase font-bold tracking-widest">Or authenticate via</span>
+          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
         </div>
 
         <button
           type="button"
           onClick={handleDemoGoogleLogin}
-          className="w-full py-3 rounded-xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm transition flex items-center justify-center gap-2.5"
+          className="w-full py-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-sm active:scale-[0.98] transition flex items-center justify-center gap-2.5"
         >
           <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
             <path
@@ -335,12 +350,12 @@ export const UserLogin: React.FC = () => {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          <span>Continue with Google</span>
+          <span>Continue with Google Single Sign-On</span>
         </button>
 
-        <div className="text-center text-xs text-slate-500 pt-2">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-sky-600 font-bold hover:underline">
+        <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-1">
+          Don't have an account yet?{' '}
+          <Link to="/signup" className="text-sky-600 dark:text-sky-400 font-bold hover:underline">
             Sign up with OTP
           </Link>
         </div>
