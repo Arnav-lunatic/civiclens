@@ -245,6 +245,8 @@ const createComplaint = async (req, res) => {
       category,
       latitude,
       longitude,
+      photoLatitude,
+      photoLongitude,
       address,
       pincode,
       district,
@@ -257,6 +259,33 @@ const createComplaint = async (req, res) => {
         success: false,
         message: 'Strict GPS Location is mandatory.',
       });
+    }
+
+    const latNum = parseFloat(latitude.toString());
+    const lngNum = parseFloat(longitude.toString());
+
+    let issueLatNum = latNum;
+    let issueLngNum = lngNum;
+
+    // Physical On-Site Presence Verification against photo coordinates
+    if (photoLatitude && photoLongitude) {
+      const photoLatNum = parseFloat(photoLatitude.toString());
+      const photoLngNum = parseFloat(photoLongitude.toString());
+      if (!isNaN(photoLatNum) && !isNaN(photoLngNum)) {
+        const distMeters = haversineDistance(latNum, lngNum, photoLatNum, photoLngNum);
+        const MAX_ALLOWED_DISTANCE_METERS = 100; // 100m radius
+        if (distMeters > MAX_ALLOWED_DISTANCE_METERS) {
+          return res.status(400).json({
+            success: false,
+            message: `Physical on-site presence verification failed! You are ${Math.round(distMeters)}m away from where the photo was captured. You must be at the issue location to submit (Max allowed: ${MAX_ALLOWED_DISTANCE_METERS}m).`,
+            distance: Math.round(distMeters),
+            maxAllowed: MAX_ALLOWED_DISTANCE_METERS,
+          });
+        }
+        // Set the saved issue location strictly to the clicked photo location
+        issueLatNum = photoLatNum;
+        issueLngNum = photoLngNum;
+      }
     }
 
     if (!title || !description || !pincode) {
@@ -274,15 +303,15 @@ const createComplaint = async (req, res) => {
       });
     }
 
-    const images = await processUploadedImages(files, latitude, longitude);
+    const images = await processUploadedImages(files, issueLatNum, issueLngNum);
 
     const { complaint } = await createComplaintRecord({
       title,
       description,
       category,
       images,
-      latitude,
-      longitude,
+      latitude: issueLatNum,
+      longitude: issueLngNum,
       address,
       pincode,
       district,
@@ -314,6 +343,8 @@ const submitComplaintWithOTP = async (req, res) => {
       category,
       latitude,
       longitude,
+      photoLatitude,
+      photoLongitude,
       address,
       pincode,
       district,
@@ -323,6 +354,33 @@ const submitComplaintWithOTP = async (req, res) => {
 
     if (!latitude || !longitude || isNaN(parseFloat(latitude)) || isNaN(parseFloat(longitude))) {
       return res.status(400).json({ success: false, message: 'Strict GPS Location is mandatory.' });
+    }
+
+    const latNum = parseFloat(latitude.toString());
+    const lngNum = parseFloat(longitude.toString());
+
+    let issueLatNum = latNum;
+    let issueLngNum = lngNum;
+
+    // Physical On-Site Presence Verification against photo coordinates
+    if (photoLatitude && photoLongitude) {
+      const photoLatNum = parseFloat(photoLatitude.toString());
+      const photoLngNum = parseFloat(photoLongitude.toString());
+      if (!isNaN(photoLatNum) && !isNaN(photoLngNum)) {
+        const distMeters = haversineDistance(latNum, lngNum, photoLatNum, photoLngNum);
+        const MAX_ALLOWED_DISTANCE_METERS = 100; // 100m radius
+        if (distMeters > MAX_ALLOWED_DISTANCE_METERS) {
+          return res.status(400).json({
+            success: false,
+            message: `Physical on-site presence verification failed! You are ${Math.round(distMeters)}m away from where the photo was captured. You must be at the issue location to submit (Max allowed: ${MAX_ALLOWED_DISTANCE_METERS}m).`,
+            distance: Math.round(distMeters),
+            maxAllowed: MAX_ALLOWED_DISTANCE_METERS,
+          });
+        }
+        // Set the saved issue location strictly to the clicked photo location
+        issueLatNum = photoLatNum;
+        issueLngNum = photoLngNum;
+      }
     }
 
     if (!email || !otp) {
@@ -356,15 +414,15 @@ const submitComplaintWithOTP = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Live geotagged photo is required.' });
     }
 
-    const images = await processUploadedImages(files, latitude, longitude);
+    const images = await processUploadedImages(files, issueLatNum, issueLngNum);
 
     const { complaint } = await createComplaintRecord({
       title,
       description,
       category,
       images,
-      latitude,
-      longitude,
+      latitude: issueLatNum,
+      longitude: issueLngNum,
       address,
       pincode,
       district,

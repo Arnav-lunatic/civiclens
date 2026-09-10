@@ -50,6 +50,13 @@ export const ReportIssue: React.FC = () => {
 
   // Photos, AI & Modals
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [photoLocation, setPhotoLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+    pincode: string;
+    district: string;
+  } | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isOtpOpen, setIsOtpOpen] = useState(false);
   const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
@@ -143,10 +150,28 @@ export const ReportIssue: React.FC = () => {
   };
 
   const handlePhotoCaptured = async (file: File, dataUrl: string, lat: number, lng: number) => {
+    // Reverse geocode and freeze the exact photo capture location
+    const geo = await GeoService.reverseGeocode(lat, lng);
+    const loc = {
+      lat,
+      lng,
+      address: geo.address || address,
+      pincode: geo.pincode || pincode,
+      district: geo.district || district,
+    };
+    setPhotoLocation(loc);
+
     // If the previous photo was invalid or rejected, replace it with the new one!
     setPhotos((prev) => (isValidCivicIssue === false ? [{ file, dataUrl, lat, lng }] : [...prev, { file, dataUrl, lat, lng }]));
     analyzePhotoWithGroq(file, dataUrl);
   };
+
+  const MAX_PRESENCE_DISTANCE_METERS = 100;
+  const primaryPhoto = photos.length > 0 ? photos[0] : null;
+  const photoDistance = (liveLat !== null && liveLng !== null && primaryPhoto)
+    ? GeoService.calculateDistance(primaryPhoto.lat, primaryPhoto.lng, liveLat, liveLng)
+    : 0;
+  const isOutOfRange = Boolean(primaryPhoto && photoDistance > MAX_PRESENCE_DISTANCE_METERS);
 
   const analyzePhotoWithGroq = async (file: File, dataUrl: string) => {
     setAnalyzingAi(true);
@@ -197,6 +222,7 @@ export const ReportIssue: React.FC = () => {
     const updated = photos.filter((_, i) => i !== index);
     setPhotos(updated);
     if (updated.length === 0) {
+      setPhotoLocation(null);
       setIsValidCivicIssue(null);
       setAiError('');
       setAiSuccessBadge(null);
@@ -224,6 +250,13 @@ export const ReportIssue: React.FC = () => {
       return;
     }
 
+    if (isOutOfRange) {
+      alert(
+        `⚠️ Physical On-Site Presence Verification Failed!\n\nYou are currently ${photoDistance} meters away from where the photo was taken.\n\nCivicLens enforces strict physical presence on-site at the grievance location (Max permitted radius: ${MAX_PRESENCE_DISTANCE_METERS}m) to prevent fake/remote reporting.\n\nPlease walk back to the issue location or retake the photo at your current spot.`
+      );
+      return;
+    }
+
     if (!user) {
       setSubmitting(true);
       try {
@@ -247,17 +280,29 @@ export const ReportIssue: React.FC = () => {
     formData.append('description', description);
     formData.append('category', category);
     formData.append('priority', priority);
-    formData.append('pincode', pincode);
-    formData.append('district', district);
-    formData.append('address', address);
-    formData.append('latitude', liveLat!.toString());
-    formData.append('longitude', liveLng!.toString());
+
+    // Target location is strictly locked to the clicked photo location
+    const targetLat = photoLocation?.lat ?? (primaryPhoto ? primaryPhoto.lat : liveLat!);
+    const targetLng = photoLocation?.lng ?? (primaryPhoto ? primaryPhoto.lng : liveLng!);
+    const targetPincode = photoLocation?.pincode || pincode;
+    const targetDistrict = photoLocation?.district || district;
+    const targetAddress = photoLocation?.address || address;
+
+    formData.append('pincode', targetPincode);
+    formData.append('district', targetDistrict);
+    formData.append('address', targetAddress);
+    formData.append('latitude', targetLat.toString());
+    formData.append('longitude', targetLng.toString());
+    formData.append('photoLatitude', targetLat.toString());
+    formData.append('photoLongitude', targetLng.toString());
+    formData.append('submissionLatitude', liveLat!.toString());
+    formData.append('submissionLongitude', liveLng!.toString());
 
     photos.forEach((p) => formData.append('images', p.file));
 
     try {
       await API.request('/complaints', 'POST', formData, true);
-      alert('Geotagged grievance lodged successfully!');
+      alert('Geotagged grievance lodged successfully at the photo location!');
       navigate('/dashboard');
     } catch (err: any) {
       alert(err.message || 'Failed to submit grievance');
@@ -275,18 +320,30 @@ export const ReportIssue: React.FC = () => {
     formData.append('description', description);
     formData.append('category', category);
     formData.append('priority', priority);
-    formData.append('pincode', pincode);
-    formData.append('district', district);
-    formData.append('address', address);
-    formData.append('latitude', liveLat!.toString());
-    formData.append('longitude', liveLng!.toString());
+
+    // Target location is strictly locked to the clicked photo location
+    const targetLat = photoLocation?.lat ?? (primaryPhoto ? primaryPhoto.lat : liveLat!);
+    const targetLng = photoLocation?.lng ?? (primaryPhoto ? primaryPhoto.lng : liveLng!);
+    const targetPincode = photoLocation?.pincode || pincode;
+    const targetDistrict = photoLocation?.district || district;
+    const targetAddress = photoLocation?.address || address;
+
+    formData.append('pincode', targetPincode);
+    formData.append('district', targetDistrict);
+    formData.append('address', targetAddress);
+    formData.append('latitude', targetLat.toString());
+    formData.append('longitude', targetLng.toString());
+    formData.append('photoLatitude', targetLat.toString());
+    formData.append('photoLongitude', targetLng.toString());
+    formData.append('submissionLatitude', liveLat!.toString());
+    formData.append('submissionLongitude', liveLng!.toString());
 
     photos.forEach((p) => formData.append('images', p.file));
 
     const res = await API.request('/complaints/submit-with-otp', 'POST', formData, true);
     API.setAuth(res.token, res.user, 'citizen');
     setIsOtpOpen(false);
-    alert('Email verified & grievance lodged!');
+    alert('Email verified & grievance lodged at the photo location!');
     navigate('/dashboard');
   };
 
@@ -638,6 +695,61 @@ export const ReportIssue: React.FC = () => {
                 ))}
               </div>
             )}
+
+            {/* Physical On-Site Presence Verification Geofence Status */}
+            {photos.length > 0 && (
+              isOutOfRange ? (
+                <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-2xl space-y-2 shadow-sm animate-pulse-slow">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 border border-rose-200 mt-0.5">
+                      <AlertTriangle className="w-5 h-5 text-rose-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-rose-900 uppercase tracking-wide flex items-center gap-1.5">
+                          🚨 Physical Presence Geofence Breach
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-rose-200 text-rose-900 font-mono text-[10px] font-bold border border-rose-300">
+                          {photoDistance}m Away (Max: {MAX_PRESENCE_DISTANCE_METERS}m)
+                        </span>
+                      </div>
+                      <p className="text-xs text-rose-800 mt-1 font-medium leading-relaxed">
+                        You have moved <strong>{photoDistance} meters</strong> away from where the photo was taken! CivicLens requires you to lodge grievances on-site at the actual hazard location to prevent fraudulent submissions.
+                      </p>
+                      <p className="text-[11px] text-rose-700 mt-1 font-semibold">
+                        👉 Please return within 100 meters of the issue location or retake the photo at your current spot.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-rose-200 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCameraOpen(true)}
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Retake Photo at Current Location</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1.5 text-xs text-emerald-800 font-semibold shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>On-Site Presence Verified &bull; Grievance Anchored to Photo Spot</span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-300">
+                      {photoDistance}m from photo spot (≤{MAX_PRESENCE_DISTANCE_METERS}m permitted)
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-emerald-700 font-mono font-medium flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span>Locked at Clicked Image GPS: {primaryPhoto?.lat.toFixed(6)}, {primaryPhoto?.lng.toFixed(6)} ({photoLocation?.pincode ? `PIN: ${photoLocation.pincode}` : 'Auto-locked'})</span>
+                  </div>
+                </div>
+              )
+            )}
           </div>
 
           {/* Groq AI Vision Analysis Status Card */}
@@ -704,9 +816,9 @@ export const ReportIssue: React.FC = () => {
 
           {/* ─── STEP 3: ISSUE DETAILS & REDRESSAL SPECIFICATION ─── */}
           <fieldset
-            disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
+            disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
             className={`space-y-6 transition-all duration-200 ${
-              photos.length === 0 || isValidCivicIssue === false || analyzingAi
+              photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange
                 ? 'opacity-40 cursor-not-allowed select-none pointer-events-none'
                 : ''
             }`}
@@ -723,7 +835,7 @@ export const ReportIssue: React.FC = () => {
               <input
                 type="text"
                 required
-                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
+                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Hazardous open manhole & broken road"
@@ -735,7 +847,7 @@ export const ReportIssue: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Category *</label>
                 <select
-                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
+                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed shadow-sm font-medium"
@@ -753,7 +865,7 @@ export const ReportIssue: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Severity / Priority</label>
                 <select
-                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
+                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed shadow-sm font-medium"
@@ -771,7 +883,7 @@ export const ReportIssue: React.FC = () => {
               <textarea
                 rows={3}
                 required
-                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi}
+                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the civic hazard and exact landmark..."
@@ -782,21 +894,25 @@ export const ReportIssue: React.FC = () => {
 
           <button
             type="submit"
-            disabled={submitting || analyzingAi || photos.length === 0 || isValidCivicIssue === false}
+            disabled={submitting || analyzingAi || photos.length === 0 || isValidCivicIssue === false || isOutOfRange}
             className={`w-full py-4 rounded-2xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2 ${
-              isValidCivicIssue === false
+              isOutOfRange
+                ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-95 shadow-rose-500/20'
+                : isValidCivicIssue === false
                 ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-90'
                 : photos.length === 0
                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
                 : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-500/25 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
           >
-            {isValidCivicIssue === false ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+            {isOutOfRange || isValidCivicIssue === false ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
             <span>
               {submitting
                 ? 'Submitting Grievance...'
                 : analyzingAi
                 ? 'Groq AI Analyzing Photo...'
+                : isOutOfRange
+                ? `Submission Blocked: Out of Range (${photoDistance}m away)`
                 : isValidCivicIssue === false
                 ? 'Submission Locked (Invalid Civic Photo)'
                 : photos.length === 0
