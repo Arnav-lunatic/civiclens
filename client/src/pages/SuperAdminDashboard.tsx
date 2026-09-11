@@ -25,6 +25,7 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowUpDown,
+  Filter,
 } from 'lucide-react';
 import { API } from '../services/api';
 import { User, Complaint } from '../types';
@@ -62,11 +63,12 @@ export const SuperAdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(() => complaints.length === 0 && subAdmins.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // View switch: 'districts' (filter & view specific district) vs 'officers' (all registered officers list)
+  const [activeTab, setActiveTab] = useState<'districts' | 'officers'>('districts');
+  const [officerSearch, setOfficerSearch] = useState<string>('');
+
   // District oversight state
   const [selectedDistrict, setSelectedDistrict] = useState<string>('All');
-  const [districtSearchQuery, setDistrictSearchQuery] = useState<string>('');
-  const [districtSort, setDistrictSort] = useState<'issues' | 'alpha' | 'rate'>('issues');
-  const [isDistrictExpanded, setIsDistrictExpanded] = useState<boolean>(false);
   const [complaintStatusFilter, setComplaintStatusFilter] = useState<string>('All');
   const [complaintSearch, setComplaintSearch] = useState<string>('');
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
@@ -199,33 +201,24 @@ export const SuperAdminDashboard: React.FC = () => {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [complaints, subAdmins]);
 
-  // Scalable filtered & sorted district groups (supports 72+ districts effortlessly)
-  const filteredDistrictGroups = useMemo(() => {
-    let list = [...districtGroups];
+  // Filtered sub-admins for the Registered Officers tab
+  const filteredSubAdmins = useMemo(() => {
+    if (!officerSearch.trim()) return subAdmins;
+    const q = officerSearch.toLowerCase();
+    return subAdmins.filter(
+      (admin) =>
+        admin.name?.toLowerCase().includes(q) ||
+        admin.email?.toLowerCase().includes(q) ||
+        admin.department?.toLowerCase().includes(q) ||
+        admin.assignedDistrict?.toLowerCase().includes(q) ||
+        admin.assignedPincodes?.some((pin) => pin.toLowerCase().includes(q))
+    );
+  }, [subAdmins, officerSearch]);
 
-    if (districtSearchQuery.trim()) {
-      const q = districtSearchQuery.toLowerCase();
-      list = list.filter(
-        (g) =>
-          g.name.toLowerCase().includes(q) ||
-          g.officers.some((o) => o.toLowerCase().includes(q))
-      );
-    }
-
-    if (districtSort === 'alpha') {
-      list.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (districtSort === 'rate') {
-      list.sort((a, b) => {
-        const rateA = a.total > 0 ? a.resolved / a.total : 0;
-        const rateB = b.total > 0 ? b.resolved / b.total : 0;
-        return rateA - rateB;
-      });
-    } else {
-      list.sort((a, b) => b.total - a.total);
-    }
-
-    return list;
-  }, [districtGroups, districtSearchQuery, districtSort]);
+  // Alphabetically sorted district groups for clean dropdown selection
+  const sortedDistrictOptions = useMemo(() => {
+    return [...districtGroups].sort((a, b) => a.name.localeCompare(b.name));
+  }, [districtGroups]);
 
   // Filtered complaints for the active selected district
   const displayedComplaints = useMemo(() => {
@@ -449,620 +442,498 @@ export const SuperAdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Sub-Admins Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-4 p-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold text-slate-900">Registered District Officers &amp; Mapped PIN Codes</h2>
+      {/* ─── Main Navigation / View Switcher Tabs ─── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => loadData(true)}
-            className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1.5 transition bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-xl border border-sky-200"
+            onClick={() => setActiveTab('districts')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition ${
+              activeTab === 'districts'
+                ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-md shadow-sky-500/20'
+                : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
+            }`}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <Building2 className="w-4 h-4" />
+            <span>District Grievance Data</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('officers')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition ${
+              activeTab === 'officers'
+                ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-md shadow-sky-500/20'
+                : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Registered Officers ({subAdmins.length})</span>
           </button>
         </div>
 
-        {loading ? (
-          <div className="py-8 text-center text-slate-500">Loading officers...</div>
-        ) : subAdmins.length === 0 ? (
-          <div className="py-8 text-center text-slate-500">No district officers registered yet. Click "Register District Sub-Admin" above.</div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-4">Officer Name</th>
-                  <th className="py-3 px-4">Official Email</th>
-                  <th className="py-3 px-4">Department</th>
-                  <th className="py-3 px-4">District</th>
-                  <th className="py-3 px-4">Mapped Pincodes</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {subAdmins.map((admin) => (
-                  <tr key={admin._id || admin.id} className="hover:bg-slate-50 transition">
-                    <td className="py-3 px-4 font-bold text-slate-900">{admin.name}</td>
-                    <td className="py-3 px-4 text-slate-600 font-mono">{admin.email}</td>
-                    <td className="py-3 px-4 text-sky-700 font-semibold">{admin.department || 'General'}</td>
-                    <td className="py-3 px-4 text-slate-700">{admin.assignedDistrict || 'All'}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-1">
-                        {admin.assignedPincodes?.map((pin) => (
-                          <span key={pin} className="px-2 py-0.5 bg-sky-50 text-sky-700 font-mono rounded font-bold border border-sky-200 text-[11px]">
-                            {pin}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setEmailingAdmin(admin);
-                            setMailPassword('');
-                          }}
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-emerald-200"
-                        >
-                          <Mail className="w-3 h-3 text-emerald-600" />
-                          <span>Mail Info</span>
-                        </button>
-                        <button
-                          onClick={() => openEditModal(admin)}
-                          className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-sky-200"
-                        >
-                          <Edit3 className="w-3 h-3 text-sky-600" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSubAdmin(admin)}
-                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-rose-200"
-                        >
-                          <Trash2 className="w-3 h-3 text-rose-600" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <button
+          onClick={() => loadData(true)}
+          className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center justify-center gap-1.5 transition bg-sky-50 hover:bg-sky-100 px-3.5 py-2 rounded-xl border border-sky-200 shadow-2xs"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
+          <span>Refresh Data</span>
+        </button>
       </div>
 
-      {/* ─── District-Wise Civic Grievances Oversight ─── */}
-      <div className="space-y-4">
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200 shadow-2xs mb-1">
-              <Building2 className="w-3.5 h-3.5 text-blue-600" />
-              <span>Statewide Territorial Grievance Division ({districtGroups.length} Jurisdictions)</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-              District-Wise Civic Grievance Triage
-            </h2>
-            <p className="text-xs text-slate-500">
-              Filter, search, or jump to any district jurisdiction to inspect active complaints and officer resolution efficiency.
-            </p>
-          </div>
-          <button
-            onClick={() => loadData(true)}
-            className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1.5 self-start sm:self-auto transition bg-sky-50 hover:bg-sky-100 px-3.5 py-2 rounded-xl border border-sky-200 shadow-2xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
-            <span>Refresh Grievances</span>
-          </button>
-        </div>
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ─── OPTION 1: DISTRICT FILTER & CIVIC GRIEVANCES DATA ────────── */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {activeTab === 'districts' && (
+        <div className="space-y-6">
+          {/* District Filter Control Bar */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-800 shrink-0">
+                <Filter className="w-4 h-4 text-sky-600" />
+                <span>Filter District:</span>
+              </div>
 
-        {/* Scalable Controls Toolbar: Search + Quick Jump + Sort + Expand/Collapse */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Left: Search input + Quick Jump Select */}
-          <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search district name or officer..."
-                value={districtSearchQuery}
-                onChange={(e) => setDistrictSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white text-xs font-medium text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-sky-500/30 transition"
-              />
-              {districtSearchQuery && (
-                <button
-                  onClick={() => setDistrictSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+              {/* District Filter Select Dropdown */}
+              <div className="relative flex-1">
+                <select
+                  value={selectedDistrict}
+                  onChange={(e) => setSelectedDistrict(e.target.value)}
+                  className="w-full appearance-none pl-4 pr-10 py-2.5 bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-sky-500/30 cursor-pointer transition shadow-2xs"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <option value="All">🏛️ Statewide (All Districts) &bull; {complaints.length} issues total</option>
+                  {sortedDistrictOptions.map((g) => (
+                    <option key={g.name} value={g.name}>
+                      📍 {g.name} &bull; {g.total} issues ({g.resolved} resolved)
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end">
+              {selectedDistrict !== 'All' && (
+                <button
+                  onClick={() => setSelectedDistrict('All')}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+                >
+                  Reset to All Districts
                 </button>
               )}
             </div>
-
-            {/* Quick Jump Dropdown */}
-            <div className="relative shrink-0">
-              <select
-                value={selectedDistrict}
-                onChange={(e) => setSelectedDistrict(e.target.value)}
-                aria-label="Quick jump to district"
-                className="w-full sm:w-auto appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 text-xs font-bold text-slate-800 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-sky-500/30 cursor-pointer transition"
-              >
-                <option value="All">🏛️ Statewide (All Districts) - {complaints.length} issues</option>
-                {districtGroups.map((g) => (
-                  <option key={g.name} value={g.name}>
-                    📍 {g.name} ({g.total} issues)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
           </div>
 
-          {/* Right: Sort options + Expand/Collapse button */}
-          <div className="flex flex-wrap items-center gap-2 justify-between md:justify-end border-t md:border-t-0 pt-2 md:pt-0 border-slate-100">
-            {/* Sort Toggle Group */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-[11px] font-bold text-slate-600">
-              <button
-                onClick={() => setDistrictSort('issues')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  districtSort === 'issues'
-                    ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
-                    : 'hover:text-slate-900'
-                }`}
-              >
-                Most Issues
-              </button>
-              <button
-                onClick={() => setDistrictSort('alpha')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  districtSort === 'alpha'
-                    ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
-                    : 'hover:text-slate-900'
-                }`}
-              >
-                A–Z
-              </button>
-              <button
-                onClick={() => setDistrictSort('rate')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  districtSort === 'rate'
-                    ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
-                    : 'hover:text-slate-900'
-                }`}
-              >
-                Needs Action
-              </button>
-            </div>
-
-            {/* Expand / Collapse Toggle */}
-            <button
-              onClick={() => setIsDistrictExpanded(!isDistrictExpanded)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition"
-            >
-              {isDistrictExpanded ? (
-                <>
-                  <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Compact View</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Expand All ({districtGroups.length})</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* District Selector Cards Grid (Compact Scrollable or Full Grid) */}
-        <div
-          className={`${
-            isDistrictExpanded
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5'
-              : 'max-h-[380px] overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5'
-          }`}
-        >
-          {/* All Districts Master Card (Always visible when relevant) */}
-          {(!districtSearchQuery.trim() ||
-            'all districts'.includes(districtSearchQuery.toLowerCase()) ||
-            'statewide'.includes(districtSearchQuery.toLowerCase())) && (
-            <button
-              onClick={() => setSelectedDistrict('All')}
-              className={`p-4.5 rounded-2xl border text-left transition flex flex-col justify-between space-y-2.5 ${
-                selectedDistrict === 'All'
-                  ? 'bg-slate-900 text-white border-sky-500/60 shadow-md shadow-sky-500/15 scale-[1.01] ring-2 ring-sky-500'
-                  : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-2xs hover:shadow-xs'
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <span
-                    className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                      selectedDistrict === 'All' ? 'text-sky-300' : 'text-slate-500'
-                    }`}
-                  >
-                    Statewide Aggregate
-                  </span>
-                  <h3 className={`text-base font-black mt-0.5 ${selectedDistrict === 'All' ? 'text-white' : 'text-slate-900'}`}>
-                    All Districts
-                  </h3>
-                </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-black font-mono ${
-                    selectedDistrict === 'All'
-                      ? 'bg-sky-500/20 text-sky-200 border border-sky-500/30'
-                      : 'bg-slate-100 text-slate-700 border border-slate-200'
-                  }`}
-                >
-                  {complaints.length} issues
+          {/* Selected District Overview & Metric Summary Card */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 sm:p-7 shadow-md border border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-slate-800">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-400">
+                  Active Territorial Scope
                 </span>
+                <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
+                  <MapPin className="w-5 h-5 text-sky-400 shrink-0" />
+                  <span>{selectedDistrictMeta.name}</span>
+                </h3>
               </div>
-
-              <div
-                className={`grid grid-cols-3 gap-1.5 pt-2 border-t text-center ${
-                  selectedDistrict === 'All' ? 'border-slate-800' : 'border-slate-100'
-                }`}
-              >
-                <div>
-                  <div className={`text-[9px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    Resolved
-                  </div>
-                  <div className={`text-xs font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    {complaints.filter((c) => c.status === 'Resolved').length}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-[9px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>
-                    In Progress
-                  </div>
-                  <div className={`text-xs font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>
-                    {complaints.filter((c) => c.status === 'In Progress').length}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-[9px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>
-                    Pending
-                  </div>
-                  <div className={`text-xs font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>
-                    {complaints.filter((c) => c.status === 'Pending' || c.status === 'Under Review').length}
-                  </div>
-                </div>
-              </div>
-            </button>
-          )}
-
-          {/* Individual District Cards */}
-          {filteredDistrictGroups.map((group) => {
-            const isSelected = selectedDistrict.toLowerCase() === group.name.toLowerCase();
-            const resolutionPercent = group.total > 0 ? Math.round((group.resolved / group.total) * 100) : 0;
-
-            return (
-              <button
-                key={group.name}
-                onClick={() => setSelectedDistrict(group.name)}
-                className={`p-4.5 rounded-2xl border text-left transition flex flex-col justify-between space-y-2.5 ${
-                  isSelected
-                    ? 'bg-gradient-to-tr from-sky-600 to-blue-700 text-white border-sky-400 shadow-md shadow-sky-500/20 scale-[1.01] ring-2 ring-sky-300'
-                    : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-2xs hover:shadow-xs'
-                }`}
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <span
-                      className={`text-[9px] font-extrabold uppercase tracking-wider truncate block ${
-                        isSelected ? 'text-sky-100' : 'text-slate-500'
-                      }`}
-                    >
-                      {group.officers.length > 0 ? `${group.officers.length} Officer(s)` : 'Jurisdiction'}
+              <div>
+                {selectedDistrictMeta.officers.length > 0 ? (
+                  <div className="text-xs text-slate-200 flex items-center gap-2 bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/15">
+                    <Users className="w-3.5 h-3.5 text-sky-300" />
+                    <span>
+                      Officer(s): <strong className="text-white font-bold">{selectedDistrictMeta.officers.join(', ')}</strong>
                     </span>
-                    <h3 className={`text-sm font-black mt-0.5 truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                      {group.name}
-                    </h3>
                   </div>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-black font-mono shrink-0 ${
-                      isSelected ? 'bg-white/20 text-white border border-white/30' : 'bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    {group.total}
+                ) : (
+                  <div className="text-xs text-amber-300 bg-amber-500/15 px-3.5 py-1.5 rounded-xl border border-amber-500/25">
+                    No officer assigned directly to this district
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 4-Metrics Grid for Selected District */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-0.5">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Complaints</div>
+                <div className="text-2xl font-black font-mono text-white">{selectedDistrictMeta.total}</div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-0.5">
+                <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Resolved</div>
+                <div className="text-2xl font-black font-mono text-emerald-400">{selectedDistrictMeta.resolved}</div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-0.5">
+                <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">In Progress</div>
+                <div className="text-2xl font-black font-mono text-sky-300">{selectedDistrictMeta.inProgress}</div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-0.5">
+                <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Pending / Review</div>
+                <div className="text-2xl font-black font-mono text-amber-300">{selectedDistrictMeta.pending}</div>
+              </div>
+            </div>
+
+            {/* Resolution Rate Bar */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-xs font-bold text-slate-300">
+                <span>Territorial Resolution Rate</span>
+                <span className="text-emerald-400 font-mono font-bold">{selectedDistrictMeta.resolutionRate || '0%'}</span>
+              </div>
+              <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300"
+                  style={{ width: `${(selectedDistrictMeta.resolutionRate || '0%').replace('%', '')}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Selected District Feed Panel */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 space-y-6">
+            {/* Header Bar with District Stats */}
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pb-4 border-b border-slate-200">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-black text-slate-900">
+                    {selectedDistrictMeta.name} Complaints
+                  </h3>
+                  <span className="px-3 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200">
+                    {displayedComplaints.length} issues shown
                   </span>
                 </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Resolution Rate: <strong className="text-emerald-600 font-bold">{selectedDistrictMeta.resolutionRate}</strong>
+                </p>
+              </div>
 
-                {/* Mini Metrics Row */}
-                <div
-                  className={`grid grid-cols-3 gap-1 pt-1.5 border-t text-center ${
-                    isSelected ? 'border-sky-500/60' : 'border-slate-100'
-                  }`}
-                >
-                  <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-emerald-600'}`}>
-                      Resolved
-                    </div>
-                    <div className="text-xs font-black font-mono">{group.resolved}</div>
-                  </div>
-                  <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-sky-600'}`}>
-                      Active
-                    </div>
-                    <div className="text-xs font-black font-mono">{group.inProgress}</div>
-                  </div>
-                  <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-amber-600'}`}>
-                      Pending
-                    </div>
-                    <div className="text-xs font-black font-mono">{group.pending}</div>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="space-y-1 pt-0.5">
-                  <div className="flex justify-between text-[10px] font-semibold opacity-90">
-                    <span>Resolution Rate</span>
-                    <span>{resolutionPercent}%</span>
-                  </div>
-                  <div
-                    className={`h-1.5 w-full rounded-full overflow-hidden ${
-                      isSelected ? 'bg-sky-800' : 'bg-slate-100'
+              {/* Status Tabs */}
+              <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl shrink-0 border border-slate-200">
+                {(['All', 'Active', 'In Progress', 'Pending', 'Resolved'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setComplaintStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      complaintStatusFilter === st
+                        ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-emerald-500'}`}
-                      style={{ width: `${resolutionPercent}%` }}
-                    />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Empty Search Result Fallback */}
-        {filteredDistrictGroups.length === 0 && districtSearchQuery.trim() && (
-          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center space-y-3">
-            <Building2 className="w-8 h-8 text-slate-400 mx-auto" />
-            <div className="text-sm font-bold text-slate-800">
-              No districts found matching &ldquo;{districtSearchQuery}&rdquo;
+                    {st}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Check the spelling or try searching by the district officer&apos;s name.
-            </p>
-            <button
-              onClick={() => setDistrictSearchQuery('')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold rounded-xl border border-sky-200 transition"
-            >
-              <X className="w-3.5 h-3.5" />
-              <span>Clear Search</span>
-            </button>
-          </div>
-        )}
 
-        {/* Selected District Feed Panel */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 space-y-6">
-          {/* Header Bar with District Stats */}
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={complaintSearch}
+                onChange={(e) => setComplaintSearch(e.target.value)}
+                placeholder={`Search within ${selectedDistrictMeta.name} by title, citizen, category, or PIN...`}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none transition"
+              />
+            </div>
+
+            {/* Grievances List */}
+            {displayedComplaints.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+                <p className="text-sm font-bold text-slate-900">No Complaints Found</p>
+                <p className="text-xs">No grievances matching this filter in {selectedDistrictMeta.name}.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedComplaints.map((item) => {
+                  const mainImg = item.images && item.images.length > 0 ? item.images[0].url : item.imageUrl;
+                  const hasResolvedImage = Boolean(item.resolvedImageUrl);
+
+                  return (
+                    <div
+                      key={item._id}
+                      className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition"
+                    >
+                      <div>
+                        {/* Photos Area */}
+                        <ComplaintImage
+                          src={mainImg}
+                          alt={item.title}
+                          heightClass="h-56 sm:h-64"
+                          onClick={() =>
+                            setPreviewImage({
+                              url: mainImg,
+                              title: `Complaint Photo: ${item.title}`,
+                              subtitle: `Category: ${item.category} | District: ${item.district || 'N/A'} | PIN: ${item.pincode}`,
+                            })
+                          }
+                          topRightBadge={
+                            <span
+                              className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
+                                item.status === 'Resolved'
+                                  ? 'bg-emerald-600 text-white'
+                                  : item.status === 'In Progress'
+                                  ? 'bg-sky-600 text-white'
+                                  : item.status === 'Under Review'
+                                  ? 'bg-amber-500 text-white'
+                                  : 'bg-slate-700 text-white'
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          }
+                          bottomOverlay={
+                            <div className="flex justify-between items-center text-[10px] font-mono font-bold text-white">
+                              <span className="px-2 py-0.5 rounded-lg bg-slate-900/90 backdrop-blur-md">
+                                PIN {item.pincode}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-lg bg-sky-950/90 backdrop-blur-md text-sky-300">
+                                {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                              </span>
+                            </div>
+                          }
+                        />
+
+                        {/* Content */}
+                        <div className="p-5 space-y-3">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">
+                              {item.category}
+                            </span>
+                            <h4 className="text-base font-bold text-slate-900 leading-tight">
+                              {item.title}
+                            </h4>
+                            <p className="text-xs text-slate-600 line-clamp-2">
+                              {item.description}
+                            </p>
+                          </div>
+
+                          {/* Address & District Tag */}
+                          <div className="space-y-1 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                            <div className="flex items-start gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                              <span className="line-clamp-1">{item.address || 'Address not specified'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 pl-5 text-[11px] text-slate-500">
+                              <span>District: <strong className="text-slate-700">{item.district || (item as any).assignedSubAdmin?.assignedDistrict || 'N/A'}</strong></span>
+                              <span>&bull;</span>
+                              <span>PIN: <strong className="font-mono text-slate-700">{item.pincode}</strong></span>
+                            </div>
+                          </div>
+
+                          {/* AI Verification */}
+                          {item.aiValidation && (
+                            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="font-bold text-slate-700">AI Verification</span>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    item.aiValidation.isValid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                  }`}
+                                >
+                                  {item.aiValidation.isValid ? 'Valid' : 'Suspect'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 leading-relaxed">
+                                {item.aiValidation.summary}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Resolution Image */}
+                          {hasResolvedImage && (
+                            <div className="pt-2 border-t border-slate-100">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Resolution Proof Photo
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">Completed</span>
+                              </div>
+                              <ComplaintImage
+                                src={item.resolvedImageUrl!}
+                                alt={`Resolution for ${item.title}`}
+                                heightClass="h-28"
+                                className="rounded-xl"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    url: item.resolvedImageUrl!,
+                                    title: `Resolution Proof: ${item.title}`,
+                                    subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Assigned Officer'}`,
+                                  })
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-3xl flex justify-between items-center text-xs">
+                        <div>
+                          <div className="font-semibold text-slate-900">
+                            {item.citizen?.name || 'Citizen'}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            {new Date(item.createdAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </div>
+                        </div>
+                        <a
+                          href={`https://maps.google.com/?q=${item.latitude},${item.longitude}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition flex items-center gap-1 shadow-2xs"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Map</span>
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ─── OPTION 2: REGISTERED OFFICERS TAB ───────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {activeTab === 'officers' && (
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-5 p-6 sm:p-7">
+          {/* Officers Header & Quick Actions */}
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pb-4 border-b border-slate-200">
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black text-slate-900">
-                  {selectedDistrictMeta.name}
-                </h3>
-                <span className="px-3 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200">
-                  {displayedComplaints.length} issues shown
-                </span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200 shadow-2xs mb-1">
+                <Users className="w-3.5 h-3.5 text-sky-600" />
+                <span>Personnel Oversight ({subAdmins.length} Officers Registered)</span>
               </div>
+              <h2 className="text-xl font-black text-slate-900">Registered District Officers &amp; Mappings</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Resolution Rate: <strong className="text-emerald-600 font-bold">{selectedDistrictMeta.resolutionRate}</strong>
-                {selectedDistrictMeta.officers.length > 0 && (
-                  <span> &bull; Designated Officers: <strong className="text-slate-700">{selectedDistrictMeta.officers.join(', ')}</strong></span>
-                )}
+                Manage officer accounts, departmental jurisdictions, and territorial PIN code allocations.
               </p>
             </div>
 
-            {/* Status Tabs */}
-            <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl shrink-0 border border-slate-200">
-              {(['All', 'Active', 'In Progress', 'Pending', 'Resolved'] as const).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => setComplaintStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                    complaintStatusFilter === st
-                      ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-500/20 transition flex items-center gap-2 self-start md:self-auto"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Register District Sub-Admin</span>
+            </button>
           </div>
 
-          {/* Search Input */}
+          {/* Search Officer Input */}
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              value={complaintSearch}
-              onChange={(e) => setComplaintSearch(e.target.value)}
-              placeholder={`Search within ${selectedDistrictMeta.name} by title, citizen, category, or PIN...`}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none transition"
+              placeholder="Search registered officers by name, email, department, district, or PIN code..."
+              value={officerSearch}
+              onChange={(e) => setOfficerSearch(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white text-xs font-medium text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-sky-500/30 transition"
             />
+            {officerSearch && (
+              <button
+                onClick={() => setOfficerSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Grievances List */}
-          {displayedComplaints.length === 0 ? (
+          {/* Officers Table */}
+          {loading ? (
+            <div className="py-12 text-center text-slate-500">Loading officers...</div>
+          ) : filteredSubAdmins.length === 0 ? (
             <div className="py-12 text-center text-slate-500 space-y-2">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-              <p className="text-sm font-bold text-slate-900">No Complaints Found</p>
-              <p className="text-xs">No grievances matching this filter in {selectedDistrictMeta.name}.</p>
+              <Users className="w-10 h-10 text-slate-400 mx-auto" />
+              <p className="text-sm font-bold text-slate-800">
+                {officerSearch ? `No officers matching "${officerSearch}"` : 'No district officers registered yet.'}
+              </p>
+              <p className="text-xs">
+                {officerSearch ? 'Try a different search term or clear the filter.' : 'Click "Register District Sub-Admin" to add one.'}
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayedComplaints.map((item) => {
-                const mainImg = item.images && item.images.length > 0 ? item.images[0].url : item.imageUrl;
-                const hasResolvedImage = Boolean(item.resolvedImageUrl);
-
-                return (
-                  <div
-                    key={item._id}
-                    className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition"
-                  >
-                    <div>
-                      {/* Photos Area */}
-                      <ComplaintImage
-                        src={mainImg}
-                        alt={item.title}
-                        heightClass="h-56 sm:h-64"
-                        onClick={() =>
-                          setPreviewImage({
-                            url: mainImg,
-                            title: `Complaint Photo: ${item.title}`,
-                            subtitle: `Category: ${item.category} | District: ${item.district || 'N/A'} | PIN: ${item.pincode}`,
-                          })
-                        }
-                        topRightBadge={
-                          <span
-                            className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow ${
-                              item.status === 'Resolved'
-                                ? 'bg-emerald-600 text-white'
-                                : item.status === 'In Progress'
-                                ? 'bg-sky-600 text-white'
-                                : item.status === 'Under Review'
-                                ? 'bg-amber-500 text-white'
-                                : 'bg-slate-700 text-white'
-                            }`}
-                          >
-                            {item.status}
-                          </span>
-                        }
-                        bottomOverlay={
-                          <div className="flex justify-between items-center text-[10px] font-mono font-bold text-white">
-                            <span className="px-2 py-0.5 rounded-lg bg-slate-900/90 backdrop-blur-md">
-                              PIN {item.pincode}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
+                  <tr>
+                    <th className="py-3.5 px-4">Officer Name</th>
+                    <th className="py-3.5 px-4">Official Email</th>
+                    <th className="py-3.5 px-4">Department</th>
+                    <th className="py-3.5 px-4">Assigned District</th>
+                    <th className="py-3.5 px-4">Mapped Pincodes</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {filteredSubAdmins.map((admin) => (
+                    <tr key={admin._id || admin.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{admin.name}</td>
+                      <td className="py-3.5 px-4 text-slate-600 font-mono">{admin.email}</td>
+                      <td className="py-3.5 px-4 text-sky-700 font-bold">{admin.department || 'General'}</td>
+                      <td className="py-3.5 px-4">
+                        <button
+                          onClick={() => {
+                            setSelectedDistrict(admin.assignedDistrict || 'All');
+                            setActiveTab('districts');
+                          }}
+                          className="inline-flex items-center gap-1 text-slate-800 hover:text-sky-700 font-bold hover:underline"
+                          title="Click to view this district's grievance data"
+                        >
+                          <MapPin className="w-3 h-3 text-sky-600" />
+                          <span>{admin.assignedDistrict || 'All'}</span>
+                        </button>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {admin.assignedPincodes?.map((pin) => (
+                            <span key={pin} className="px-2 py-0.5 bg-sky-50 text-sky-700 font-mono rounded font-bold border border-sky-200 text-[11px]">
+                              {pin}
                             </span>
-                            <span className="px-2 py-0.5 rounded-lg bg-sky-950/90 backdrop-blur-md text-sky-300">
-                              {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                            </span>
-                          </div>
-                        }
-                      />
-
-                      {/* Content */}
-                      <div className="p-5 space-y-3">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-sky-600">{item.category}</span>
-                          <span className="text-slate-500 text-[10px] font-mono">{new Date(item.createdAt).toLocaleDateString()}</span>
+                          ))}
                         </div>
-
-                        <h4 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h4>
-                        <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
-
-                        {/* Location */}
-                        <div className="space-y-1 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-200">
-                          <div className="text-slate-700 font-semibold flex items-start gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
-                            <span className="line-clamp-2">{item.address || `District: ${item.district || 'N/A'}, PIN: ${item.pincode}`}</span>
-                          </div>
-                          <a
-                            href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sky-600 font-bold hover:text-sky-700 hover:underline pt-0.5 text-[10px]"
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setEmailingAdmin(admin);
+                              setMailPassword('');
+                            }}
+                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-emerald-200 shadow-2xs"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>View GPS on Google Maps ({item.latitude.toFixed(4)}, {item.longitude.toFixed(4)})</span>
-                          </a>
+                            <Mail className="w-3 h-3 text-emerald-600" />
+                            <span>Mail Info</span>
+                          </button>
+                          <button
+                            onClick={() => openEditModal(admin)}
+                            className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-sky-200 shadow-2xs"
+                          >
+                            <Edit3 className="w-3 h-3 text-sky-600" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSubAdmin(admin)}
+                            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-rose-200 shadow-2xs"
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-600" />
+                            <span>Delete</span>
+                          </button>
                         </div>
-
-                        {/* Citizen details */}
-                        {item.citizen && (
-                          <div className="text-[11px] text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
-                            <div>Reported by: <strong className="text-slate-900">{item.citizen.name}</strong></div>
-                            <div className="text-slate-500">{item.citizen.phone || item.citizen.email}</div>
-                          </div>
-                        )}
-
-                        {/* Resolved Proof Box */}
-                        {hasResolvedImage && (
-                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-black uppercase text-emerald-800 flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Verified Resolution Photo</span>
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    url: item.resolvedImageUrl!,
-                                    title: `Resolution Proof: ${item.title}`,
-                                    subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Officer'}`,
-                                  })
-                                }
-                                className="text-[10px] text-emerald-700 font-bold hover:underline flex items-center gap-0.5"
-                              >
-                                <Eye className="w-3 h-3" />
-                                <span>View</span>
-                              </button>
-                            </div>
-                            <div className="rounded-lg overflow-hidden border border-emerald-200 shadow-2xs">
-                              <ComplaintImage
-                                src={item.resolvedImageUrl!}
-                                alt="Resolution proof"
-                                heightClass="h-44 sm:h-48"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    url: item.resolvedImageUrl!,
-                                    title: `Resolution Proof: ${item.title}`,
-                                    subtitle: `Resolved by ${item.assignedSubAdmin?.name || 'Officer'}`,
-                                  })
-                                }
-                                bottomOverlay={
-                                  <div className="flex justify-end">
-                                    <span className="px-2 py-0.5 bg-emerald-950/90 text-emerald-200 text-[9px] font-bold rounded">
-                                      Work Completed
-                                    </span>
-                                  </div>
-                                }
-                              />
-                            </div>
-                            {item.resolutionNotes && (
-                              <p className="text-[10px] text-slate-700 italic line-clamp-2">
-                                "{item.resolutionNotes}"
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Officer Assignment */}
-                        {item.assignedSubAdmin && (
-                          <div className="text-[11px] text-slate-600 bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-1.5 border border-slate-200">
-                            <Building2 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <span>
-                              Assigned: <strong className="text-slate-800">{item.assignedSubAdmin.name}</strong> ({item.assignedSubAdmin.department || 'Officer'})
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="p-5 pt-0">
-                      <a
-                        href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-sky-700 hover:text-sky-800 border border-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Inspect Location on Map</span>
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Create Modal */}
       {isModalOpen && (

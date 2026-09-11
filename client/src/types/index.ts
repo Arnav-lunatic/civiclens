@@ -68,6 +68,12 @@ export interface Complaint {
   };
   resolutionNotes?: string;
   resolvedAt?: string;
+  aiValidation?: {
+    isValid: boolean;
+    confidence?: number;
+    labels?: string[];
+    summary?: string;
+  };
   timeline: TimelineEvent[];
   createdAt: string;
   updatedAt: string;
