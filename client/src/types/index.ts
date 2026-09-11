@@ -68,6 +68,22 @@ export interface Complaint {
   };
   resolutionNotes?: string;
   resolvedAt?: string;
+  likesCount?: number;
+  likedBy?: string[];
+  feedback?: {
+    rating: number;
+    comment: string;
+    citizenName?: string;
+    submittedAt?: string;
+  };
+  feedbacks?: Array<{
+    _id?: string;
+    rating: number;
+    comment: string;
+    citizenName?: string;
+    userId?: string;
+    submittedAt: string;
+  }>;
   aiValidation?: {
     isValid: boolean;
     confidence?: number;

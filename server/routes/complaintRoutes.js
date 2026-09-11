@@ -10,6 +10,8 @@ const {
   updateComplaintStatus,
   analyzeComplaintImage,
   analyzeResolutionImage,
+  toggleLikeComplaint,
+  submitComplaintFeedback,
 } = require('../controllers/complaintController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -25,6 +27,12 @@ router.post('/analyze-resolution', upload.single('image'), analyzeResolutionImag
 
 // Public / Guest Submit with Email OTP & Geotagged Photos
 router.post('/submit-with-otp', upload.array('images', 5), submitComplaintWithOTP);
+
+// Toggle Like / Upvote (Open to public & logged-in users)
+router.post('/:id/like', toggleLikeComplaint);
+
+// Submit Citizen Feedback on Resolved Issue
+router.post('/:id/feedback', submitComplaintFeedback);
 
 // Logged In Citizen / Officer / Admin Routes (Any registered user can lodge civic grievances)
 router.post('/', protect, authorize('citizen', 'subadmin', 'superadmin'), upload.array('images', 5), createComplaint);

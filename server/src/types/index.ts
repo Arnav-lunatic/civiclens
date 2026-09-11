@@ -76,6 +76,22 @@ export interface IComplaint extends Document {
   citizen: Types.ObjectId | IUser;
   assignedSubAdmin?: Types.ObjectId | IUser | null;
   resolutionNotes?: string;
+  likesCount?: number;
+  likedBy?: string[];
+  feedback?: {
+    rating: number;
+    comment: string;
+    citizenName?: string;
+    submittedAt?: Date;
+  };
+  feedbacks?: Array<{
+    _id?: Types.ObjectId;
+    rating: number;
+    comment: string;
+    citizenName?: string;
+    userId?: Types.ObjectId;
+    submittedAt: Date;
+  }>;
   timeline: ITimelineEvent[];
   createdAt: Date;
   updatedAt: Date;

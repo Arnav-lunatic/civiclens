@@ -112,6 +112,30 @@ const ComplaintSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    likesCount: {
+      type: Number,
+      default: 0,
+    },
+    likedBy: [
+      {
+        type: String,
+      },
+    ],
+    feedback: {
+      rating: { type: Number, min: 1, max: 5 },
+      comment: { type: String, default: '' },
+      citizenName: { type: String, default: '' },
+      submittedAt: { type: Date, default: Date.now },
+    },
+    feedbacks: [
+      {
+        rating: { type: Number, min: 1, max: 5 },
+        comment: { type: String, default: '' },
+        citizenName: { type: String, default: '' },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        submittedAt: { type: Date, default: Date.now },
+      },
+    ],
     timeline: [
       {
         status: String,

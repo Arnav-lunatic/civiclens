@@ -447,6 +447,11 @@ export const getMyComplaints = async (req: AuthRequest, res: Response): Promise<
   }
 };
 
+const publicComplaintsCache = new Map<string, { data: any; timestamp: number }>();
+export const invalidatePublicCache = () => {
+  publicComplaintsCache.clear();
+};
+
 // @desc    4. Get Public Live Feed
 // @route   GET /api/complaints/public
 export const getPublicComplaints = async (req: Request, res: Response): Promise<void> => {
@@ -1268,3 +1273,106 @@ Respond ONLY with a valid JSON object matching this schema without markdown or c
     });
   }
 };
+
+// 10. Toggle Like / Upvote Complaint
+export const toggleLikeComplaint = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const voterId = (req.body && req.body.voterId) || (req.user && req.user._id ? req.user._id.toString() : null) || req.ip;
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      res.status(404).json({ success: false, message: 'Complaint not found' });
+      return;
+    }
+
+    complaint.likedBy = complaint.likedBy || [];
+    const existingIndex = voterId ? complaint.likedBy.indexOf(voterId) : -1;
+    let hasLiked = false;
+
+    if (existingIndex > -1) {
+      complaint.likedBy.splice(existingIndex, 1);
+      complaint.likesCount = Math.max(0, (complaint.likesCount || 1) - 1);
+      hasLiked = false;
+    } else {
+      if (voterId) {
+        complaint.likedBy.push(voterId);
+      }
+      complaint.likesCount = (complaint.likesCount || 0) + 1;
+      hasLiked = true;
+    }
+
+    await complaint.save();
+    invalidatePublicCache();
+
+    res.status(200).json({
+      success: true,
+      hasLiked,
+      likesCount: complaint.likesCount,
+    });
+  } catch (error: any) {
+    console.error('Toggle Like Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 11. Submit Citizen Feedback & Rating for Resolved Grievance
+export const submitComplaintFeedback = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { rating, comment, citizenName } = req.body;
+
+    const ratingNum = parseInt(rating, 10);
+    if (!ratingNum || ratingNum < 1 || ratingNum > 5) {
+      res.status(400).json({ success: false, message: 'Please provide a valid rating between 1 and 5 stars.' });
+      return;
+    }
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      res.status(404).json({ success: false, message: 'Complaint not found.' });
+      return;
+    }
+
+    if (complaint.status !== 'Resolved') {
+      res.status(400).json({ success: false, message: 'Feedback can only be submitted for Resolved grievances.' });
+      return;
+    }
+
+    const finalName = citizenName || (req.user ? req.user.name : 'Verified Citizen');
+    const feedbackData = {
+      rating: ratingNum,
+      comment: (comment || '').trim(),
+      citizenName: finalName,
+      submittedAt: new Date(),
+    };
+
+    complaint.feedback = feedbackData;
+    complaint.feedbacks = complaint.feedbacks || [];
+    complaint.feedbacks.push({
+      ...feedbackData,
+      userId: req.user ? req.user._id : undefined,
+    });
+
+    complaint.timeline.push({
+      status: 'Resolved',
+      message: `Citizen Feedback submitted by ${finalName}: ${ratingNum} ★ - "${comment || 'Satisfied with resolution'}"`,
+      updatedBy: req.user ? req.user._id : undefined as any,
+      updaterRole: 'citizen',
+      timestamp: new Date(),
+    });
+
+    await complaint.save();
+    invalidatePublicCache();
+
+    res.status(200).json({
+      success: true,
+      message: 'Thank you for your feedback! Rating recorded successfully.',
+      feedback: complaint.feedback,
+    });
+  } catch (error: any) {
+    console.error('Submit Feedback Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

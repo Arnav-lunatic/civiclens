@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Camera, CheckCircle2, Clock, AlertTriangle, RefreshCw, MapPin, ExternalLink } from 'lucide-react';
+import { Camera, CheckCircle2, Clock, AlertTriangle, RefreshCw, MapPin, ExternalLink, Heart, Star, MessageSquare } from 'lucide-react';
 import { API } from '../services/api';
 import { Complaint } from '../types';
 import { ComplaintImage } from '../components/ComplaintImage';
 import { ImageModal } from '../components/ImageModal';
+import { FeedbackModal } from '../components/FeedbackModal';
 
 export const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,64 @@ export const UserDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(() => complaints.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
+  const [feedbackComplaint, setFeedbackComplaint] = useState<Complaint | null>(null);
+
+  const voterId = useMemo(() => {
+    if (user?._id || user?.id) return user._id || user.id;
+    let saved = localStorage.getItem('civiclens_voter_id');
+    if (!saved) {
+      saved = 'citizen_' + Math.random().toString(36).substring(2, 12);
+      localStorage.setItem('civiclens_voter_id', saved);
+    }
+    return saved;
+  }, [user]);
+
+  const handleToggleLike = async (e: React.MouseEvent, complaintId: string) => {
+    e.stopPropagation();
+    const currentComplaint = complaints.find((c) => c._id === complaintId);
+    const isLiked = currentComplaint?.likedBy?.includes(voterId);
+    const newLiked = !isLiked;
+    const currentCount = currentComplaint?.likesCount || 0;
+    const newCount = Math.max(0, currentCount + (newLiked ? 1 : -1));
+
+    // Optimistic UI update
+    setComplaints((prev) =>
+      prev.map((c) => {
+        if (c._id !== complaintId) return c;
+        const updatedLikedBy = newLiked
+          ? [...(c.likedBy || []), voterId]
+          : (c.likedBy || []).filter((id) => id !== voterId);
+        return { ...c, likesCount: newCount, likedBy: updatedLikedBy };
+      })
+    );
+
+    try {
+      const res = await API.request(`/complaints/${complaintId}/like`, 'POST', { voterId });
+      if (res && res.success) {
+        setComplaints((prev) =>
+          prev.map((c) => {
+            if (c._id !== complaintId) return c;
+            const updatedLikedBy = res.hasLiked
+              ? Array.from(new Set([...(c.likedBy || []), voterId]))
+              : (c.likedBy || []).filter((id) => id !== voterId);
+            return { ...c, likesCount: res.likesCount, likedBy: updatedLikedBy };
+          })
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle like:', err);
+    }
+  };
+
+  const handleFeedbackSuccess = (feedback: any) => {
+    if (!feedbackComplaint) return;
+    setComplaints((prev) =>
+      prev.map((c) => {
+        if (c._id !== feedbackComplaint._id) return c;
+        return { ...c, feedback };
+      })
+    );
+  };
 
   useEffect(() => {
     if (!user || API.getRole('citizen') !== 'citizen') {
@@ -296,8 +355,75 @@ export const UserDashboard: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="text-[10px] text-slate-400 text-right font-mono">
-                      Ticket #{item._id.slice(-6).toUpperCase()}
+                    {/* Citizen Feedback Display & Button */}
+                    {item.feedback?.rating ? (
+                      <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/90 space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-3.5 h-3.5 ${
+                                  star <= item.feedback!.rating
+                                    ? 'fill-amber-400 text-amber-500'
+                                    : 'text-slate-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="font-bold text-amber-900 text-xs ml-1">
+                              Your Rating: {item.feedback.rating}/5
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFeedbackComplaint(item)}
+                            className="text-[10px] text-amber-800 font-bold hover:underline"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                        {item.feedback.comment && (
+                          <p className="text-[11px] text-amber-950 italic leading-relaxed">
+                            "{item.feedback.comment}"
+                          </p>
+                        )}
+                      </div>
+                    ) : item.status === 'Resolved' ? (
+                      <button
+                        type="button"
+                        onClick={() => setFeedbackComplaint(item)}
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition flex items-center justify-center gap-1.5"
+                      >
+                        <Star className="w-4 h-4 fill-white text-white" />
+                        <span>Rate Grievance Resolution & Give Feedback</span>
+                      </button>
+                    ) : null}
+
+                    {/* Bottom Action Row: Like counter and Ticket ID */}
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleLike(e, item._id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
+                          item.likedBy?.includes(voterId)
+                            ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200 shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                        title={item.likedBy?.includes(voterId) ? 'Liked! Click to remove upvote' : 'Upvote this grievance'}
+                      >
+                        <Heart
+                          className={`w-3.5 h-3.5 transition-transform ${
+                            item.likedBy?.includes(voterId)
+                              ? 'fill-rose-500 text-rose-500 scale-110'
+                              : 'text-slate-400'
+                          }`}
+                        />
+                        <span>{item.likesCount || 0} Upvotes</span>
+                      </button>
+
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        Ticket #{item._id.slice(-6).toUpperCase()}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -306,6 +432,14 @@ export const UserDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Citizen Feedback Modal */}
+      <FeedbackModal
+        isOpen={Boolean(feedbackComplaint)}
+        onClose={() => setFeedbackComplaint(null)}
+        complaint={feedbackComplaint}
+        onSuccess={handleFeedbackSuccess}
+      />
 
       {/* High-Resolution Uncropped Image Modal */}
       <ImageModal

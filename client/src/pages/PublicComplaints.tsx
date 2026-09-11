@@ -17,12 +17,16 @@ import {
   SlidersHorizontal,
   Compass,
   ArrowUpDown,
+  Heart,
+  Star,
+  MessageSquare,
 } from 'lucide-react';
 import { API } from '../services/api';
 import { fetchFallbackLocation } from '../services/geo';
 import { Complaint } from '../types';
 import { ComplaintImage } from '../components/ComplaintImage';
 import { ImageModal } from '../components/ImageModal';
+import { FeedbackModal } from '../components/FeedbackModal';
 
 // Haversine formula: calculates distance in meters between two GPS coordinates
 const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -72,6 +76,68 @@ export const PublicComplaints: React.FC = () => {
 
   // Image zoom modal
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
+
+  // Citizen Feedback modal
+  const [feedbackComplaint, setFeedbackComplaint] = useState<Complaint | null>(null);
+
+  // Unique Voter / Visitor ID for liking
+  const voterId = useMemo(() => {
+    const user = API.getUser('citizen') || API.getUser();
+    if (user?._id || user?.id) return user._id || user.id;
+    let saved = localStorage.getItem('civiclens_voter_id');
+    if (!saved) {
+      saved = 'guest_' + Math.random().toString(36).substring(2, 12);
+      localStorage.setItem('civiclens_voter_id', saved);
+    }
+    return saved;
+  }, []);
+
+  const handleToggleLike = async (e: React.MouseEvent, complaintId: string) => {
+    e.stopPropagation();
+    const currentComplaint = complaints.find((c) => c._id === complaintId);
+    const isLiked = currentComplaint?.likedBy?.includes(voterId);
+    const newLiked = !isLiked;
+    const currentCount = currentComplaint?.likesCount || 0;
+    const newCount = Math.max(0, currentCount + (newLiked ? 1 : -1));
+
+    // Optimistic UI update
+    setComplaints((prev) =>
+      prev.map((c) => {
+        if (c._id !== complaintId) return c;
+        const updatedLikedBy = newLiked
+          ? [...(c.likedBy || []), voterId]
+          : (c.likedBy || []).filter((id) => id !== voterId);
+        return { ...c, likesCount: newCount, likedBy: updatedLikedBy };
+      })
+    );
+
+    try {
+      const res = await API.request(`/complaints/${complaintId}/like`, 'POST', { voterId });
+      if (res && res.success) {
+        setComplaints((prev) =>
+          prev.map((c) => {
+            if (c._id !== complaintId) return c;
+            const updatedLikedBy = res.hasLiked
+              ? Array.from(new Set([...(c.likedBy || []), voterId]))
+              : (c.likedBy || []).filter((id) => id !== voterId);
+            return { ...c, likesCount: res.likesCount, likedBy: updatedLikedBy };
+          })
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle like:', err);
+    }
+  };
+
+  const handleFeedbackSuccess = (feedback: any) => {
+    if (!feedbackComplaint) return;
+    setComplaints((prev) =>
+      prev.map((c) => {
+        if (c._id !== feedbackComplaint._id) return c;
+        return { ...c, feedback };
+      })
+    );
+  };
 
   useEffect(() => {
     loadComplaints();
@@ -659,10 +725,82 @@ export const PublicComplaints: React.FC = () => {
                           </span>
                         </div>
                       )}
+
+                      {/* Citizen Feedback & Rating Display */}
+                      {item.feedback?.rating && (
+                        <div className="p-3 bg-amber-50/90 rounded-2xl border border-amber-200/90 space-y-1.5 shadow-2xs">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-3.5 h-3.5 ${
+                                    star <= item.feedback!.rating
+                                      ? 'fill-amber-400 text-amber-500'
+                                      : 'text-slate-300'
+                                  }`}
+                                />
+                              ))}
+                              <span className="font-bold text-amber-900 text-xs ml-1">
+                                {item.feedback.rating}/5
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-amber-800 font-semibold">
+                              Verified Citizen Review
+                            </span>
+                          </div>
+                          {item.feedback.comment && (
+                            <p className="text-[11px] text-amber-950 italic leading-relaxed">
+                              "{item.feedback.comment}"
+                            </p>
+                          )}
+                          {item.feedback.citizenName && (
+                            <div className="text-[10px] text-amber-700 font-medium text-right">
+                              — {item.feedback.citizenName}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="p-5 pt-0">
+                  {/* Card Bottom Actions: Like, Rate, and Google Maps */}
+                  <div className="p-5 pt-0 space-y-2 border-t border-slate-100 mt-2 pt-3">
+                    <div className="flex items-center gap-2">
+                      {/* Like / Upvote Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleLike(e, item._id)}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border ${
+                          item.likedBy?.includes(voterId)
+                            ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200 shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                        title={item.likedBy?.includes(voterId) ? 'Liked! Click to remove upvote' : 'Upvote this grievance'}
+                      >
+                        <Heart
+                          className={`w-4 h-4 transition-transform ${
+                            item.likedBy?.includes(voterId)
+                              ? 'fill-rose-500 text-rose-500 scale-110'
+                              : 'text-slate-400'
+                          }`}
+                        />
+                        <span>{item.likesCount || 0} Upvotes</span>
+                      </button>
+
+                      {/* Citizen Feedback / Rate Button for Resolved Issues */}
+                      {item.status === 'Resolved' && (
+                        <button
+                          type="button"
+                          onClick={() => setFeedbackComplaint(item)}
+                          className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-2xs"
+                        >
+                          <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                          <span>{item.feedback?.rating ? 'Edit Rating' : 'Rate Redressal'}</span>
+                        </button>
+                      )}
+                    </div>
+
                     <a
                       href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
                       target="_blank"
@@ -679,6 +817,14 @@ export const PublicComplaints: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Citizen Rating & Feedback Modal */}
+      <FeedbackModal
+        isOpen={Boolean(feedbackComplaint)}
+        onClose={() => setFeedbackComplaint(null)}
+        complaint={feedbackComplaint}
+        onSuccess={handleFeedbackSuccess}
+      />
 
       {/* High-Resolution Uncropped Image Modal */}
       <ImageModal
