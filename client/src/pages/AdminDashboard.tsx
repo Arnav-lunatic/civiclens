@@ -224,6 +224,11 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     if (!selectedComplaint) return;
 
+    if (selectedComplaint.status === 'Resolved' || selectedComplaint.status === 'Rejected') {
+      alert(`⚠️ Status is locked: This grievance is already marked as "${selectedComplaint.status}" and cannot be modified further.`);
+      return;
+    }
+
     if (newStatus === 'Resolved') {
       // 1. Strict GPS location matching requirement
       if (!locationVerified || subadminLat === null || subadminLng === null) {
@@ -620,34 +625,46 @@ export const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div className="p-5 pt-0">
-                    <button
-                      onClick={() => {
-                        setSelectedComplaint(item);
-                        const initialStatus = item.status || 'In Progress';
-                        setNewStatus(initialStatus);
-                        setResolutionNotes(item.resolutionNotes || '');
-                        setLocationVerified(false);
-                        setLocationCheckLoading(false);
-                        setLocationError('');
-                        setLocationDistance(null);
-                        setSubadminLat(null);
-                        setSubadminLng(null);
-                        setResolutionPhotoFile(null);
-                        setResolutionPhotoPreview('');
-                        setResolutionPhotoLat(null);
-                        setResolutionPhotoLng(null);
-                        setAnalyzingResolutionAi(false);
-                        setAiResolutionResult(null);
-                        setAiResolutionError('');
-                        if (initialStatus === 'Resolved') {
-                          handleVerifyLocation(item);
-                        }
-                      }}
-                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
-                    >
-                      <PenSquare className="w-3.5 h-3.5" />
-                      <span>Update Grievance Status</span>
-                    </button>
+                    {item.status === 'Resolved' ? (
+                      <div className="w-full py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-2xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Grievance Resolved (Status Locked)</span>
+                      </div>
+                    ) : item.status === 'Rejected' ? (
+                      <div className="w-full py-2.5 bg-rose-50 border border-rose-200 text-rose-800 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-2xs">
+                        <Lock className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Grievance Rejected (Status Locked)</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setSelectedComplaint(item);
+                          const initialStatus = item.status || 'In Progress';
+                          setNewStatus(initialStatus);
+                          setResolutionNotes(item.resolutionNotes || '');
+                          setLocationVerified(false);
+                          setLocationCheckLoading(false);
+                          setLocationError('');
+                          setLocationDistance(null);
+                          setSubadminLat(null);
+                          setSubadminLng(null);
+                          setResolutionPhotoFile(null);
+                          setResolutionPhotoPreview('');
+                          setResolutionPhotoLat(null);
+                          setResolutionPhotoLng(null);
+                          setAnalyzingResolutionAi(false);
+                          setAiResolutionResult(null);
+                          setAiResolutionError('');
+                          if (initialStatus === 'Resolved') {
+                            handleVerifyLocation(item);
+                          }
+                        }}
+                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
+                      >
+                        <PenSquare className="w-3.5 h-3.5" />
+                        <span>Update Grievance Status</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );

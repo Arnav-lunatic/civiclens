@@ -671,6 +671,14 @@ const updateComplaintStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Complaint not found' });
     }
 
+    // Lock terminal statuses: once an issue is Resolved or Rejected, no further status modifications are allowed
+    if (complaint.status === 'Resolved' || complaint.status === 'Rejected') {
+      return res.status(400).json({
+        success: false,
+        message: `This grievance has already been marked as ${complaint.status}. Once an issue is ${complaint.status.toLowerCase()}, further status modifications are permanently locked.`,
+      });
+    }
+
     if (req.user.role === 'subadmin') {
       const hasPincode = req.user.assignedPincodes && req.user.assignedPincodes.includes(complaint.pincode);
       const isDirectlyAssigned = complaint.assignedSubAdmin && complaint.assignedSubAdmin.toString() === req.user._id.toString();
