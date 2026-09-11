@@ -27,9 +27,9 @@ router.post('/analyze-resolution', upload.single('image'), analyzeResolutionImag
 // Public / Guest Submit with Email OTP & Geotagged Photos
 router.post('/submit-with-otp', upload.array('images', 5), submitComplaintWithOTP);
 
-// Logged In Citizen Routes
-router.post('/', protect, authorize('citizen'), upload.array('images', 5), createComplaint);
-router.get('/my', protect, authorize('citizen'), getMyComplaints);
+// Logged In Citizen / Officer / Admin Routes (Any registered user can lodge civic grievances)
+router.post('/', protect, authorize('citizen', 'subadmin', 'superadmin'), upload.array('images', 5), createComplaint);
+router.get('/my', protect, authorize('citizen', 'subadmin', 'superadmin'), getMyComplaints);
 
 // Sub-Admin Routes
 router.get('/subadmin', protect, authorize('subadmin', 'superadmin'), getSubAdminComplaints);
