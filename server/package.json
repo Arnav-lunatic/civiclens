@@ -4,7 +4,7 @@
   "description": "CivicLens Geotagged Grievance Redressal Backend API (TypeScript)",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "node --watch --env-file=.env src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --env-file=.env src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
