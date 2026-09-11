@@ -1,8 +1,24 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Camera, ShieldCheck, MapPin, CheckCircle2, Lock, FileText, Globe, Cpu, ArrowUpRight } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Camera, ShieldCheck, MapPin, CheckCircle2, Lock, FileText, Globe, Cpu, ArrowUpRight, Shield, Building2 } from 'lucide-react';
+import { API } from '../services/api';
 
 export const Footer: React.FC = () => {
+  const location = useLocation();
+  const isSuperAdminPath = location.pathname.startsWith('/superadmin');
+  const isAdminPath = location.pathname.startsWith('/admin');
+
+  const activeRole = isSuperAdminPath ? 'superadmin' : isAdminPath ? 'subadmin' : 'citizen';
+  const user = API.getUser(activeRole);
+  const role = API.getRole(activeRole);
+
+  let logoHref = '/';
+  if (isSuperAdminPath) {
+    logoHref = user && (role === 'superadmin' || activeRole === 'superadmin') ? '/superadmin/dashboard' : '/superadmin/login';
+  } else if (isAdminPath) {
+    logoHref = user && (role === 'subadmin' || role === 'superadmin' || activeRole === 'subadmin') ? '/admin/dashboard' : '/admin/login';
+  }
+
   return (
     <footer className="relative bg-white text-slate-600 mt-20 border-t border-slate-200/90 overflow-hidden shadow-sm">
       {/* Background ambient lighting */}
@@ -13,13 +29,25 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 mb-12">
           {/* Brand & Mission (Col 1-4) */}
           <div className="md:col-span-4 space-y-4">
-            <Link to="/" className="flex items-center space-x-2.5 shrink-0 group">
+            <Link to={logoHref} className="flex items-center space-x-2.5 shrink-0 group">
               <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center p-1 border border-slate-200 shadow-md shadow-sky-500/10 group-hover:scale-105 transition overflow-hidden">
                 <img src="/images/logo.png" alt="CivicLens Logo" className="w-full h-full object-contain rounded-xl" />
               </div>
-              <span className="text-xl font-black text-slate-900 tracking-tight">
-                Civic<span className="text-sky-600">Lens</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-black text-slate-900 tracking-tight">
+                  Civic<span className="text-sky-600">Lens</span>
+                </span>
+                {isSuperAdminPath && (
+                  <span className="text-[10px] font-bold text-purple-600 uppercase font-mono -mt-1">
+                    State Master Console
+                  </span>
+                )}
+                {isAdminPath && (
+                  <span className="text-[10px] font-bold text-blue-600 uppercase font-mono -mt-1">
+                    District Officer Portal
+                  </span>
+                )}
+              </div>
             </Link>
             <p className="text-xs text-slate-600 leading-relaxed font-normal">
               AI-powered geotagged municipal grievance redressal system. Verified real-time GPS coordinates, Groq Vision AI hazard detection, and on-site anti-tamper geofencing for rapid public resolution.
@@ -32,32 +60,68 @@ export const Footer: React.FC = () => {
 
           {/* Quick Platform Links (Col 5-6) */}
           <div className="md:col-span-2 space-y-3.5">
-            <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Platform</h4>
+            <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              {isSuperAdminPath ? 'Master Console' : isAdminPath ? 'Officer Portal' : 'Platform'}
+            </h4>
             <ul className="space-y-2.5 text-xs">
-              <li>
-                <Link to="/explore" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
-                  <Globe className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
-                  <span>Public Grievances</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/report" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
-                  <Camera className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
-                  <span>Report Hazard</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/dashboard" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
-                  <span>Track Status</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/login" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
-                  <Lock className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
-                  <span>Citizen Sign In</span>
-                </Link>
-              </li>
+              {isSuperAdminPath ? (
+                <>
+                  <li>
+                    <Link to="/superadmin/dashboard" className="text-slate-600 hover:text-purple-600 transition flex items-center gap-1.5 group">
+                      <Shield className="w-3.5 h-3.5 text-purple-500 group-hover:text-purple-600 transition" />
+                      <span>State Dashboard</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/superadmin/login" className="text-slate-600 hover:text-purple-600 transition flex items-center gap-1.5 group">
+                      <Lock className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 transition" />
+                      <span>Master Login</span>
+                    </Link>
+                  </li>
+                </>
+              ) : isAdminPath ? (
+                <>
+                  <li>
+                    <Link to="/admin/dashboard" className="text-slate-600 hover:text-blue-600 transition flex items-center gap-1.5 group">
+                      <Building2 className="w-3.5 h-3.5 text-blue-500 group-hover:text-blue-600 transition" />
+                      <span>Officer Dashboard</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/login" className="text-slate-600 hover:text-blue-600 transition flex items-center gap-1.5 group">
+                      <Lock className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition" />
+                      <span>Officer Login</span>
+                    </Link>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li>
+                    <Link to="/explore" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
+                      <Globe className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
+                      <span>Public Grievances</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/report" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
+                      <Camera className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
+                      <span>Report Hazard</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/dashboard" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
+                      <span>Track Status</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/login" className="text-slate-600 hover:text-sky-600 transition flex items-center gap-1.5 group">
+                      <Lock className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition" />
+                      <span>Citizen Sign In</span>
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 

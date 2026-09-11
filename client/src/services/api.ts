@@ -96,7 +96,7 @@ export const API = {
     } else if (targetRole === 'subadmin') {
       window.location.href = '/admin/login';
     } else {
-      window.location.href = '/';
+      window.location.href = '/login';
     }
   },
 

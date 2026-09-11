@@ -14,6 +14,30 @@ export const Navbar: React.FC = () => {
   const user = API.getUser(activeRole);
   const role = API.getRole(activeRole);
 
+  let logoHref = '/';
+  let portalSubtitle = 'AI Redressal Engine';
+  let portalBadge = null;
+
+  if (isSuperAdminPath) {
+    logoHref = user && (role === 'superadmin' || activeRole === 'superadmin') ? '/superadmin/dashboard' : '/superadmin/login';
+    portalSubtitle = 'State Master Console';
+    portalBadge = (
+      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
+        <Shield className="w-3 h-3 text-purple-600" />
+        <span>State Master</span>
+      </span>
+    );
+  } else if (isAdminPath) {
+    logoHref = user && (role === 'subadmin' || role === 'superadmin' || activeRole === 'subadmin') ? '/admin/dashboard' : '/admin/login';
+    portalSubtitle = 'District Officer Console';
+    portalBadge = (
+      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+        <Shield className="w-3 h-3 text-blue-600" />
+        <span>District Officer</span>
+      </span>
+    );
+  }
+
   const handleLogout = () => {
     API.logout(activeRole);
     if (activeRole === 'superadmin') {
@@ -30,8 +54,8 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/85 border-b border-slate-200/80 transition-all duration-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-3.5 sm:px-6 h-16 flex justify-between items-center gap-2 sm:gap-4">
-        {/* Brand Logo */}
-        <Link to="/" className="flex items-center space-x-2.5 shrink-0 group">
+        {/* Brand Logo - Context-aware routing */}
+        <Link to={logoHref} className="flex items-center space-x-2.5 shrink-0 group">
           <div className="relative">
             <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center p-1 border border-slate-200 shadow-md shadow-sky-500/10 group-hover:shadow-lg group-hover:shadow-sky-500/20 group-hover:scale-105 transition-all duration-300 overflow-hidden">
               <img src="/images/logo.png" alt="CivicLens Logo" className="w-full h-full object-contain rounded-xl" />
@@ -39,11 +63,14 @@ export const Navbar: React.FC = () => {
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"></span>
           </div>
           <div className="flex flex-col">
-            <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-1">
-              Civic<span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-teal-600 to-cyan-600">Lens</span>
-            </span>
-            <span className="hidden sm:inline text-[9px] font-bold text-slate-500 -mt-1 tracking-wider uppercase font-mono">
-              AI Redressal Engine
+            <div className="flex items-center gap-2">
+              <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-1">
+                Civic<span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-teal-600 to-cyan-600">Lens</span>
+              </span>
+              {portalBadge}
+            </div>
+            <span className="hidden sm:inline text-[9px] font-bold text-slate-500 -mt-0.5 tracking-wider uppercase font-mono">
+              {portalSubtitle}
             </span>
           </div>
         </Link>
