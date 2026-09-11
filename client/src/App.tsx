@@ -19,18 +19,21 @@ import { API } from './services/api';
 
 export const App: React.FC = () => {
   useEffect(() => {
-    // 1. Immediate wakeup ping on app load
+    // 1. Immediate wakeup ping on app load & background profile sync from database
     API.pingHealth();
+    API.syncUserProfile();
 
     // 2. Keep Render awake: ping health check every 4 minutes (240,000 ms)
     const keepAliveInterval = setInterval(() => {
       API.pingHealth();
+      API.syncUserProfile();
     }, 4 * 60 * 1000);
 
-    // 3. Ping on tab visibility change (when citizen switches back to tab)
+    // 3. Ping & sync profile on tab visibility change (when citizen switches back to tab)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         API.pingHealth();
+        API.syncUserProfile();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);

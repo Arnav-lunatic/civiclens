@@ -100,9 +100,34 @@ export const API = {
     }
   },
 
-  // In-Memory cache & in-flight request deduplication for ultra-fast UI rendering
-  clearCache: () => {
-    requestCache.clear();
+  // Synchronize active user profile directly from database to keep names/roles/districts fresh
+  syncUserProfile: async (role?: string): Promise<User | null> => {
+    try {
+      const targetRole = getContextRole(role);
+      const token = API.getToken(targetRole);
+      if (!token) return null;
+
+      const res = await API.request('/auth/me', 'GET', null, false, { skipCache: true });
+      if (res && res.user) {
+        const freshUser: User = {
+          id: res.user._id || res.user.id,
+          _id: res.user._id,
+          name: res.user.name,
+          email: res.user.email,
+          role: res.user.role,
+          phone: res.user.phone,
+          department: res.user.department,
+          assignedDistrict: res.user.assignedDistrict,
+          assignedPincodes: res.user.assignedPincodes,
+          officialId: res.user.officialId,
+        };
+        API.setAuth(token, freshUser, res.user.role || targetRole);
+        return freshUser;
+      }
+    } catch {
+      // Background sync fail-safe
+    }
+    return null;
   },
 
   // Ping backend health check to keep Render awake
