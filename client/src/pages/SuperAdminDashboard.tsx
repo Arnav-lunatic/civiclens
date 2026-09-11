@@ -22,6 +22,9 @@ import {
   Eye,
   X,
   Map,
+  ChevronDown,
+  ChevronUp,
+  ArrowUpDown,
 } from 'lucide-react';
 import { API } from '../services/api';
 import { User, Complaint } from '../types';
@@ -61,6 +64,9 @@ export const SuperAdminDashboard: React.FC = () => {
 
   // District oversight state
   const [selectedDistrict, setSelectedDistrict] = useState<string>('All');
+  const [districtSearchQuery, setDistrictSearchQuery] = useState<string>('');
+  const [districtSort, setDistrictSort] = useState<'issues' | 'alpha' | 'rate'>('issues');
+  const [isDistrictExpanded, setIsDistrictExpanded] = useState<boolean>(false);
   const [complaintStatusFilter, setComplaintStatusFilter] = useState<string>('All');
   const [complaintSearch, setComplaintSearch] = useState<string>('');
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
@@ -192,6 +198,34 @@ export const SuperAdminDashboard: React.FC = () => {
 
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [complaints, subAdmins]);
+
+  // Scalable filtered & sorted district groups (supports 72+ districts effortlessly)
+  const filteredDistrictGroups = useMemo(() => {
+    let list = [...districtGroups];
+
+    if (districtSearchQuery.trim()) {
+      const q = districtSearchQuery.toLowerCase();
+      list = list.filter(
+        (g) =>
+          g.name.toLowerCase().includes(q) ||
+          g.officers.some((o) => o.toLowerCase().includes(q))
+      );
+    }
+
+    if (districtSort === 'alpha') {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (districtSort === 'rate') {
+      list.sort((a, b) => {
+        const rateA = a.total > 0 ? a.resolved / a.total : 0;
+        const rateB = b.total > 0 ? b.resolved / b.total : 0;
+        return rateA - rateB;
+      });
+    } else {
+      list.sort((a, b) => b.total - a.total);
+    }
+
+    return list;
+  }, [districtGroups, districtSearchQuery, districtSort]);
 
   // Filtered complaints for the active selected district
   const displayedComplaints = useMemo(() => {
@@ -498,80 +532,208 @@ export const SuperAdminDashboard: React.FC = () => {
       </div>
 
       {/* ─── District-Wise Civic Grievances Oversight ─── */}
-      <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Section Header */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200 shadow-2xs mb-1">
               <Building2 className="w-3.5 h-3.5 text-blue-600" />
-              <span>Statewide Territorial Grievance Division</span>
+              <span>Statewide Territorial Grievance Division ({districtGroups.length} Jurisdictions)</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
               District-Wise Civic Grievance Triage
             </h2>
             <p className="text-xs text-slate-500">
-              Click on any district card below to filter and inspect all civic complaints, assigned officers, and resolution status.
+              Filter, search, or jump to any district jurisdiction to inspect active complaints and officer resolution efficiency.
             </p>
           </div>
           <button
             onClick={() => loadData(true)}
-            className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1.5 self-start sm:self-auto transition bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-xl border border-sky-200"
+            className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1.5 self-start sm:self-auto transition bg-sky-50 hover:bg-sky-100 px-3.5 py-2 rounded-xl border border-sky-200 shadow-2xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
             <span>Refresh Grievances</span>
           </button>
         </div>
 
-        {/* District Selector Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* All Districts Master Card */}
-          <button
-            onClick={() => setSelectedDistrict('All')}
-            className={`p-5 rounded-3xl border text-left transition flex flex-col justify-between space-y-3 ${
-              selectedDistrict === 'All'
-                ? 'bg-slate-900 text-white border-sky-500/60 shadow-lg shadow-sky-500/15 scale-[1.01] ring-2 ring-sky-500'
-                : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-sm'
-            }`}
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                  selectedDistrict === 'All' ? 'text-sky-300' : 'text-slate-500'
-                }`}>
-                  Statewide Aggregate
-                </span>
-                <h3 className={`text-lg font-black mt-0.5 ${selectedDistrict === 'All' ? 'text-white' : 'text-slate-900'}`}>All Districts</h3>
-              </div>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-black font-mono ${
-                selectedDistrict === 'All' ? 'bg-sky-500/20 text-sky-200 border border-sky-500/30' : 'bg-slate-100 text-slate-700 border border-slate-200'
-              }`}>
-                {complaints.length} issues
-              </span>
+        {/* Scalable Controls Toolbar: Search + Quick Jump + Sort + Expand/Collapse */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Left: Search input + Quick Jump Select */}
+          <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search district name or officer..."
+                value={districtSearchQuery}
+                onChange={(e) => setDistrictSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white text-xs font-medium text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-sky-500/30 transition"
+              />
+              {districtSearchQuery && (
+                <button
+                  onClick={() => setDistrictSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
-            <div className={`grid grid-cols-3 gap-2 pt-1 border-t text-center ${selectedDistrict === 'All' ? 'border-slate-800' : 'border-slate-100'}`}>
-              <div>
-                <div className={`text-[10px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>Resolved</div>
-                <div className={`text-sm font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                  {complaints.filter((c) => c.status === 'Resolved').length}
-                </div>
-              </div>
-              <div>
-                <div className={`text-[10px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>In Progress</div>
-                <div className={`text-sm font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>
-                  {complaints.filter((c) => c.status === 'In Progress').length}
-                </div>
-              </div>
-              <div>
-                <div className={`text-[10px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>Pending</div>
-                <div className={`text-sm font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>
-                  {complaints.filter((c) => c.status === 'Pending' || c.status === 'Under Review').length}
-                </div>
-              </div>
+            {/* Quick Jump Dropdown */}
+            <div className="relative shrink-0">
+              <select
+                value={selectedDistrict}
+                onChange={(e) => setSelectedDistrict(e.target.value)}
+                aria-label="Quick jump to district"
+                className="w-full sm:w-auto appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 text-xs font-bold text-slate-800 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-sky-500/30 cursor-pointer transition"
+              >
+                <option value="All">🏛️ Statewide (All Districts) - {complaints.length} issues</option>
+                {districtGroups.map((g) => (
+                  <option key={g.name} value={g.name}>
+                    📍 {g.name} ({g.total} issues)
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-          </button>
+          </div>
+
+          {/* Right: Sort options + Expand/Collapse button */}
+          <div className="flex flex-wrap items-center gap-2 justify-between md:justify-end border-t md:border-t-0 pt-2 md:pt-0 border-slate-100">
+            {/* Sort Toggle Group */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-[11px] font-bold text-slate-600">
+              <button
+                onClick={() => setDistrictSort('issues')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  districtSort === 'issues'
+                    ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                Most Issues
+              </button>
+              <button
+                onClick={() => setDistrictSort('alpha')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  districtSort === 'alpha'
+                    ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                A–Z
+              </button>
+              <button
+                onClick={() => setDistrictSort('rate')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  districtSort === 'rate'
+                    ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                Needs Action
+              </button>
+            </div>
+
+            {/* Expand / Collapse Toggle */}
+            <button
+              onClick={() => setIsDistrictExpanded(!isDistrictExpanded)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition"
+            >
+              {isDistrictExpanded ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Compact View</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Expand All ({districtGroups.length})</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* District Selector Cards Grid (Compact Scrollable or Full Grid) */}
+        <div
+          className={`${
+            isDistrictExpanded
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5'
+              : 'max-h-[380px] overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5'
+          }`}
+        >
+          {/* All Districts Master Card (Always visible when relevant) */}
+          {(!districtSearchQuery.trim() ||
+            'all districts'.includes(districtSearchQuery.toLowerCase()) ||
+            'statewide'.includes(districtSearchQuery.toLowerCase())) && (
+            <button
+              onClick={() => setSelectedDistrict('All')}
+              className={`p-4.5 rounded-2xl border text-left transition flex flex-col justify-between space-y-2.5 ${
+                selectedDistrict === 'All'
+                  ? 'bg-slate-900 text-white border-sky-500/60 shadow-md shadow-sky-500/15 scale-[1.01] ring-2 ring-sky-500'
+                  : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-2xs hover:shadow-xs'
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <span
+                    className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                      selectedDistrict === 'All' ? 'text-sky-300' : 'text-slate-500'
+                    }`}
+                  >
+                    Statewide Aggregate
+                  </span>
+                  <h3 className={`text-base font-black mt-0.5 ${selectedDistrict === 'All' ? 'text-white' : 'text-slate-900'}`}>
+                    All Districts
+                  </h3>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-black font-mono ${
+                    selectedDistrict === 'All'
+                      ? 'bg-sky-500/20 text-sky-200 border border-sky-500/30'
+                      : 'bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  {complaints.length} issues
+                </span>
+              </div>
+
+              <div
+                className={`grid grid-cols-3 gap-1.5 pt-2 border-t text-center ${
+                  selectedDistrict === 'All' ? 'border-slate-800' : 'border-slate-100'
+                }`}
+              >
+                <div>
+                  <div className={`text-[9px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    Resolved
+                  </div>
+                  <div className={`text-xs font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    {complaints.filter((c) => c.status === 'Resolved').length}
+                  </div>
+                </div>
+                <div>
+                  <div className={`text-[9px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>
+                    In Progress
+                  </div>
+                  <div className={`text-xs font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-sky-400' : 'text-sky-600'}`}>
+                    {complaints.filter((c) => c.status === 'In Progress').length}
+                  </div>
+                </div>
+                <div>
+                  <div className={`text-[9px] font-bold uppercase ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>
+                    Pending
+                  </div>
+                  <div className={`text-xs font-black font-mono mt-0.5 ${selectedDistrict === 'All' ? 'text-amber-400' : 'text-amber-600'}`}>
+                    {complaints.filter((c) => c.status === 'Pending' || c.status === 'Under Review').length}
+                  </div>
+                </div>
+              </div>
+            </button>
+          )}
 
           {/* Individual District Cards */}
-          {districtGroups.map((group) => {
+          {filteredDistrictGroups.map((group) => {
             const isSelected = selectedDistrict.toLowerCase() === group.name.toLowerCase();
             const resolutionPercent = group.total > 0 ? Math.round((group.resolved / group.total) * 100) : 0;
 
@@ -579,42 +741,56 @@ export const SuperAdminDashboard: React.FC = () => {
               <button
                 key={group.name}
                 onClick={() => setSelectedDistrict(group.name)}
-                className={`p-5 rounded-3xl border text-left transition flex flex-col justify-between space-y-3 ${
+                className={`p-4.5 rounded-2xl border text-left transition flex flex-col justify-between space-y-2.5 ${
                   isSelected
-                    ? 'bg-gradient-to-tr from-sky-600 to-blue-700 text-white border-sky-400 shadow-lg shadow-sky-500/20 scale-[1.01] ring-2 ring-sky-300'
-                    : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-sm'
+                    ? 'bg-gradient-to-tr from-sky-600 to-blue-700 text-white border-sky-400 shadow-md shadow-sky-500/20 scale-[1.01] ring-2 ring-sky-300'
+                    : 'bg-white hover:border-slate-300 text-slate-900 border-slate-200/90 shadow-2xs hover:shadow-xs'
                 }`}
               >
-                <div className="flex justify-between items-start">
-                  <div className="min-w-0">
-                    <span className={`text-[10px] font-extrabold uppercase tracking-wider truncate block ${
-                      isSelected ? 'text-sky-100' : 'text-slate-500'
-                    }`}>
-                      District Jurisdiction
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span
+                      className={`text-[9px] font-extrabold uppercase tracking-wider truncate block ${
+                        isSelected ? 'text-sky-100' : 'text-slate-500'
+                      }`}
+                    >
+                      {group.officers.length > 0 ? `${group.officers.length} Officer(s)` : 'Jurisdiction'}
                     </span>
-                    <h3 className={`text-base font-black mt-0.5 truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>{group.name}</h3>
+                    <h3 className={`text-sm font-black mt-0.5 truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                      {group.name}
+                    </h3>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-black font-mono shrink-0 ml-2 ${
-                    isSelected ? 'bg-white/20 text-white border border-white/30' : 'bg-slate-100 text-slate-700 border border-slate-200'
-                  }`}>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-black font-mono shrink-0 ${
+                      isSelected ? 'bg-white/20 text-white border border-white/30' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                    }`}
+                  >
                     {group.total}
                   </span>
                 </div>
 
                 {/* Mini Metrics Row */}
-                <div className={`grid grid-cols-3 gap-1 pt-2 border-t text-center ${
-                  isSelected ? 'border-sky-500/60' : 'border-slate-100'
-                }`}>
+                <div
+                  className={`grid grid-cols-3 gap-1 pt-1.5 border-t text-center ${
+                    isSelected ? 'border-sky-500/60' : 'border-slate-100'
+                  }`}
+                >
                   <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-emerald-600'}`}>Resolved</div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-emerald-600'}`}>
+                      Resolved
+                    </div>
                     <div className="text-xs font-black font-mono">{group.resolved}</div>
                   </div>
                   <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-sky-600'}`}>Active</div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-sky-600'}`}>
+                      Active
+                    </div>
                     <div className="text-xs font-black font-mono">{group.inProgress}</div>
                   </div>
                   <div>
-                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-amber-600'}`}>Pending</div>
+                    <div className={`text-[9px] font-bold uppercase ${isSelected ? 'text-sky-100' : 'text-amber-600'}`}>
+                      Pending
+                    </div>
                     <div className="text-xs font-black font-mono">{group.pending}</div>
                   </div>
                 </div>
@@ -625,11 +801,13 @@ export const SuperAdminDashboard: React.FC = () => {
                     <span>Resolution Rate</span>
                     <span>{resolutionPercent}%</span>
                   </div>
-                  <div className={`h-1.5 w-full rounded-full overflow-hidden ${
-                    isSelected ? 'bg-sky-800' : 'bg-slate-100'
-                  }`}>
+                  <div
+                    className={`h-1.5 w-full rounded-full overflow-hidden ${
+                      isSelected ? 'bg-sky-800' : 'bg-slate-100'
+                    }`}
+                  >
                     <div
-                      className={`h-full rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`}
+                      className={`h-full rounded-full transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-emerald-500'}`}
                       style={{ width: `${resolutionPercent}%` }}
                     />
                   </div>
@@ -638,6 +816,26 @@ export const SuperAdminDashboard: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Empty Search Result Fallback */}
+        {filteredDistrictGroups.length === 0 && districtSearchQuery.trim() && (
+          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center space-y-3">
+            <Building2 className="w-8 h-8 text-slate-400 mx-auto" />
+            <div className="text-sm font-bold text-slate-800">
+              No districts found matching &ldquo;{districtSearchQuery}&rdquo;
+            </div>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Check the spelling or try searching by the district officer&apos;s name.
+            </p>
+            <button
+              onClick={() => setDistrictSearchQuery('')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold rounded-xl border border-sky-200 transition"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Clear Search</span>
+            </button>
+          </div>
+        )}
 
         {/* Selected District Feed Panel */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 space-y-6">
