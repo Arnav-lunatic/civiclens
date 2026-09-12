@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, AlertTriangle, Loader2, Lock, Info } from 'lucide-react';
+import { Camera, MapPin, Satellite, ShieldCheck, Trash2, Send, CheckCircle2, Activity, RefreshCw, AlertCircle, AlertTriangle, Loader2, Lock, Info, Navigation } from 'lucide-react';
 import { API } from '../services/api';
 import { GeoService, FusedPosition } from '../services/geo';
 import { CameraModal } from '../components/CameraModal';
@@ -68,14 +68,11 @@ export const ReportIssue: React.FC = () => {
   const [aiSuccessBadge, setAiSuccessBadge] = useState<string | null>(null);
   const [isValidCivicIssue, setIsValidCivicIssue] = useState<boolean | null>(null);
 
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   useEffect(() => {
     startGpsTracking();
 
     return () => {
       if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);
 
@@ -96,29 +93,53 @@ export const ReportIssue: React.FC = () => {
       (err: GeolocationPositionError) => {
         console.warn('GPS hardware error:', err);
         setGpsLoading(false);
+        setLiveLat(null);
+        setLiveLng(null);
         if (err.code === 1) {
           setGpsDenied(true);
-          setErrorMessage('Location permission denied. Please allow location access in your browser / Mac settings.');
+          setErrorMessage('Location permission was denied. CivicLens strictly mandates device GPS access to lodge authentic civic complaints.');
         } else if (err.code === 2) {
-          setErrorMessage('GPS position unavailable. Please ensure Wi-Fi or Location Services are enabled on your device.');
+          setErrorMessage('GPS sensor position unavailable. Please ensure Location Services or GPS are active on your device.');
         } else if (err.code === 3) {
-          setErrorMessage('GPS query timed out. Please click "Sync / Refresh GPS" to retry.');
+          setErrorMessage('GPS query timed out. Please click "Grant / Request GPS Access" to retry.');
+        } else {
+          setErrorMessage(err.message || 'GPS location error.');
         }
       }
     );
 
     watchIdRef.current = watchId;
+  };
 
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    pollIntervalRef.current = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          handleNewPosition(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy || 5));
-        },
-        () => {},
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 10000 }
-      );
-    }, 3000);
+  const requestGpsPermissionDirectly = () => {
+    setGpsLoading(true);
+    setErrorMessage('');
+    setGpsDenied(false);
+
+    if (!navigator.geolocation) {
+      setErrorMessage('Geolocation hardware is not supported on this browser or device.');
+      setGpsLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        handleNewPosition(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy || 5));
+        startGpsTracking();
+      },
+      (err) => {
+        setGpsLoading(false);
+        setLiveLat(null);
+        setLiveLng(null);
+        if (err.code === 1) {
+          setGpsDenied(true);
+          setErrorMessage('Location permission denied. Please allow location access in your browser / site settings and click Retry.');
+        } else {
+          setErrorMessage('GPS signal not received. Please enable Location Services on your device and retry.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   const handleNewPosition = async (lat: number, lng: number, acc: number) => {
@@ -516,19 +537,39 @@ export const ReportIssue: React.FC = () => {
               </div>
             </div>
 
-            {/* GPS Error Alert */}
-            {errorMessage && (
-              <div className="p-4 bg-rose-950/80 border border-rose-800 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                <div className="flex items-center gap-2.5 text-xs text-rose-200 font-medium">
-                  <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
-                  <span>{errorMessage}</span>
+            {/* GPS Error & Permission Request Alert */}
+            {(errorMessage || liveLat === null || liveLng === null || gpsDenied) && (
+              <div className="p-4 sm:p-5 bg-rose-950/90 border-2 border-rose-600 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 shadow-xl">
+                <div className="flex items-start gap-3 text-xs text-rose-200 font-medium">
+                  <div className="w-8 h-8 rounded-xl bg-rose-600/30 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/40 mt-0.5">
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="font-bold text-sm text-rose-100 uppercase tracking-wider block">
+                      Strict Device GPS Required
+                    </span>
+                    <span>
+                      {errorMessage || 'CivicLens requires your real-time physical device GPS location. IP-based location and manual entry are disabled to prevent fake complaints.'}
+                    </span>
+                  </div>
                 </div>
                 <button
                   type="button"
-                  onClick={startGpsTracking}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow transition whitespace-nowrap"
+                  onClick={requestGpsPermissionDirectly}
+                  disabled={gpsLoading}
+                  className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black rounded-xl shadow-lg transition whitespace-nowrap flex items-center justify-center gap-2 self-start sm:self-auto"
                 >
-                  Retry Sensor Connection
+                  {gpsLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Requesting GPS...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>{gpsDenied ? 'Request GPS Permission Again' : 'Grant / Enable Live GPS'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -621,9 +662,16 @@ export const ReportIssue: React.FC = () => {
             {liveLat && liveLng ? (
               <MapView lat={liveLat} lng={liveLng} accuracy={accuracy} />
             ) : (
-              <div className="h-44 rounded-2xl border border-dashed border-slate-800 bg-slate-950/50 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
-                <MapPin className="w-6 h-6 text-sky-400 animate-bounce" />
-                <span>Map will render strictly when hardware sensor GPS connects</span>
+              <div className="h-44 rounded-2xl border border-dashed border-slate-800 bg-slate-950/50 flex flex-col items-center justify-center text-slate-400 text-xs space-y-3 p-4 text-center">
+                <MapPin className="w-7 h-7 text-rose-400 animate-bounce" />
+                <span className="text-rose-300 font-semibold">Strict GPS location is required to render map & capture photos</span>
+                <button
+                  type="button"
+                  onClick={requestGpsPermissionDirectly}
+                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow"
+                >
+                  Enable GPS Location Now
+                </button>
               </div>
             )}
           </div>
@@ -646,14 +694,32 @@ export const ReportIssue: React.FC = () => {
 
             <button
               type="button"
-              disabled={liveLat === null || liveLng === null || photos.length >= 5}
-              onClick={() => setIsCameraOpen(true)}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-700 hover:to-sky-700 text-white font-bold text-sm shadow-md shadow-emerald-500/20 hover:shadow-lg transition flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={photos.length >= 5}
+              onClick={() => {
+                if (liveLat === null || liveLng === null) {
+                  alert('⚠️ Strict Hardware GPS is required! Please grant location permission first.');
+                  requestGpsPermissionDirectly();
+                  return;
+                }
+                setIsCameraOpen(true);
+              }}
+              className={`w-full py-4 px-6 rounded-2xl font-bold text-sm shadow-md transition flex items-center justify-center gap-3 ${
+                liveLat === null || liveLng === null
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-rose-500/20'
+                  : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-700 hover:to-sky-700 text-white shadow-emerald-500/20 hover:shadow-lg'
+              }`}
             >
-              <Camera className="w-5 h-5" />
-              <span>
-                {liveLat === null ? 'GPS Sensor Required to Enable Camera' : 'Open Live Camera (Real-Time Watermark)'}
-              </span>
+              {liveLat === null || liveLng === null ? (
+                <>
+                  <Lock className="w-5 h-5" />
+                  <span>🔒 GPS Lock Required: Click to Grant GPS &amp; Open Camera</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-5 h-5" />
+                  <span>Open Live Camera (Real-Time Watermark)</span>
+                </>
+              )}
             </button>
 
             {/* Photo Gallery */}
@@ -816,26 +882,31 @@ export const ReportIssue: React.FC = () => {
 
           {/* ─── STEP 3: ISSUE DETAILS & REDRESSAL SPECIFICATION ─── */}
           <fieldset
-            disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
+            disabled={liveLat === null || liveLng === null || photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
             className={`space-y-6 transition-all duration-200 ${
-              photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange
+              liveLat === null || liveLng === null || photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange
                 ? 'opacity-40 cursor-not-allowed select-none pointer-events-none'
                 : ''
             }`}
           >
-            {photos.length === 0 && (
+            {liveLat === null || liveLng === null ? (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-800 text-xs font-bold">
+                <Lock className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>Step 3 Locked: Please grant and enable your real-time device GPS in Step 1 to unlock the reporting form.</span>
+              </div>
+            ) : photos.length === 0 ? (
               <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2.5 text-sky-800 text-xs font-bold">
                 <Info className="w-4 h-4 text-sky-600 flex-shrink-0" />
                 <span>Step 3 Locked: Please capture a live photo of the civic issue in Step 2 above to unlock grievance details and trigger AI analysis.</span>
               </div>
-            )}
+            ) : null}
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Step 3: Issue Title *</label>
               <input
                 type="text"
                 required
-                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
+                disabled={liveLat === null || liveLng === null || photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Hazardous open manhole & broken road"
@@ -847,7 +918,7 @@ export const ReportIssue: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Category *</label>
                 <select
-                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
+                  disabled={liveLat === null || liveLng === null || photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed shadow-sm font-medium"
@@ -865,7 +936,7 @@ export const ReportIssue: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Severity / Priority</label>
                 <select
-                  disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
+                  disabled={liveLat === null || liveLng === null || photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed shadow-sm font-medium"
@@ -883,7 +954,7 @@ export const ReportIssue: React.FC = () => {
               <textarea
                 rows={3}
                 required
-                disabled={photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
+                disabled={liveLat === null || liveLng === null || photos.length === 0 || isValidCivicIssue === false || analyzingAi || isOutOfRange}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the civic hazard and exact landmark..."
@@ -894,9 +965,11 @@ export const ReportIssue: React.FC = () => {
 
           <button
             type="submit"
-            disabled={submitting || analyzingAi || photos.length === 0 || isValidCivicIssue === false || isOutOfRange}
+            disabled={submitting || analyzingAi || photos.length === 0 || isValidCivicIssue === false || isOutOfRange || liveLat === null || liveLng === null}
             className={`w-full py-4 rounded-2xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2 ${
-              isOutOfRange
+              liveLat === null || liveLng === null
+                ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-95 shadow-rose-500/20'
+                : isOutOfRange
                 ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-95 shadow-rose-500/20'
                 : isValidCivicIssue === false
                 ? 'bg-rose-600 hover:bg-rose-600 text-white cursor-not-allowed opacity-90'
@@ -905,12 +978,14 @@ export const ReportIssue: React.FC = () => {
                 : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-500/25 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
           >
-            {isOutOfRange || isValidCivicIssue === false ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+            {liveLat === null || liveLng === null || isOutOfRange || isValidCivicIssue === false ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
             <span>
               {submitting
                 ? 'Submitting Grievance...'
                 : analyzingAi
                 ? 'Groq AI Analyzing Photo...'
+                : liveLat === null || liveLng === null
+                ? 'Strict Hardware GPS Required to Submit'
                 : isOutOfRange
                 ? `Submission Blocked: Out of Range (${photoDistance}m away)`
                 : isValidCivicIssue === false
