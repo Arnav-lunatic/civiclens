@@ -12,12 +12,14 @@ const {
   analyzeResolutionImage,
   toggleLikeComplaint,
   submitComplaintFeedback,
+  getPublicComplaintStats,
 } = require('../controllers/complaintController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-// Public live feed
+// Public live feed & statistics
 router.get('/public', getPublicComplaints);
+router.get('/stats', getPublicComplaintStats);
 
 // Groq AI Vision Image Analysis Route (Public for seamless pre-submission check)
 router.post('/analyze-image', upload.single('image'), analyzeComplaintImage);

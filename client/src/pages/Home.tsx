@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Camera,
@@ -17,11 +17,64 @@ import {
   Layers,
   AlertTriangle,
   Flame,
-  ChevronRight
+  ChevronRight,
+  RefreshCw,
+  TrendingUp,
+  BarChart3,
 } from 'lucide-react';
+import { API } from '../services/api';
+
+interface PublicStats {
+  totalComplaints: number;
+  totalCitizenReports: number;
+  pending: number;
+  ongoing: number;
+  inProgress: number;
+  resolved: number;
+  rejected: number;
+  resolutionRate: number;
+  categories: Record<string, number>;
+}
 
 export const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'both' | 'before' | 'after'>('both');
+  const [stats, setStats] = useState<PublicStats>({
+    totalComplaints: 0,
+    totalCitizenReports: 0,
+    pending: 0,
+    ongoing: 0,
+    inProgress: 0,
+    resolved: 0,
+    rejected: 0,
+    resolutionRate: 0,
+    categories: {},
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const fetchStats = async (isManual = false) => {
+    if (isManual) setIsSyncing(true);
+    try {
+      const res = await API.request('/complaints/stats', 'GET');
+      if (res && res.stats) {
+        setStats(res.stats);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch public stats:', err);
+    } finally {
+      setStatsLoading(false);
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    // Auto-refresh every 30 seconds for live pulse
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const CIVIC_CATEGORIES = [
     {
@@ -229,6 +282,90 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* ─── LIVE REAL-TIME CIVIC REDRESSAL TELEMETRY STRIP ─── */}
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-lg space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200">
+              <Activity className="w-3.5 h-3.5 text-sky-600 animate-pulse" />
+              <span>Live Municipal Telemetry &bull; Real-Time Grievance Tracker</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+              Grievance Redressal Performance Pulse
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchStats(true)}
+            disabled={isSyncing}
+            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 self-start sm:self-auto border border-slate-200"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-sky-600 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Refreshing...' : 'Live Sync'}</span>
+          </button>
+        </div>
+
+        {/* 4 Core Dynamic Metrics */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {/* 1. Total Registered */}
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100/80 p-5 rounded-2xl border border-slate-200/80 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <span>Total Grievances</span>
+              <Layers className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="text-3xl sm:text-4xl font-black font-mono text-slate-900">
+              {statsLoading ? '...' : stats.totalComplaints}
+            </div>
+            <div className="text-[11px] text-slate-600 flex items-center gap-1">
+              <Users className="w-3 h-3 text-slate-400" />
+              <span>{stats.totalCitizenReports || stats.totalComplaints} Citizen Reports Linked</span>
+            </div>
+          </div>
+
+          {/* 2. Pending Triage */}
+          <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/50 p-5 rounded-2xl border border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-700 uppercase tracking-wider">
+              <span>Pending Triage</span>
+              <Clock className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="text-3xl sm:text-4xl font-black font-mono text-amber-950">
+              {statsLoading ? '...' : stats.pending}
+            </div>
+            <div className="text-[11px] text-amber-800 font-medium">
+              Awaiting officer site dispatch
+            </div>
+          </div>
+
+          {/* 3. Ongoing Redressals */}
+          <div className="bg-gradient-to-br from-sky-50/80 to-blue-50/50 p-5 rounded-2xl border border-sky-200/80 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-sky-700 uppercase tracking-wider">
+              <span>Ongoing Actions</span>
+              <TrendingUp className="w-4 h-4 text-sky-600" />
+            </div>
+            <div className="text-3xl sm:text-4xl font-black font-mono text-sky-950">
+              {statsLoading ? '...' : (stats.ongoing || stats.inProgress)}
+            </div>
+            <div className="text-[11px] text-sky-800 font-medium">
+              Active engineering repair underway
+            </div>
+          </div>
+
+          {/* 4. Resolved & Verified */}
+          <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-5 rounded-2xl border border-emerald-200/80 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-emerald-700 uppercase tracking-wider">
+              <span>Resolved &amp; Closed</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-3xl sm:text-4xl font-black font-mono text-emerald-950">
+              {statsLoading ? '...' : stats.resolved}
+            </div>
+            <div className="text-[11px] text-emerald-800 font-bold flex items-center gap-1">
+              <span>{stats.resolutionRate}% Verified Resolution Rate</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── 2. THREE-STEP WORKFLOW PIPELINE ─── */}
       <section className="space-y-8">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
@@ -361,32 +498,34 @@ export const Home: React.FC = () => {
         <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-y sm:divide-y-0 sm:divide-x divide-slate-800">
           <div className="pt-4 sm:pt-0">
             <div className="text-3xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300">
-              100%
+              {statsLoading ? '100%' : `${stats.resolutionRate}%`}
             </div>
             <div className="text-xs text-slate-300 font-bold uppercase tracking-wider mt-2">
-              Geotagged Hardware Proof
+              Verified Resolution Rate
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">Strict Physical GPS Sensor</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">
+              {stats.resolved} of {stats.totalComplaints || 0} Tickets Closed
+            </div>
           </div>
 
           <div className="pt-4 sm:pt-0 sm:pl-4">
             <div className="text-3xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
-              &lt; 24h
+              {statsLoading ? '0' : stats.totalCitizenReports || stats.totalComplaints}
             </div>
             <div className="text-xs text-slate-300 font-bold uppercase tracking-wider mt-2">
-              SLA Triage Dispatch
+              Citizens Empowered
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">Automated Escalation</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">AI Duplicate Merged Evidence</div>
           </div>
 
           <div className="pt-4 sm:pt-0 sm:pl-4">
             <div className="text-3xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">
-              PIN-Code
+              {statsLoading ? '0' : (stats.ongoing || stats.inProgress)}
             </div>
             <div className="text-xs text-slate-300 font-bold uppercase tracking-wider mt-2">
-              Auto-Routing Engine
+              Active Field Actions
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">Zero Bureaucratic Delays</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Sub-Admins On-Site</div>
           </div>
 
           <div className="pt-4 sm:pt-0 sm:pl-4">
@@ -396,7 +535,7 @@ export const Home: React.FC = () => {
             <div className="text-xs text-slate-300 font-bold uppercase tracking-wider mt-2">
               Groq AI Vision Audit
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">Anti-Spoof Fraud Detection</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Anti-Spoof Geotag Security</div>
           </div>
         </div>
       </section>
@@ -423,32 +562,35 @@ export const Home: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {CIVIC_CATEGORIES.map((cat, idx) => (
-            <div
-              key={idx}
-              className="bg-white p-6 rounded-3xl border border-slate-200/90 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200 space-y-3 flex flex-col justify-between"
-            >
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                    {cat.badge}
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-slate-900">{cat.title}</h3>
-                <div className="text-[11px] font-semibold text-sky-600">{cat.dept}</div>
-                <p className="text-xs text-slate-600 leading-relaxed font-normal">{cat.desc}</p>
-              </div>
-
-              <Link
-                to={`/explore`}
-                className="pt-2 text-xs font-bold text-slate-700 hover:text-sky-600 flex items-center justify-between border-t border-slate-100"
+          {CIVIC_CATEGORIES.map((cat, idx) => {
+            const count = stats.categories ? stats.categories[cat.title] || 0 : 0;
+            return (
+              <div
+                key={idx}
+                className="bg-white p-6 rounded-3xl border border-slate-200/90 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200 space-y-3 flex flex-col justify-between"
               >
-                <span>View reported cases</span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-              </Link>
-            </div>
-          ))}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">{cat.icon}</span>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                      {count > 0 ? `${count} Active Cases` : cat.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900">{cat.title}</h3>
+                  <div className="text-[11px] font-semibold text-sky-600">{cat.dept}</div>
+                  <p className="text-xs text-slate-600 leading-relaxed font-normal">{cat.desc}</p>
+                </div>
+
+                <Link
+                  to={`/explore?category=${encodeURIComponent(cat.title)}`}
+                  className="pt-2 text-xs font-bold text-slate-700 hover:text-sky-600 flex items-center justify-between border-t border-slate-100"
+                >
+                  <span>View reported cases ({count})</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                </Link>
+              </div>
+            );
+          })}
         </div>
       </section>
 

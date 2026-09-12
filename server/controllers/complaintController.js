@@ -1663,6 +1663,79 @@ const submitComplaintFeedback = async (req, res) => {
   }
 };
 
+// 12. Public Live Aggregated Statistics for Homepage & Transparency
+const getPublicComplaintStats = async (req, res) => {
+  try {
+    const [statusStats, categoryStats, totals] = await Promise.all([
+      Complaint.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Complaint.aggregate([
+        {
+          $group: {
+            _id: '$category',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Complaint.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalCitizenReports: { $sum: { $ifNull: ['$reportedByCount', 1] } },
+            totalComplaints: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
+
+    let pending = 0;
+    let inProgress = 0;
+    let resolved = 0;
+    let rejected = 0;
+
+    statusStats.forEach((st) => {
+      if (st._id === 'Pending') pending += st.count;
+      else if (st._id === 'In Progress' || st._id === 'Under Review') inProgress += st.count;
+      else if (st._id === 'Resolved') resolved += st.count;
+      else if (st._id === 'Rejected') rejected += st.count;
+    });
+
+    const totalComplaints = totals[0]?.totalComplaints || 0;
+    const totalCitizenReports = totals[0]?.totalCitizenReports || 0;
+    const ongoing = inProgress;
+    const resolutionRate = totalComplaints > 0 ? Math.round((resolved / totalComplaints) * 100) : 0;
+
+    const categories = {};
+    categoryStats.forEach((c) => {
+      if (c._id) categories[c._id] = c.count;
+    });
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalComplaints,
+        totalCitizenReports,
+        pending,
+        ongoing,
+        inProgress,
+        resolved,
+        rejected,
+        resolutionRate,
+        categories,
+      },
+    });
+  } catch (error) {
+    console.error('Get Public Stats Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createComplaint,
   submitComplaintWithOTP,
@@ -1675,4 +1748,5 @@ module.exports = {
   analyzeResolutionImage,
   toggleLikeComplaint,
   submitComplaintFeedback,
+  getPublicComplaintStats,
 };
