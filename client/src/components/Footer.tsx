@@ -157,7 +157,7 @@ export const Footer: React.FC = () => {
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
                 <div className="font-bold text-slate-800 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-sky-600" />
-                  <span>500m Anti-Tamper Geofence</span>
+                  <span>100m Anti-Tamper Geofence</span>
                 </div>
                 <p className="text-[10px] text-slate-500 leading-tight">
                   District officers must be physically present at reported GPS coordinates to verify & resolve grievances.

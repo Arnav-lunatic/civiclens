@@ -115,7 +115,7 @@ export const AdminDashboard: React.FC = () => {
     return R * c;
   };
 
-  const MAX_DISTANCE = 500; // meters
+  const MAX_DISTANCE = 100; // meters
 
   const handleVerifyLocation = (targetComplaint?: Complaint) => {
     const comp = targetComplaint || selectedComplaint;
@@ -139,7 +139,7 @@ export const AdminDashboard: React.FC = () => {
       } else {
         setLocationVerified(false);
         const distStr = distMeters >= 1000 ? `${(distMeters / 1000).toFixed(2)} km` : `${distMeters}m`;
-        setLocationError(`GPS Mismatch: You are ${distStr} away from the grievance location (${comp.latitude.toFixed(5)}, ${comp.longitude.toFixed(5)}). All actions are locked until you are within 500m.`);
+        setLocationError(`GPS Mismatch: You are ${distStr} away from the grievance location (${comp.latitude.toFixed(5)}, ${comp.longitude.toFixed(5)}). All actions are locked until you are within 100m.`);
       }
       setLocationCheckLoading(false);
     };
@@ -232,7 +232,7 @@ export const AdminDashboard: React.FC = () => {
     if (newStatus === 'Resolved') {
       // 1. Strict GPS location matching requirement
       if (!locationVerified || subadminLat === null || subadminLng === null) {
-        alert('⚠️ Strict on-site GPS verification is required. You must verify your location within 500m of the reported issue before marking as Resolved.');
+        alert('⚠️ Strict on-site GPS verification is required. You must verify your location within 100m of the reported issue before marking as Resolved.');
         return;
       }
 
@@ -845,7 +845,7 @@ export const AdminDashboard: React.FC = () => {
                         isMatched={locationVerified}
                       />
                       <p className="text-[10px] text-slate-500 text-center">
-                        Red Pin = Reported Grievance Location &bull; 500m allowable boundary circle &bull; Green/Blue Pin = Your Live Detected GPS
+                        Red Pin = Reported Grievance Location &bull; 100m allowable boundary circle &bull; Green/Blue Pin = Your Live Detected GPS
                       </p>
                     </div>
 
@@ -896,7 +896,7 @@ export const AdminDashboard: React.FC = () => {
                       <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                         <div className="text-[11px] text-emerald-800">
-                          <span className="font-bold">Location Matched!</span> You are <strong>{locationDistance}m</strong> from the issue site (within 500m geofence). Resolution tools below are now <strong>unlocked</strong>.
+                          <span className="font-bold">Location Matched!</span> You are <strong>{locationDistance}m</strong> from the issue site (within 100m geofence). Resolution tools below are now <strong>unlocked</strong>.
                         </div>
                       </div>
                     )}
@@ -913,7 +913,7 @@ export const AdminDashboard: React.FC = () => {
                           <span>Resolution Actions Locked</span>
                         </div>
                         <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                          CivicLens strictly requires physical presence on-site. Because your detected location does not match the issue location (within 500m), resolution notes, camera photo capture, and publishing as Resolved are locked until you reach the site.
+                          CivicLens strictly requires physical presence on-site. Because your detected location does not match the issue location (within 100m), resolution notes, camera photo capture, and publishing as Resolved are locked until you reach the site.
                         </p>
                       </div>
                     </div>
@@ -1108,7 +1108,7 @@ export const AdminDashboard: React.FC = () => {
                   {!locationVerified ? (
                     <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2 font-medium">
                       <Lock className="w-4 h-4 text-rose-600 shrink-0" />
-                      <span>GPS verification required: Verify your location in Step 1 within 500m of the issue to unlock notes &amp; photo capture.</span>
+                      <span>GPS verification required: Verify your location in Step 1 within 100m of the issue to unlock notes &amp; photo capture.</span>
                     </div>
                   ) : !resolutionNotes.trim() ? (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">

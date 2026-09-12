@@ -82,10 +82,10 @@ export const GrievancePolicy: React.FC = () => {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase">
                   <span className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-[10px]">4</span>
-                  <span>500m Geofenced Proof</span>
+                  <span>100m Geofenced Proof</span>
                 </div>
                 <p className="text-xs text-slate-600">
-                  Officer must be physically present within allowable geofence of the issue GPS location to take a live resolution photo before marking "Resolved".
+                  Officer must be physically present within allowable 100m geofence of the issue GPS location to take a live resolution photo before marking "Resolved".
                 </p>
               </div>
             </div>

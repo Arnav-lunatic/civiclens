@@ -16,7 +16,7 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-const MAX_RESOLUTION_DISTANCE_METERS = 500;
+const MAX_RESOLUTION_DISTANCE_METERS = 100;
 
 const uploadToCloudinary = (buffer, folder = 'civiclens/complaints') => {
   return new Promise((resolve, reject) => {
@@ -707,7 +707,7 @@ const updateComplaintStatus = async (req, res) => {
 
     if (status === 'Resolved') {
       // Strict GPS Location verification is mandatory for Resolved status:
-      // Admin must be on-site within MAX_RESOLUTION_DISTANCE_METERS (500m) of the grievance GPS
+      // Admin must be on-site within MAX_RESOLUTION_DISTANCE_METERS (100m) of the grievance GPS
       const rawLat = resolutionLat || adminLat;
       const rawLng = resolutionLng || adminLng;
       const lat = parseFloat(rawLat);

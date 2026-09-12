@@ -67,12 +67,12 @@ export const AdminResolutionMap: React.FC<AdminResolutionMapProps> = ({
     });
 
     L.marker([issueLat, issueLng], { icon: issueIcon })
-      .bindPopup(`<strong>${issueTitle}</strong><br/>Issue GPS: ${issueLat.toFixed(5)}, ${issueLng.toFixed(5)}<br/>500m geofence active`)
+      .bindPopup(`<strong>${issueTitle}</strong><br/>Issue GPS: ${issueLat.toFixed(5)}, ${issueLng.toFixed(5)}<br/>100m geofence active`)
       .addTo(layerGroup);
 
-    // 2. 500-meter allowable resolution geofence circle
+    // 2. 100-meter allowable resolution geofence circle
     L.circle([issueLat, issueLng], {
-      radius: 500,
+      radius: 100,
       color: isMatched ? '#10b981' : '#f59e0b',
       fillColor: isMatched ? '#34d399' : '#fbbf24',
       fillOpacity: isMatched ? 0.15 : 0.12,
@@ -153,13 +153,13 @@ export const AdminResolutionMap: React.FC<AdminResolutionMapProps> = ({
             {isMatched ? (
               <>
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>MATCHED: {distance !== null ? `${distance}m away (Within 500m)` : 'On-Site'}</span>
+                <span>MATCHED: {distance !== null ? `${distance}m away (Within 100m)` : 'On-Site'}</span>
               </>
             ) : (
               <>
                 <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
                 <span>
-                  MISMATCH: {distance !== null ? (distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${distance}m`) : ''} away (Max 500m allowed)
+                  MISMATCH: {distance !== null ? (distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${distance}m`) : ''} away (Max 100m allowed)
                 </span>
               </>
             )}
@@ -172,7 +172,7 @@ export const AdminResolutionMap: React.FC<AdminResolutionMapProps> = ({
         <div className="bg-slate-950/90 backdrop-blur-md text-slate-200 px-3 py-1.5 rounded-xl shadow-md border border-white/10 space-y-0.5">
           <div className="flex items-center gap-2 font-semibold">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
-            <span>Red Marker: Grievance Location (500m Geofence)</span>
+            <span>Red Marker: Grievance Location (100m Geofence)</span>
           </div>
           <div className="flex items-center gap-2 font-semibold">
             <span className={`w-2.5 h-2.5 rounded-full inline-block ${isMatched ? 'bg-emerald-400' : 'bg-red-500 animate-pulse'}`}></span>
