@@ -75,6 +75,7 @@ export interface Complaint {
     name: string;
     email: string;
     phone?: string;
+    avatar?: string;
   };
   assignedSubAdmin?: {
     _id: string;

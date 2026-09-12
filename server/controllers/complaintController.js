@@ -706,7 +706,8 @@ const getPublicComplaints = async (req, res) => {
     if (state && state !== 'All') query.state = new RegExp(state.trim(), 'i');
 
     let queryBuilder = Complaint.find(query)
-      .select('-citizen -timeline')
+      .select('-timeline')
+      .populate('citizen', 'name email avatar')
       .populate('assignedSubAdmin', 'name email department officialId')
       .sort({ createdAt: -1 })
       .lean();
@@ -810,7 +811,7 @@ const getSubAdminComplaints = async (req, res) => {
 
     const complaints = await Complaint.find(query)
       .select('-timeline')
-      .populate('citizen', 'name email phone')
+      .populate('citizen', 'name email phone avatar')
       .populate('assignedSubAdmin', 'name email department officialId')
       .sort({ createdAt: -1 })
       .lean();
@@ -840,7 +841,7 @@ const getSuperAdminComplaints = async (req, res) => {
 
     const complaints = await Complaint.find(query)
       .select('-timeline')
-      .populate('citizen', 'name email phone')
+      .populate('citizen', 'name email phone avatar')
       .populate('assignedSubAdmin', 'name email department officialId')
       .sort({ createdAt: -1 })
       .lean();
@@ -1666,64 +1667,37 @@ const submitComplaintFeedback = async (req, res) => {
 // 12. Public Live Aggregated Statistics for Homepage & Transparency
 const getPublicComplaintStats = async (req, res) => {
   try {
-    const [statusStats, categoryStats, totals] = await Promise.all([
-      Complaint.aggregate([
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
-          },
-        },
-      ]),
-      Complaint.aggregate([
-        {
-          $group: {
-            _id: '$category',
-            count: { $sum: 1 },
-          },
-        },
-      ]),
-      Complaint.aggregate([
-        {
-          $group: {
-            _id: null,
-            totalCitizenReports: { $sum: { $ifNull: ['$reportedByCount', 1] } },
-            totalComplaints: { $sum: 1 },
-          },
-        },
-      ]),
+    const [totalComplaints, pending, inProgress, underReview, resolved, rejected, complaints] = await Promise.all([
+      Complaint.countDocuments({}),
+      Complaint.countDocuments({ status: 'Pending' }),
+      Complaint.countDocuments({ status: 'In Progress' }),
+      Complaint.countDocuments({ status: 'Under Review' }),
+      Complaint.countDocuments({ status: 'Resolved' }),
+      Complaint.countDocuments({ status: 'Rejected' }),
+      Complaint.find({}).select('category reportedByCount status').lean(),
     ]);
 
-    let pending = 0;
-    let inProgress = 0;
-    let resolved = 0;
-    let rejected = 0;
-
-    statusStats.forEach((st) => {
-      if (st._id === 'Pending') pending += st.count;
-      else if (st._id === 'In Progress' || st._id === 'Under Review') inProgress += st.count;
-      else if (st._id === 'Resolved') resolved += st.count;
-      else if (st._id === 'Rejected') rejected += st.count;
-    });
-
-    const totalComplaints = totals[0]?.totalComplaints || 0;
-    const totalCitizenReports = totals[0]?.totalCitizenReports || 0;
-    const ongoing = inProgress;
-    const resolutionRate = totalComplaints > 0 ? Math.round((resolved / totalComplaints) * 100) : 0;
-
+    let totalCitizenReports = 0;
     const categories = {};
-    categoryStats.forEach((c) => {
-      if (c._id) categories[c._id] = c.count;
+
+    complaints.forEach((c) => {
+      totalCitizenReports += (c.reportedByCount || 1);
+      if (c.category) {
+        categories[c.category] = (categories[c.category] || 0) + 1;
+      }
     });
+
+    const ongoing = inProgress + underReview;
+    const resolutionRate = totalComplaints > 0 ? Math.round((resolved / totalComplaints) * 100) : 0;
 
     res.status(200).json({
       success: true,
       stats: {
         totalComplaints,
-        totalCitizenReports,
+        totalCitizenReports: totalCitizenReports || totalComplaints,
         pending,
         ongoing,
-        inProgress,
+        inProgress: ongoing,
         resolved,
         rejected,
         resolutionRate,

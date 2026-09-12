@@ -634,13 +634,39 @@ export const PublicComplaints: React.FC = () => {
                         </div>
                       }
                       bottomOverlay={
-                        <div className="flex justify-between items-center text-[10px] font-mono font-bold text-white">
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
-                            PIN {item.pincode}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
-                            {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                          </span>
+                        <div className="flex justify-between items-center gap-2">
+                          {/* Primary Reporter Avatar & Name with +Number */}
+                          <div className="inline-flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl text-white border border-white/15 shadow max-w-[60%] truncate">
+                            {item.citizen?.avatar ? (
+                              <img
+                                src={item.citizen.avatar}
+                                alt={item.citizen?.name || 'Citizen'}
+                                className="w-4 h-4 rounded-full object-cover shrink-0 border border-sky-400"
+                              />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center text-[9px] font-black shrink-0 shadow-2xs">
+                                {(item.citizen?.name || 'Citizen').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-[10px] font-bold text-slate-100 truncate">
+                              {item.citizen?.name || 'Citizen'}
+                            </span>
+                            {reportedCount > 1 && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-600 text-white text-[9px] font-black shrink-0 shadow-2xs">
+                                +{reportedCount - 1}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Coordinates / PIN */}
+                          <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono font-bold text-white">
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                              PIN {item.pincode}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                              {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                            </span>
+                          </div>
                         </div>
                       }
                     />

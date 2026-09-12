@@ -27,6 +27,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Status update modal
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [modalPhotoIndex, setModalPhotoIndex] = useState(0);
   const [newStatus, setNewStatus] = useState('In Progress');
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [updating, setUpdating] = useState(false);
@@ -546,13 +547,39 @@ export const AdminDashboard: React.FC = () => {
                         </span>
                       }
                       bottomOverlay={
-                        <div className="flex gap-1.5 items-center">
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-mono font-bold">
-                            PIN {item.pincode}
-                          </span>
-                          <span className="px-2.5 py-1 rounded-lg bg-sky-950/90 backdrop-blur-md text-sky-300 text-[10px] font-mono font-bold">
-                            GPS: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                          </span>
+                        <div className="flex justify-between items-center gap-2">
+                          {/* Primary Reporter Avatar & Name with +Number */}
+                          <div className="inline-flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl text-white border border-white/15 shadow max-w-[60%] truncate">
+                            {item.citizen?.avatar ? (
+                              <img
+                                src={item.citizen.avatar}
+                                alt={item.citizen?.name || 'Citizen'}
+                                className="w-4 h-4 rounded-full object-cover shrink-0 border border-sky-400"
+                              />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center text-[9px] font-black shrink-0 shadow-2xs">
+                                {(item.citizen?.name || 'Citizen').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-[10px] font-bold text-slate-100 truncate">
+                              {item.citizen?.name || 'Citizen'}
+                            </span>
+                            {(item.reportedByCount || 1) > 1 && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-600 text-white text-[9px] font-black shrink-0 shadow-2xs">
+                                +{(item.reportedByCount || 1) - 1}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Coordinates / PIN */}
+                          <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono font-bold text-white">
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                              PIN {item.pincode}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                              {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                            </span>
+                          </div>
                         </div>
                       }
                     />
@@ -572,6 +599,39 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <h3 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h3>
                       <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
+
+                      {/* Multi-Photo Issue Evidence Thumbnails on Admin Card */}
+                      {item.images && item.images.length > 1 && (
+                        <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 uppercase">
+                            <span className="flex items-center gap-1">
+                              <Camera className="w-3 h-3 text-sky-600" />
+                              <span>Multiple Angles / Photos ({item.images.length})</span>
+                            </span>
+                            <span className="text-sky-600 text-[9px]">Click photo to inspect</span>
+                          </div>
+                          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                            {item.images.map((imgObj, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewImage({
+                                    url: imgObj.url,
+                                    title: `${item.title} (Photo #${idx + 1})`,
+                                    subtitle: `GPS: ${imgObj.latitude?.toFixed(4) || item.latitude.toFixed(4)}, ${imgObj.longitude?.toFixed(4) || item.longitude.toFixed(4)}`,
+                                  });
+                                }}
+                                className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 hover:border-sky-500 shrink-0 transition"
+                              >
+                                <img src={imgObj.url} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="space-y-1.5 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-200">
                         <div className="text-slate-800 font-semibold flex items-start gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-sky-600 flex-shrink-0 mt-0.5" />
@@ -655,6 +715,7 @@ export const AdminDashboard: React.FC = () => {
                       <button
                         onClick={() => {
                           setSelectedComplaint(item);
+                          setModalPhotoIndex(0);
                           const initialStatus = item.status || 'In Progress';
                           setNewStatus(initialStatus);
                           setResolutionNotes(item.resolutionNotes || '');
@@ -716,30 +777,106 @@ export const AdminDashboard: React.FC = () => {
               <h4 className="font-bold text-slate-900 text-sm">{selectedComplaint.title}</h4>
               <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{selectedComplaint.description}</p>
               
-              <div className="rounded-xl overflow-hidden border border-slate-200">
-                <ComplaintImage
-                  src={selectedComplaint.images && selectedComplaint.images.length > 0 ? selectedComplaint.images[0].url : selectedComplaint.imageUrl}
-                  alt={selectedComplaint.title}
-                  heightClass="h-44 sm:h-48"
-                  onClick={() =>
-                    setPreviewImage({
-                      url: selectedComplaint.images && selectedComplaint.images.length > 0 ? selectedComplaint.images[0].url : selectedComplaint.imageUrl,
-                      title: `Reported Grievance: ${selectedComplaint.title}`,
-                      subtitle: `Reported by ${selectedComplaint.citizen?.name || 'Citizen'} | PIN: ${selectedComplaint.pincode}`,
-                    })
-                  }
-                  bottomOverlay={
-                    <div className="flex justify-between items-center text-[10px] font-mono font-bold text-white">
-                      <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
-                        PIN {selectedComplaint.pincode}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
-                        {selectedComplaint.latitude.toFixed(4)}, {selectedComplaint.longitude.toFixed(4)}
-                      </span>
+              {(() => {
+                const modalActiveImg =
+                  selectedComplaint.images && selectedComplaint.images.length > modalPhotoIndex
+                    ? selectedComplaint.images[modalPhotoIndex].url
+                    : selectedComplaint.images && selectedComplaint.images.length > 0
+                    ? selectedComplaint.images[0].url
+                    : selectedComplaint.imageUrl;
+
+                const reportedCount = selectedComplaint.reportedByCount || 1;
+
+                return (
+                  <div className="space-y-3">
+                    <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative">
+                      <ComplaintImage
+                        src={modalActiveImg}
+                        alt={selectedComplaint.title}
+                        heightClass="h-48 sm:h-56"
+                        onClick={() =>
+                          setPreviewImage({
+                            url: modalActiveImg,
+                            title: `Reported Grievance: ${selectedComplaint.title}`,
+                            subtitle: `Reported by ${selectedComplaint.citizen?.name || 'Citizen'} | PIN: ${selectedComplaint.pincode}`,
+                          })
+                        }
+                        topLeftBadge={
+                          selectedComplaint.images && selectedComplaint.images.length > 1 ? (
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-950/85 backdrop-blur-md text-white text-[10px] font-bold">
+                              Photo {modalPhotoIndex + 1} of {selectedComplaint.images.length}
+                            </span>
+                          ) : undefined
+                        }
+                        bottomOverlay={
+                          <div className="flex justify-between items-center gap-2">
+                            {/* Primary Reporter Avatar & Name with +Number */}
+                            <div className="inline-flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl text-white border border-white/15 shadow max-w-[60%] truncate">
+                              {selectedComplaint.citizen?.avatar ? (
+                                <img
+                                  src={selectedComplaint.citizen.avatar}
+                                  alt={selectedComplaint.citizen?.name || 'Citizen'}
+                                  className="w-4 h-4 rounded-full object-cover shrink-0 border border-sky-400"
+                                />
+                              ) : (
+                                <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center text-[9px] font-black shrink-0 shadow-2xs">
+                                  {(selectedComplaint.citizen?.name || 'Citizen').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span className="text-[10px] font-bold text-slate-100 truncate">
+                                {selectedComplaint.citizen?.name || 'Citizen'}
+                              </span>
+                              {reportedCount > 1 && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-orange-600 text-white text-[9px] font-black shrink-0 shadow-2xs">
+                                  +{reportedCount - 1}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono font-bold text-white">
+                              <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                                PIN {selectedComplaint.pincode}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                                {selectedComplaint.latitude.toFixed(4)}, {selectedComplaint.longitude.toFixed(4)}
+                              </span>
+                            </div>
+                          </div>
+                        }
+                      />
                     </div>
-                  }
-                />
-              </div>
+
+                    {/* Multi-Photo Thumbnail Selector in Modal */}
+                    {selectedComplaint.images && selectedComplaint.images.length > 1 && (
+                      <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 uppercase">
+                          <span>Switch Grievance Angle / Photo ({selectedComplaint.images.length} available):</span>
+                          <span className="text-sky-600 font-extrabold">Active: #{modalPhotoIndex + 1}</span>
+                        </div>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                          {selectedComplaint.images.map((imgObj, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setModalPhotoIndex(idx)}
+                              className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                                modalPhotoIndex === idx
+                                  ? 'border-sky-600 ring-2 ring-sky-300 scale-105 shadow-sm'
+                                  : 'border-slate-200 opacity-70 hover:opacity-100'
+                              }`}
+                            >
+                              <img src={imgObj.url} alt={`Angle #${idx + 1}`} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-[10px] font-black">
+                                #{idx + 1}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Co-Reporters & Multi-Citizen Evidence if merged */}
               {(selectedComplaint.reportedByCount || 1) > 1 && (
@@ -756,29 +893,6 @@ export const AdminDashboard: React.FC = () => {
                   <p className="text-[11px] text-amber-800 leading-relaxed">
                     Multiple citizens reported this exact physical defect. Resolving this single master ticket will notify all {selectedComplaint.reportedByCount} citizen(s).
                   </p>
-                  {selectedComplaint.images && selectedComplaint.images.length > 1 && (
-                    <div className="pt-1">
-                      <div className="text-[10px] font-bold text-amber-900 uppercase mb-1">All Uploaded Photos:</div>
-                      <div className="flex gap-2 overflow-x-auto pb-1">
-                        {selectedComplaint.images.map((img, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() =>
-                              setPreviewImage({
-                                url: img.url,
-                                title: `${selectedComplaint.title} (Angle #${i + 1})`,
-                                subtitle: `GPS: ${img.latitude?.toFixed(4)}, ${img.longitude?.toFixed(4)}`,
-                              })
-                            }
-                            className="w-12 h-12 rounded-xl overflow-hidden border-2 border-amber-300 shrink-0 hover:scale-105 transition"
-                          >
-                            <img src={img.url} alt={`Evidence #${i + 1}`} className="w-full h-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

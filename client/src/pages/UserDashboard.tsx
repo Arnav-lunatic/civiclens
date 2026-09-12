@@ -244,21 +244,72 @@ export const UserDashboard: React.FC = () => {
                         ) : undefined
                       }
                       bottomOverlay={
-                        <div className="flex gap-1.5 items-center">
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-mono font-bold">
-                            PIN {item.pincode}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-sky-950/90 backdrop-blur-md text-sky-300 text-[10px] font-mono">
-                            GPS: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                          </span>
-                          {photosCount > 1 && (
-                            <span className="px-2 py-0.5 rounded-lg bg-slate-900/90 text-white text-[10px] font-bold">
-                              +{photosCount - 1} Photos
+                        <div className="flex justify-between items-center gap-2">
+                          {/* Primary Reporter Avatar & Name with +Number */}
+                          <div className="inline-flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-xl text-white border border-white/15 shadow max-w-[60%] truncate">
+                            {item.citizen?.avatar ? (
+                              <img
+                                src={item.citizen.avatar}
+                                alt={item.citizen?.name || 'Citizen'}
+                                className="w-4 h-4 rounded-full object-cover shrink-0 border border-sky-400"
+                              />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center text-[9px] font-black shrink-0 shadow-2xs">
+                                {(item.citizen?.name || 'Citizen').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-[10px] font-bold text-slate-100 truncate">
+                              {item.citizen?.name || 'You'}
                             </span>
-                          )}
+                            {(item.reportedByCount || 1) > 1 && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-600 text-white text-[9px] font-black shrink-0 shadow-2xs">
+                                +{(item.reportedByCount || 1) - 1}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Coordinates / PIN */}
+                          <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono font-bold text-white">
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md">
+                              PIN {item.pincode}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-200">
+                              {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                            </span>
+                          </div>
                         </div>
                       }
                     />
+
+                    {/* Multi-photo thumbnails if multiple images exist */}
+                    {item.images && item.images.length > 1 && (
+                      <div className="p-3 bg-slate-50 border-b border-slate-200/90 space-y-1.5">
+                        <div className="text-[10px] font-bold text-slate-600 uppercase flex items-center justify-between">
+                          <span>Uploaded Perspectives ({item.images.length}):</span>
+                        </div>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                          {item.images.map((imgObj, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: imgObj.url,
+                                  title: `${item.title} (Photo #${idx + 1})`,
+                                  subtitle: `Geotagged at ${imgObj.latitude?.toFixed(4)}, ${imgObj.longitude?.toFixed(4)}`,
+                                })
+                              }
+                              className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-300 hover:border-sky-500 shrink-0 transition-transform active:scale-95 group"
+                            >
+                              <img src={imgObj.url} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[10px] font-bold">
+                                #{idx + 1}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="p-5 space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
