@@ -176,7 +176,7 @@ export const Home: React.FC = () => {
               </div>
               <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-200">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>500m Anti-Tamper Geofence</span>
+                <span>100m Anti-Tamper Geofence</span>
               </div>
             </div>
           </div>
@@ -283,7 +283,7 @@ export const Home: React.FC = () => {
             </div>
             <h3 className="text-base sm:text-lg font-bold text-slate-900">3. Direct Municipal Routing</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Auto-assigned to the local District Sub-Admin mapped to your postal PIN code, enforced by 500m on-site physical geofencing for resolution.
+              Auto-assigned to the local District Sub-Admin mapped to your postal PIN code, enforced by 100m on-site physical geofencing for resolution.
             </p>
           </div>
         </div>
