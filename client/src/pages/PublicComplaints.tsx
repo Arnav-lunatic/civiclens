@@ -20,6 +20,8 @@ import {
   Heart,
   Star,
   MessageSquare,
+  Users,
+  Flame,
 } from 'lucide-react';
 import { API } from '../services/api';
 import { fetchFallbackLocation } from '../services/geo';
@@ -72,7 +74,7 @@ export const PublicComplaints: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Resolved' | 'Pending' | 'In Progress'>('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [sortBy, setSortBy] = useState<'nearest' | 'newest'>('nearest');
+  const [sortBy, setSortBy] = useState<'nearest' | 'newest' | 'most-reported'>('nearest');
 
   // Image zoom modal
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
@@ -257,6 +259,12 @@ export const PublicComplaints: React.FC = () => {
         return true;
       })
       .sort((a, b) => {
+        if (sortBy === 'most-reported') {
+          const countA = a.reportedByCount || 1;
+          const countB = b.reportedByCount || 1;
+          if (countB !== countA) return countB - countA;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
         if (sortBy === 'nearest') {
           if (a.distanceMeters !== null && b.distanceMeters !== null) {
             return a.distanceMeters - b.distanceMeters;
@@ -504,11 +512,17 @@ export const PublicComplaints: React.FC = () => {
 
           {/* Sort Button */}
           <button
-            onClick={() => setSortBy(sortBy === 'nearest' ? 'newest' : 'nearest')}
+            onClick={() => {
+              if (sortBy === 'nearest') setSortBy('most-reported');
+              else if (sortBy === 'most-reported') setSortBy('newest');
+              else setSortBy('nearest');
+            }}
             className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition flex items-center justify-center gap-2 shrink-0 border border-slate-200"
           >
             <ArrowUpDown className="w-3.5 h-3.5 text-sky-600" />
-            <span>Sort: {sortBy === 'nearest' ? '📍 Nearest to Me' : '🕒 Newest First'}</span>
+            <span>
+              Sort: {sortBy === 'nearest' ? '📍 Nearest to Me' : sortBy === 'most-reported' ? '🔥 Most Reported' : '🕒 Newest First'}
+            </span>
           </button>
         </div>
 
@@ -541,6 +555,7 @@ export const PublicComplaints: React.FC = () => {
             Showing <strong className="text-slate-900 font-bold">{processedComplaints.length}</strong> of{' '}
             <strong className="text-slate-900 font-bold">{complaints.length}</strong> grievances
             {sortBy === 'nearest' && ' (ordered closest to your location)'}
+            {sortBy === 'most-reported' && ' (ordered by community report count)'}
           </div>
         </div>
 
@@ -562,6 +577,7 @@ export const PublicComplaints: React.FC = () => {
             {processedComplaints.map((item) => {
               const mainImg = item.images && item.images.length > 0 ? item.images[0].url : item.imageUrl;
               const hasResolvedImage = Boolean(item.resolvedImageUrl);
+              const reportedCount = item.reportedByCount || 1;
 
               return (
                 <div
@@ -603,6 +619,12 @@ export const PublicComplaints: React.FC = () => {
                               BEFORE: Reported Grievance
                             </span>
                           )}
+                          {reportedCount > 1 && (
+                            <span className="px-2.5 py-1 rounded-full bg-orange-600 text-white text-[10px] font-black shadow flex items-center gap-1 animate-pulse">
+                              <Flame className="w-3 h-3 text-amber-200 fill-amber-200" />
+                              <span>{reportedCount} Citizens Reported</span>
+                            </span>
+                          )}
                           {item.distanceMeters !== null && (
                             <div className="px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-sky-400 text-[10px] font-bold flex items-center gap-1 shadow">
                               <MapPin className="w-3 h-3 text-sky-400" />
@@ -630,8 +652,44 @@ export const PublicComplaints: React.FC = () => {
                         <span className="text-slate-400 text-[10px]">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
 
-                      <h3 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-900 text-base line-clamp-1 flex-1">{item.title}</h3>
+                        {reportedCount > 1 && (
+                          <span className="px-2 py-0.5 rounded-md bg-orange-100 border border-orange-200 text-orange-800 text-[10px] font-bold shrink-0 flex items-center gap-1">
+                            <Users className="w-3 h-3 text-orange-600" />
+                            <span>{reportedCount} reports</span>
+                          </span>
+                        )}
+                      </div>
+
                       <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line break-words">{item.description}</p>
+
+                      {/* Multi-photo Evidence Thumbnails if multiple citizens uploaded photos */}
+                      {item.images && item.images.length > 1 && (
+                        <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 uppercase">
+                            <span>Community Evidence ({item.images.length} photos):</span>
+                          </div>
+                          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                            {item.images.map((imgObj, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    url: imgObj.url,
+                                    title: `${item.title} (Photo #${idx + 1})`,
+                                    subtitle: `Geotagged at ${imgObj.latitude?.toFixed(4)}, ${imgObj.longitude?.toFixed(4)}`,
+                                  })
+                                }
+                                className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 hover:border-sky-500 shrink-0 transition"
+                              >
+                                <img src={imgObj.url} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Location Box */}
                       <div className="space-y-1 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-200">

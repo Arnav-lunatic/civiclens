@@ -52,6 +52,17 @@ export interface ITimelineEvent {
   timestamp: Date;
 }
 
+export interface ICoReporter {
+  citizen?: Types.ObjectId | IUser;
+  citizenName?: string;
+  citizenEmail?: string;
+  imageUrl?: string;
+  description?: string;
+  reportedAt?: Date;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface IComplaint extends Document {
   _id: Types.ObjectId;
   title: string;
@@ -78,6 +89,8 @@ export interface IComplaint extends Document {
   resolutionNotes?: string;
   likesCount?: number;
   likedBy?: string[];
+  reportedByCount?: number;
+  coReporters?: ICoReporter[];
   feedback?: {
     rating: number;
     comment: string;

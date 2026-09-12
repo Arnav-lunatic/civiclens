@@ -38,6 +38,22 @@ export interface TimelineEvent {
   timestamp: string;
 }
 
+export interface CoReporter {
+  _id?: string;
+  citizen?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  citizenName?: string;
+  citizenEmail?: string;
+  imageUrl?: string;
+  description?: string;
+  reportedAt?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface Complaint {
   _id: string;
   title: string;
@@ -70,6 +86,8 @@ export interface Complaint {
   resolvedAt?: string;
   likesCount?: number;
   likedBy?: string[];
+  reportedByCount?: number;
+  coReporters?: CoReporter[];
   feedback?: {
     rating: number;
     comment: string;

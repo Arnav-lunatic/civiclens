@@ -113,6 +113,98 @@ const fetchReverseGeocode = async (lat, lng) => {
   return null;
 };
 
+// AI Visual Duplicate & Hazard Identification using Groq Vision API
+const checkVisualDuplicateWithGroq = async (existingImageUrl, newImageUrl, category) => {
+  const groqApiKey = process.env.GROQ_API_KEY;
+  if (!groqApiKey || !existingImageUrl || !newImageUrl) {
+    return { isDuplicate: false, confidenceScore: 0, reasoning: 'No API key or image missing' };
+  }
+
+  try {
+    const promptText = `You are an AI Civic Infrastructure Duplicate & Merge Validator for CivicLens.
+Your task is to compare two municipal defect images taken in the same 50-meter neighborhood under category "${category}".
+IMAGE 1 is an existing active reported issue.
+IMAGE 2 is a newly submitted photo.
+
+Analyze both images carefully:
+- Check if both photos capture the exact same physical hazard / defect (e.g. the same specific pothole, same garbage pile, same broken streetlight/pole, same open manhole/drainage leak, or same broken bench/footpath).
+- Take into account different angles, lighting conditions, or distances of the same physical problem.
+- If they are clearly different defects (e.g., two distinct potholes on different sides of the road, or a pothole vs a streetlight), mark isSamePhysicalIssue: false.
+
+Respond ONLY with a valid raw JSON object matching this schema without any markdown formatting or surrounding text:
+{
+  "isSamePhysicalIssue": true or false,
+  "confidenceScore": 0.0 to 1.0,
+  "reasoning": "Concise 1-2 sentence explanation of visual similarity or differences"
+}`;
+
+    const payload = {
+      model: 'qwen/qwen3.6-27b',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a municipal civic infrastructure AI validator. Evaluate the two images for physical defect identity and respond ONLY with a raw JSON object matching the required schema.',
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptText },
+            { type: 'text', text: 'Image 1 (Existing Active Ticket):' },
+            { type: 'image_url', image_url: { url: existingImageUrl } },
+            { type: 'text', text: 'Image 2 (New Submission):' },
+            { type: 'image_url', image_url: { url: newImageUrl } },
+          ],
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 300,
+      reasoning_format: 'hidden',
+      reasoning_effort: 'none',
+    };
+
+    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      delete payload.reasoning_format;
+      delete payload.reasoning_effort;
+      response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    if (!response.ok) {
+      console.warn(`[Groq Duplicate Check] API returned status ${response.status}`);
+      return { isDuplicate: false, confidenceScore: 0, reasoning: 'API error' };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    const cleanJson = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanJson);
+    const isSame = parsed.isSamePhysicalIssue === true && (parsed.confidenceScore === undefined || parsed.confidenceScore >= 0.70);
+    return {
+      isDuplicate: isSame,
+      confidenceScore: parsed.confidenceScore || 0,
+      reasoning: parsed.reasoning || '',
+    };
+  } catch (err) {
+    console.error('[Groq Duplicate Check Error]:', err.message);
+    return { isDuplicate: false, confidenceScore: 0, reasoning: err.message };
+  }
+};
+
 const createComplaintRecord = async ({
   title,
   description,
@@ -151,6 +243,90 @@ const createComplaintRecord = async ({
   }
 
   const primaryImageUrl = images && images.length > 0 ? images[0].url : '';
+
+  // 0. AI Duplicate & Geoclustering Pre-Check (Active complaints within 60m of same category)
+  try {
+    const nearbyCandidates = await Complaint.find({
+      category: category || 'Other',
+      status: { $in: ['Pending', 'Under Review', 'In Progress'] },
+      location: {
+        $nearSphere: {
+          $geometry: { type: 'Point', coordinates: [lngNum, latNum] },
+          $maxDistance: 60, // 60 meters radius
+        },
+      },
+    }).limit(3);
+
+    if (nearbyCandidates && nearbyCandidates.length > 0 && primaryImageUrl) {
+      for (const candidate of nearbyCandidates) {
+        const candidateImg = candidate.imageUrl || (candidate.images && candidate.images[0] ? candidate.images[0].url : '');
+        if (candidateImg) {
+          const checkResult = await checkVisualDuplicateWithGroq(candidateImg, primaryImageUrl, category || 'Other');
+          if (checkResult.isDuplicate) {
+            console.log(`[Duplicate AI Match] Merging new report into existing ticket ${candidate._id} (Confidence: ${checkResult.confidenceScore})`);
+            
+            // Increment reported count
+            candidate.reportedByCount = (candidate.reportedByCount || 1) + 1;
+            
+            // Append co-reporter info
+            candidate.coReporters = candidate.coReporters || [];
+            candidate.coReporters.push({
+              citizen: citizenUser._id,
+              citizenName: citizenUser.name || citizenUser.email || 'Verified Citizen',
+              citizenEmail: citizenUser.email || '',
+              imageUrl: primaryImageUrl,
+              description: description || '',
+              reportedAt: new Date(),
+              latitude: latNum,
+              longitude: lngNum,
+            });
+
+            // Append photos to images array if not already present
+            if (images && images.length > 0) {
+              candidate.images = candidate.images || [];
+              images.forEach((newImg) => {
+                if (!candidate.images.some((existing) => existing.url === newImg.url)) {
+                  candidate.images.push(newImg);
+                }
+              });
+            }
+
+            // Auto-Escalate Priority based on community impact count
+            let priorityEscalated = false;
+            if (candidate.reportedByCount >= 5 && candidate.priority !== 'Critical') {
+              candidate.priority = 'Critical';
+              priorityEscalated = true;
+            } else if (candidate.reportedByCount >= 3 && ['Low', 'Medium'].includes(candidate.priority)) {
+              candidate.priority = 'High';
+              priorityEscalated = true;
+            }
+
+            // Record timeline event
+            candidate.timeline.push({
+              status: candidate.status,
+              message: `AI Duplicate Verified & Merged: Additional report filed by ${citizenUser.name || citizenUser.email || 'Citizen'}. Total affected citizen count increased to ${candidate.reportedByCount}.${priorityEscalated ? ` Priority auto-escalated to ${candidate.priority}.` : ''}`,
+              updatedBy: citizenUser._id,
+              updaterRole: 'citizen',
+              timestamp: new Date(),
+            });
+
+            await candidate.save();
+            invalidatePublicCache();
+
+            return {
+              complaint: candidate,
+              isMerged: true,
+              reportedByCount: candidate.reportedByCount,
+              assignedAdmin: candidate.assignedSubAdmin,
+            };
+          }
+        }
+      }
+    }
+  } catch (dupError) {
+    console.warn('[Duplicate Check Warning]:', dupError.message);
+  }
+
   const distRegexes = buildDistrictRegexList(cleanDistrict);
 
   // 1. Try District + Category match (Case-Insensitive small/upper case & aliases)
@@ -199,6 +375,8 @@ const createComplaintRecord = async ({
     citizen: citizenUser._id,
     assignedSubAdmin: assignedAdmin ? assignedAdmin._id : null,
     status: 'Pending',
+    reportedByCount: 1,
+    coReporters: [],
     timeline: [
       {
         status: 'Pending',
@@ -214,7 +392,7 @@ const createComplaintRecord = async ({
 
   invalidatePublicCache();
 
-  return { complaint, assignedAdmin };
+  return { complaint, assignedAdmin, isMerged: false, reportedByCount: 1 };
 };
 
 const processUploadedImages = async (files, reqBodyLat, reqBodyLng) => {
@@ -305,7 +483,7 @@ const createComplaint = async (req, res) => {
 
     const images = await processUploadedImages(files, issueLatNum, issueLngNum);
 
-    const { complaint } = await createComplaintRecord({
+    const { complaint, isMerged, reportedByCount } = await createComplaintRecord({
       title,
       description,
       category,
@@ -322,7 +500,11 @@ const createComplaint = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Grievance lodged and routed to District Officer!',
+      isMerged: !!isMerged,
+      reportedByCount: reportedByCount || 1,
+      message: isMerged
+        ? `Active report already verified at this location! Your report and photo have been merged to boost urgency (${reportedByCount} citizens affected).`
+        : 'Grievance lodged and routed to District Officer!',
       complaint,
     });
   } catch (error) {
@@ -416,7 +598,7 @@ const submitComplaintWithOTP = async (req, res) => {
 
     const images = await processUploadedImages(files, issueLatNum, issueLngNum);
 
-    const { complaint } = await createComplaintRecord({
+    const { complaint, isMerged, reportedByCount } = await createComplaintRecord({
       title,
       description,
       category,
@@ -435,7 +617,11 @@ const submitComplaintWithOTP = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Email verified & grievance lodged!',
+      isMerged: !!isMerged,
+      reportedByCount: reportedByCount || 1,
+      message: isMerged
+        ? `Email verified & report merged with active nearby ticket! (${reportedByCount} citizens affected).`
+        : 'Email verified & grievance lodged!',
       token,
       user: {
         id: user._id,
@@ -471,7 +657,13 @@ const optimizeComplaintPayload = (c) => {
 // 3. Get My Complaints
 const getMyComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ citizen: req.user._id })
+    const complaints = await Complaint.find({
+      $or: [
+        { citizen: req.user._id },
+        { 'coReporters.citizen': req.user._id },
+        { 'coReporters.citizenEmail': req.user.email },
+      ],
+    })
       .select('-timeline')
       .populate('assignedSubAdmin', 'name email department phone officialId')
       .sort({ createdAt: -1 })

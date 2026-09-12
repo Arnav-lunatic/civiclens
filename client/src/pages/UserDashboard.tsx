@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Camera, CheckCircle2, Clock, AlertTriangle, RefreshCw, MapPin, ExternalLink, Heart, Star, MessageSquare } from 'lucide-react';
+import { Camera, CheckCircle2, Clock, AlertTriangle, RefreshCw, MapPin, ExternalLink, Heart, Star, MessageSquare, Users, Flame } from 'lucide-react';
 import { API } from '../services/api';
 import { Complaint } from '../types';
 import { ComplaintImage } from '../components/ComplaintImage';
@@ -262,7 +262,15 @@ export const UserDashboard: React.FC = () => {
 
                     <div className="p-5 space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-sky-600">{item.category}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-sky-600">{item.category}</span>
+                          {(item.reportedByCount || 1) > 1 && (
+                            <span className="px-2 py-0.5 bg-orange-100 border border-orange-200 text-orange-800 text-[10px] font-black rounded-md flex items-center gap-1">
+                              <Flame className="w-3 h-3 text-orange-600 fill-orange-600" />
+                              <span>{item.reportedByCount} Reports</span>
+                            </span>
+                          )}
+                        </div>
                         {item.district && (
                           <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md border border-slate-200">
                             District: {item.district}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink, Camera, Loader2, AlertTriangle, X, Bot, Sparkles, Lock, Unlock, Navigation } from 'lucide-react';
+import { Building2, CheckCircle2, Shield, RefreshCw, PenSquare, MapPin, ExternalLink, Camera, Loader2, AlertTriangle, X, Bot, Sparkles, Lock, Unlock, Navigation, Users, Flame } from 'lucide-react';
 import { API } from '../services/api';
 import { Complaint, User } from '../types';
 import { ResolutionCameraModal } from '../components/ResolutionCameraModal';
@@ -559,7 +559,15 @@ export const AdminDashboard: React.FC = () => {
 
                     <div className="p-5 space-y-3">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-sky-600">{item.category}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-sky-600">{item.category}</span>
+                          {(item.reportedByCount || 1) > 1 && (
+                            <span className="px-2 py-0.5 rounded-full bg-orange-100 border border-orange-200 text-orange-800 text-[10px] font-black flex items-center gap-1">
+                              <Flame className="w-3 h-3 text-orange-600 fill-orange-600" />
+                              <span>{item.reportedByCount} Reports</span>
+                            </span>
+                          )}
+                        </div>
                         <span className="text-slate-400 text-[10px] font-mono">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                       <h3 className="font-bold text-slate-900 text-base line-clamp-1">{item.title}</h3>
@@ -580,8 +588,16 @@ export const AdminDashboard: React.FC = () => {
                         </a>
                       </div>
                       {item.citizen && (
-                        <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                          Reported by: <strong className="text-slate-900">{item.citizen.name}</strong> ({item.citizen.phone || item.citizen.email})
+                        <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                          <div>
+                            Primary Reporter: <strong className="text-slate-900">{item.citizen.name}</strong> ({item.citizen.phone || item.citizen.email})
+                          </div>
+                          {item.coReporters && item.coReporters.length > 0 && (
+                            <div className="text-[10px] text-orange-700 font-bold flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              <span>+{item.coReporters.length} other citizen(s) co-reported this exact defect</span>
+                            </div>
+                          )}
                         </div>
                       )}
                       {item.resolvedImageUrl && (
@@ -724,6 +740,47 @@ export const AdminDashboard: React.FC = () => {
                   }
                 />
               </div>
+
+              {/* Co-Reporters & Multi-Citizen Evidence if merged */}
+              {(selectedComplaint.reportedByCount || 1) > 1 && (
+                <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-2xl space-y-2 mt-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-900">
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-amber-600" />
+                      <span>{selectedComplaint.reportedByCount} Citizens Affected &amp; Grouped</span>
+                    </span>
+                    <span className="text-[10px] bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-md font-extrabold">
+                      AI Verified Duplicates
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Multiple citizens reported this exact physical defect. Resolving this single master ticket will notify all {selectedComplaint.reportedByCount} citizen(s).
+                  </p>
+                  {selectedComplaint.images && selectedComplaint.images.length > 1 && (
+                    <div className="pt-1">
+                      <div className="text-[10px] font-bold text-amber-900 uppercase mb-1">All Uploaded Photos:</div>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {selectedComplaint.images.map((img, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() =>
+                              setPreviewImage({
+                                url: img.url,
+                                title: `${selectedComplaint.title} (Angle #${i + 1})`,
+                                subtitle: `GPS: ${img.latitude?.toFixed(4)}, ${img.longitude?.toFixed(4)}`,
+                              })
+                            }
+                            className="w-12 h-12 rounded-xl overflow-hidden border-2 border-amber-300 shrink-0 hover:scale-105 transition"
+                          >
+                            <img src={img.url} alt={`Evidence #${i + 1}`} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleUpdateStatus} className="space-y-4">

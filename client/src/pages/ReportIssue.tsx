@@ -322,8 +322,12 @@ export const ReportIssue: React.FC = () => {
     photos.forEach((p) => formData.append('images', p.file));
 
     try {
-      await API.request('/complaints', 'POST', formData, true);
-      alert('Geotagged grievance lodged successfully at the photo location!');
+      const res = await API.request('/complaints', 'POST', formData, true);
+      if (res?.isMerged) {
+        alert(`✨ AI Verified Duplicate: An active complaint already exists at this location!\n\nYour report and photo have been linked to boost its priority (${res.reportedByCount} citizens affected).`);
+      } else {
+        alert('Geotagged grievance lodged successfully at the photo location!');
+      }
       navigate('/dashboard');
     } catch (err: any) {
       alert(err.message || 'Failed to submit grievance');
@@ -364,7 +368,11 @@ export const ReportIssue: React.FC = () => {
     const res = await API.request('/complaints/submit-with-otp', 'POST', formData, true);
     API.setAuth(res.token, res.user, 'citizen');
     setIsOtpOpen(false);
-    alert('Email verified & grievance lodged at the photo location!');
+    if (res?.isMerged) {
+      alert(`✨ AI Verified: Email verified & report merged with active nearby ticket (${res.reportedByCount} citizens affected)!`);
+    } else {
+      alert('Email verified & grievance lodged at the photo location!');
+    }
     navigate('/dashboard');
   };
 

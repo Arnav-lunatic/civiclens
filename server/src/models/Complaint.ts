@@ -120,6 +120,26 @@ const ComplaintSchema = new Schema<IComplaint>(
         type: String,
       },
     ],
+    reportedByCount: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    coReporters: [
+      {
+        citizen: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        citizenName: { type: String, default: '' },
+        citizenEmail: { type: String, default: '' },
+        imageUrl: { type: String, default: '' },
+        description: { type: String, default: '' },
+        reportedAt: { type: Date, default: Date.now },
+        latitude: Number,
+        longitude: Number,
+      },
+    ],
     feedback: {
       rating: { type: Number, min: 1, max: 5 },
       comment: { type: String, default: '' },
